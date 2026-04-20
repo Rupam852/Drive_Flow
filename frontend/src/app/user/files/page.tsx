@@ -60,6 +60,7 @@ export default function UserFilesPage() {
   const [downloadingFile, setDownloadingFile] = useState<any>(null);
   const [movingIds, setMovingIds] = useState<string[]>([]);
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([]);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
 
   const currentFolder = path[path.length - 1]!;
 
@@ -176,7 +177,14 @@ export default function UserFilesPage() {
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
       try {
-        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, { responseType: 'blob' });
+        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, { 
+          responseType: 'blob',
+          onDownloadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+            }
+          }
+        });
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -188,6 +196,8 @@ export default function UserFilesPage() {
       } catch (e) {
         console.error(e);
         addToast('Folder download failed', 'error');
+      } finally {
+        setDownloadProgress(null);
       }
       return;
     }
@@ -219,7 +229,14 @@ export default function UserFilesPage() {
     addToast('Preparing ZIP file...');
     try {
       const ids = Array.from(selected);
-      const res = await api.post('/files/bulk-download', { fileIds: ids }, { responseType: 'blob' });
+      const res = await api.post('/files/bulk-download', { fileIds: ids }, { 
+        responseType: 'blob',
+        onDownloadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+          }
+        }
+      });
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -232,6 +249,8 @@ export default function UserFilesPage() {
     } catch (e) {
       console.error(e);
       addToast('Error downloading files', 'error');
+    } finally {
+      setDownloadProgress(null);
     }
   };
 
@@ -297,9 +316,16 @@ export default function UserFilesPage() {
       }}
     >
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <h2 className="text-2xl font-bold text-white">My Files</h2>
-          <div className="flex items-center gap-1 mt-1 flex-wrap">
+        <div className="flex items-center gap-3">
+          {path.length > 1 && (
+            <button onClick={() => breadcrumbNav(path.length - 2)} 
+              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors" title="Go Back">
+              <ChevronRight className="w-5 h-5 rotate-180" />
+            </button>
+          )}
+          <div>
+            <h2 className="text-2xl font-bold text-white">My Files</h2>
+            <div className="flex items-center gap-1 mt-1 flex-wrap">
             {path.map((p, i) => (
               <span key={i} className="flex items-center gap-1">
                 {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500" />}
@@ -311,6 +337,7 @@ export default function UserFilesPage() {
             ))}
           </div>
         </div>
+      </div>
         
         <div className="flex items-center gap-2">
           {stats && (
@@ -654,6 +681,37 @@ export default function UserFilesPage() {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Download Progress Overlay */}
+      <AnimatePresence>
+        {downloadProgress !== null && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card p-8 rounded-3xl max-w-sm w-full text-center border border-white/20 shadow-2xl">
+              <div className="relative w-24 h-24 mx-auto mb-6">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                  <motion.circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent"
+                    strokeDasharray={251}
+                    animate={{ strokeDashoffset: 251 - (251 * downloadProgress) / 100 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-purple-500" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white">
+                  {downloadProgress}%
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Downloading...</h3>
+              <p className="text-sm text-gray-400">Please wait while we prepare and download your files.</p>
+              
+              <div className="mt-8 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div initial={{ width: 0 }} animate={{ width: `${downloadProgress}%` }}
+                  className="h-full bg-gradient-to-r from-purple-600 to-pink-600" />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

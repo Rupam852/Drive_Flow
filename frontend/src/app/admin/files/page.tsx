@@ -66,6 +66,14 @@ export default function AdminFilesPage() {
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean,
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    isDanger?: boolean
+  }>({ show: false, title: '', message: '', onConfirm: () => {}, isDanger: false });
   const [movingIds, setMovingIds] = useState<string[]>([]);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -85,13 +93,7 @@ export default function AdminFilesPage() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([]);
-  const [confirmModal, setConfirmModal] = useState<{
-    show: boolean,
-    title: string,
-    message: string,
-    onConfirm: () => void,
-    isDanger?: boolean
-  }>({ show: false, title: '', message: '', onConfirm: () => {}, isDanger: false });
+
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
 
@@ -571,7 +573,14 @@ export default function AdminFilesPage() {
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
       try {
-        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, { responseType: 'blob' });
+        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, { 
+          responseType: 'blob',
+          onDownloadProgress: (progressEvent: any) => {
+            if (progressEvent.total) {
+              setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+            }
+          }
+        });
         const url = window.URL.createObjectURL(new Blob([res.data]));
         const link = document.createElement('a');
         link.href = url;
@@ -583,6 +592,8 @@ export default function AdminFilesPage() {
       } catch (e) {
         console.error(e);
         addToast('Folder download failed', 'error');
+      } finally {
+        setDownloadProgress(null);
       }
       return;
     }
@@ -597,13 +608,15 @@ export default function AdminFilesPage() {
         link.setAttribute('target', '_blank');
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
+        link.parentNode?.removeChild(link);
       } else {
         addToast('Direct link not available', 'error');
       }
     } catch (e) {
       console.error(e);
       addToast('Download failed', 'error');
+    } finally {
+      setDownloadProgress(null);
     }
     
     setShowDownloadModal(false);
@@ -660,9 +673,16 @@ export default function AdminFilesPage() {
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            File Manager
+        <div className="flex items-center gap-3">
+          {path.length > 1 && (
+            <button onClick={() => breadcrumbNav(path.length - 2)} 
+              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors" title="Go Back">
+              <ChevronRight className="w-5 h-5 rotate-180" />
+            </button>
+          )}
+          <div>
+            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+              File Manager
             {stats && (
               <span className="text-[10px] font-normal bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-400">
                 {stats.totalFiles} Files • {stats.totalFolders} Folders
@@ -684,6 +704,7 @@ export default function AdminFilesPage() {
             ))}
           </div>
         </div>
+      </div>
         
         {stats && (
           <div className="w-full sm:w-56 bg-white/5 p-3 rounded-2xl border border-white/10">
@@ -1485,6 +1506,37 @@ export default function AdminFilesPage() {
           ))}
         </AnimatePresence>
       </div>
+
+      {/* Download Progress Overlay */}
+      <AnimatePresence>
+        {downloadProgress !== null && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card p-8 rounded-3xl max-w-sm w-full text-center border border-white/20 shadow-2xl">
+              <div className="relative w-24 h-24 mx-auto mb-6">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
+                  <motion.circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent"
+                    strokeDasharray={251}
+                    animate={{ strokeDashoffset: 251 - (251 * downloadProgress) / 100 }}
+                    transition={{ duration: 0.5 }}
+                    className="text-purple-500" />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white">
+                  {downloadProgress}%
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Downloading...</h3>
+              <p className="text-sm text-gray-400">Please wait while we prepare and download your files.</p>
+              
+              <div className="mt-8 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div initial={{ width: 0 }} animate={{ width: `${downloadProgress}%` }}
+                  className="h-full bg-gradient-to-r from-purple-600 to-pink-600" />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
