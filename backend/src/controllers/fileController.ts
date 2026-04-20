@@ -46,7 +46,15 @@ const getFolderSize = async (folderId: string): Promise<number> => {
 // @route GET /api/files?parentId=xxx
 export const listFiles = async (req: Request, res: Response) => {
   try {
-    const parentId = (req.query.parentId as string) || DRIVE_FOLDER_ID;
+    let parentId = (req.query.parentId as string) || DRIVE_FOLDER_ID;
+    
+    // Failsafe for missing or literal 'undefined'/'null' passed from frontend
+    if (!parentId || parentId === 'undefined' || parentId === 'null' || parentId.trim() === '') {
+      parentId = DRIVE_FOLDER_ID;
+    }
+    // Remove any accidental quotes or whitespace
+    parentId = parentId.replace(/['"]/g, '').trim();
+
     console.log(`[listFiles] Requesting files for parentId: ${parentId}`);
     const driveRes = await drive.files.list({
       q: `'${parentId}' in parents and trashed = false`,
