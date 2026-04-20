@@ -80,7 +80,25 @@ export default function UserFilesPage() {
   };
 
   useEffect(() => {
-    loadFiles(currentFolder.id);
+    if (!searchQuery) {
+      loadFiles(currentFolder.id);
+    } else {
+      const timer = setTimeout(async () => {
+        setLoading(true);
+        try {
+          const res = await api.get(`/files/search?q=${encodeURIComponent(searchQuery)}`);
+          setFiles(res.data);
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, currentFolder.id]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      loadFiles(currentFolder.id);
+    }
     fetchStats();
 
     const handlePopState = () => {
@@ -92,7 +110,7 @@ export default function UserFilesPage() {
       } else {
         setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: 'Folder' }]);
       }
-      loadFiles(folderId);
+      if (!searchQuery) loadFiles(folderId);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -108,21 +126,8 @@ export default function UserFilesPage() {
       return true;
     };
 
-    if (!searchQuery) return files.filter(matchesCategory);
-    
-    const q = searchQuery.toLowerCase();
-    return files.filter(file => {
-      if (!matchesCategory(file)) return false;
-      const name = file.name.toLowerCase();
-      
-      // Fuzzy match
-      let n = 0;
-      for (let i = 0; i < name.length && n < q.length; i++) {
-        if (name[i] === q[n]) n++;
-      }
-      return n === q.length;
-    });
-  }, [files, searchQuery, activeCategory]);
+    return files.filter(matchesCategory);
+  }, [files, activeCategory]);
 
   const navigate = (folder: DriveFile) => {
     setPath(p => [...p, { id: folder.id, name: folder.name }]);

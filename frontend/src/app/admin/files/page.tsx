@@ -108,7 +108,25 @@ export default function AdminFilesPage() {
   };
 
   useEffect(() => {
-    loadFiles(currentFolder.id);
+    if (!searchQuery) {
+      loadFiles(currentFolder.id);
+    } else {
+      const timer = setTimeout(async () => {
+        setLoading(true);
+        try {
+          const res = await api.get(`/files/search?q=${encodeURIComponent(searchQuery)}`);
+          setFiles(res.data);
+        } catch (e) { console.error(e); }
+        finally { setLoading(false); }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [searchQuery, currentFolder.id]);
+
+  useEffect(() => {
+    if (!searchQuery) {
+      loadFiles(currentFolder.id);
+    }
 
     const handlePopState = () => {
       const params = new URLSearchParams(window.location.search);
@@ -122,7 +140,7 @@ export default function AdminFilesPage() {
         // so we just jump there (limited breadcrumb).
         setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: 'Folder' }]);
       }
-      loadFiles(folderId);
+      if (!searchQuery) loadFiles(folderId);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -138,21 +156,8 @@ export default function AdminFilesPage() {
       return true;
     };
 
-    if (!searchQuery) return files.filter(matchesCategory);
-    
-    const q = searchQuery.toLowerCase();
-    return files.filter(file => {
-      if (!matchesCategory(file)) return false;
-      const name = file.name.toLowerCase();
-      
-      // Fuzzy match: check if characters appear in order
-      let n = 0;
-      for (let i = 0; i < name.length && n < q.length; i++) {
-        if (name[i] === q[n]) n++;
-      }
-      return n === q.length;
-    });
-  }, [files, searchQuery, activeCategory]);
+    return files.filter(matchesCategory);
+  }, [files, activeCategory]);
 
   const addToast = (msg: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now();

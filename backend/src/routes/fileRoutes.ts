@@ -26,6 +26,7 @@ import {
   getUploadSession,
   finalizeUpload,
   getDownloadLink,
+  searchFiles,
 } from '../controllers/fileController';
 import { protect, admin, approved } from '../middleware/authMiddleware';
 
@@ -49,6 +50,7 @@ router.delete('/trash', protect, admin, deletePermanently);
 router.post('/bulk-download', protect, approved, bulkDownload);
 
 // CRUD
+router.get('/search', protect, searchFiles);
 router.get('/', protect, listFiles);
 router.post('/upload', protect, approved, upload.single('file'), uploadFile);
 router.post('/folder', protect, approved, createFolder);
