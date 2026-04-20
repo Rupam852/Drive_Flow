@@ -605,6 +605,40 @@ export const bulkDownload = async (req: Request, res: Response) => {
   }
 };
 
+// @desc  Global deep search in MongoDB
+// @route GET /api/files/search?q=xyz
+export const searchFiles = async (req: Request, res: Response) => {
+  try {
+    const q = req.query.q as string;
+    if (!q) {
+      res.json([]);
+      return;
+    }
+
+    // Convert query to fuzzy regex (characters in order)
+    const regexStr = q.split('').map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
+    const regex = new RegExp(regexStr, 'i');
+
+    const files = await FileMetadata.find({
+      rootId: DRIVE_FOLDER_ID,
+      status: 'active',
+      name: { $regex: regex }
+    }).limit(100);
+
+    const mapped = files.map(f => ({
+      id: f.fileId,
+      name: f.name,
+      mimeType: f.type,
+      size: f.size?.toString() || '0',
+      modifiedTime: (f as any).updatedAt || new Date().toISOString()
+    }));
+
+    res.json(mapped);
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
 // @desc  Get all activity logs (Admin only)
 // @route GET /api/files/logs
 export const getActivityLogs = async (req: Request, res: Response) => {
