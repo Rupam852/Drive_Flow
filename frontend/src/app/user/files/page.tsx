@@ -172,6 +172,26 @@ export default function UserFilesPage() {
       return;
     }
 
+    // If it's a folder, use the bulk-download endpoint to zip it
+    if (isFolder(file)) {
+      addToast('Preparing folder ZIP...');
+      try {
+        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, { responseType: 'blob' });
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${file.name}.zip`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error(e);
+        addToast('Folder download failed', 'error');
+      }
+      return;
+    }
+
     // Direct download
     try {
       addToast('Preparing direct download...');
