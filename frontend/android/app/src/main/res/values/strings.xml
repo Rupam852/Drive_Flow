@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DriveFlow</string>
+    <string name="title_activity_main">DriveFlow</string>
+    <string name="package_name">com.rupam.driveflow</string>
+    <string name="custom_url_scheme">com.rupam.driveflow</string>
+</resources>
