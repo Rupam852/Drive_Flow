@@ -625,12 +625,19 @@ export const searchFiles = async (req: Request, res: Response) => {
       name: { $regex: regex }
     }).limit(100);
 
-    const mapped = files.map(f => ({
-      id: f.fileId,
-      name: f.name,
-      mimeType: f.type,
-      size: f.size?.toString() || '0',
-      modifiedTime: (f as any).updatedAt || new Date().toISOString()
+    const mapped = await Promise.all(files.map(async (f) => {
+      let size = f.size?.toString() || '0';
+      if (f.type === 'application/vnd.google-apps.folder' || f.type === 'folder') {
+        const folderSize = await getFolderSize(f.fileId);
+        size = folderSize.toString();
+      }
+      return {
+        id: f.fileId,
+        name: f.name,
+        mimeType: f.type,
+        size,
+        modifiedTime: (f as any).updatedAt || new Date().toISOString()
+      };
     }));
 
     res.json(mapped);
