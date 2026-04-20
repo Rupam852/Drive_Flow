@@ -156,7 +156,14 @@ export default function AdminFilesPage() {
       return true;
     };
 
-    return files.filter(matchesCategory);
+    const sorted = files.filter(matchesCategory).sort((a, b) => {
+      const aFolder = isFolder(a);
+      const bFolder = isFolder(b);
+      if (aFolder && !bFolder) return -1;
+      if (!aFolder && bFolder) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    return sorted;
   }, [files, activeCategory]);
 
   const addToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -897,7 +904,7 @@ export default function AdminFilesPage() {
                     <td className="px-4 py-3 text-gray-400 text-sm">{fmt(file.size, isFolder(file))}</td>
                     <td className="px-4 py-3 text-gray-400 text-sm whitespace-nowrap">{new Date(file.modifiedTime).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 transition-opacity">
                         <button onClick={(e) => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} title="Rename"
                           className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                           <Pencil className="w-4 h-4" />
