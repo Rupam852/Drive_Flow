@@ -71,10 +71,16 @@ export default function AdminDashboard() {
     load();
   }, []);
 
-  const rawPct = stats
+  const rawPct = stats && parseInt(stats.limit) > 0
     ? (parseInt(stats.used) / parseInt(stats.limit)) * 100
     : 0;
-  const usedPct = rawPct > 0 && rawPct < 0.1 ? rawPct.toFixed(2) : rawPct.toFixed(1);
+  
+  let usedPct = '0';
+  if (stats && rawPct > 0) {
+    if (rawPct < 0.01) usedPct = '<0.01';
+    else if (rawPct < 0.1) usedPct = rawPct.toFixed(2);
+    else usedPct = rawPct.toFixed(1);
+  }
 
   const cards = [
     { icon: HardDrive, label: 'Storage Used', value: formatBytes(stats?.used), color: 'bg-purple-500/30', href: '/admin/files' },
@@ -147,7 +153,7 @@ export default function AdminDashboard() {
                   <motion.circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent"
                     strokeDasharray={440}
                     initial={{ strokeDashoffset: 440 }}
-                    animate={{ strokeDashoffset: 440 - (440 * parseFloat(usedPct)) / 100 }}
+                    animate={{ strokeDashoffset: 440 - (440 * Math.min(rawPct, 100)) / 100 }}
                     transition={{ duration: 1.5, ease: "easeOut" }}
                     className="text-purple-500" />
                 </svg>
