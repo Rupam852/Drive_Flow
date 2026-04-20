@@ -194,6 +194,27 @@ export default function UserFilesPage() {
     setShowDownloadModal(false);
   };
 
+  const handleBulkDownload = async () => {
+    if (selected.size === 0) return;
+    addToast('Preparing ZIP file...');
+    try {
+      const ids = Array.from(selected);
+      const res = await api.post('/files/bulk-download', { fileIds: ids }, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'driveflow-downloads.zip');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setSelected(new Set());
+    } catch (e) {
+      console.error(e);
+      addToast('Error downloading files', 'error');
+    }
+  };
+
   const addToast = (msg: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, msg, type }]);
@@ -577,6 +598,26 @@ export default function UserFilesPage() {
               </button>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Action Bar */}
+      <AnimatePresence>
+        {selected.size > 0 && (
+          <motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] glass-card px-6 py-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] border border-white/20 flex items-center gap-6">
+            <span className="text-white font-medium text-sm whitespace-nowrap">
+              <span className="text-purple-400 font-bold">{selected.size}</span> selected
+            </span>
+            <div className="w-px h-6 bg-white/20" />
+            <button onClick={handleBulkDownload} className="flex items-center gap-2 text-white hover:text-purple-400 transition-colors whitespace-nowrap">
+              <Download className="w-5 h-5" />
+              <span className="text-sm font-medium">Download All</span>
+            </button>
+            <button onClick={() => setSelected(new Set())} className="flex items-center gap-2 text-gray-400 hover:text-red-400 transition-colors ml-2" title="Clear selection">
+              <X className="w-5 h-5" />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 
