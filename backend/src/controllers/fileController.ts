@@ -571,31 +571,58 @@ export const bulkDownload = async (req: Request, res: Response) => {
     
     archive.pipe(res);
 
+    // Helper to get all files in a folder recursively
+    const getAllFilesInFolder = async (folderId: string, pathPrefix: string = ''): Promise<{ id: string, path: string, name: string, mimeType: string }[]> => {
+      let results: any[] = [];
+      const children = await FileMetadata.find({ parentId: folderId, status: 'active' });
+      for (const child of children) {
+        if (child.type === 'application/vnd.google-apps.folder' || child.type === 'folder') {
+          const sub = await getAllFilesInFolder(child.fileId, `${pathPrefix}${child.name}/`);
+          results = results.concat(sub);
+        } else {
+          results.push({ id: child.fileId, path: pathPrefix, name: child.name, mimeType: child.type });
+        }
+      }
+      return results;
+    };
+
+    let filesToZip: { id: string, path: string, name: string, mimeType: string }[] = [];
+
     for (const fileId of fileIds) {
       try {
         const meta = await drive.files.get({ fileId, fields: 'id, name, mimeType' });
         const fileName = meta.data.name || 'file';
 
         if (meta.data.mimeType === 'application/vnd.google-apps.folder') {
-          continue; // Folders skipped for now in bulk file ZIP
-        }
-
-        const isGoogleDoc = meta.data.mimeType?.startsWith('application/vnd.google-apps.');
-        if (isGoogleDoc) {
-          const exportRes: any = await drive.files.export(
-            { fileId, mimeType: 'application/pdf' },
-            { responseType: 'stream' } as any
-          );
-          archive.append(exportRes.data, { name: fileName + '.pdf' });
+          const children = await getAllFilesInFolder(fileId, `${fileName}/`);
+          filesToZip = filesToZip.concat(children);
         } else {
-          const downRes: any = await drive.files.get(
-            { fileId, alt: 'media' },
-            { responseType: 'stream' } as any
-          );
-          archive.append(downRes.data, { name: fileName });
+          filesToZip.push({ id: fileId, path: '', name: fileName, mimeType: meta.data.mimeType! });
         }
       } catch (err) {
-        console.error(`Error adding file ${fileId} to bulk ZIP:`, err);
+        console.error(`Error resolving file/folder ${fileId}:`, err);
+      }
+    }
+
+    for (const file of filesToZip) {
+      try {
+        const fullPathName = file.path + file.name;
+        const isGoogleDoc = file.mimeType?.startsWith('application/vnd.google-apps.');
+        if (isGoogleDoc) {
+          const exportRes: any = await drive.files.export(
+            { fileId: file.id, mimeType: 'application/pdf' },
+            { responseType: 'stream' } as any
+          );
+          archive.append(exportRes.data, { name: fullPathName + '.pdf' });
+        } else {
+          const downRes: any = await drive.files.get(
+            { fileId: file.id, alt: 'media' },
+            { responseType: 'stream' } as any
+          );
+          archive.append(downRes.data, { name: fullPathName });
+        }
+      } catch (err) {
+        console.error(`Error adding file ${file.id} to bulk ZIP:`, err);
       }
     }
 
