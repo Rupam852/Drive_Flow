@@ -49,7 +49,7 @@ export const listFiles = async (req: Request, res: Response) => {
     let parentId = (req.query.parentId as string) || DRIVE_FOLDER_ID;
     
     // Failsafe for missing or literal 'undefined'/'null' passed from frontend
-    if (!parentId || parentId === 'undefined' || parentId === 'null' || parentId.trim() === '') {
+    if (!parentId || parentId === 'undefined' || parentId === 'null' || parentId === 'ROOT' || parentId.trim() === '') {
       parentId = DRIVE_FOLDER_ID;
     }
     // Remove any accidental quotes or whitespace
@@ -98,7 +98,8 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
       res.status(400).json({ message: 'No file uploaded' });
       return;
     }
-    const parentId = (req.body.parentId as string) || DRIVE_FOLDER_ID;
+    let parentId = (req.body.parentId as string) || DRIVE_FOLDER_ID;
+    if (parentId === 'ROOT') parentId = DRIVE_FOLDER_ID;
 
     const response = await drive.files.create({
       requestBody: {
@@ -135,8 +136,9 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
 // @route POST /api/files/folder
 export const createFolder = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, parentId } = req.body;
-    const parent = parentId || DRIVE_FOLDER_ID;
+    let { name, parentId } = req.body;
+    let parent = parentId || DRIVE_FOLDER_ID;
+    if (parent === 'ROOT') parent = DRIVE_FOLDER_ID;
 
     const response = await drive.files.create({
       requestBody: {
@@ -169,8 +171,9 @@ export const createFolder = async (req: AuthRequest, res: Response) => {
 // @route POST /api/files/doc
 export const createDoc = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, parentId } = req.body;
-    const parent = parentId || DRIVE_FOLDER_ID;
+    let { name, parentId } = req.body;
+    let parent = parentId || DRIVE_FOLDER_ID;
+    if (parent === 'ROOT') parent = DRIVE_FOLDER_ID;
 
     const response = await drive.files.create({
       requestBody: {
@@ -817,7 +820,8 @@ export const getUploadSession = async (req: AuthRequest, res: Response) => {
       res.status(400).json({ message: 'Name and mimeType are required' });
       return;
     }
-    const targetParentId = parentId || DRIVE_FOLDER_ID;
+    let targetParentId = parentId || DRIVE_FOLDER_ID;
+    if (targetParentId === 'ROOT') targetParentId = DRIVE_FOLDER_ID;
 
     const oauth2Client = (drive as any).context._options.auth;
     const { token } = await oauth2Client.getAccessToken();
@@ -856,7 +860,8 @@ export const getUploadSession = async (req: AuthRequest, res: Response) => {
 export const finalizeUpload = async (req: AuthRequest, res: Response) => {
   try {
     const { fileId, name, mimeType, size, parentId } = req.body;
-    const targetParentId = parentId || DRIVE_FOLDER_ID;
+    let targetParentId = parentId || DRIVE_FOLDER_ID;
+    if (targetParentId === 'ROOT') targetParentId = DRIVE_FOLDER_ID;
 
     await FileMetadata.create({
       fileId,

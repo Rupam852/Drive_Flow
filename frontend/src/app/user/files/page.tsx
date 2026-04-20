@@ -13,12 +13,11 @@ interface DriveFile {
   modifiedTime: string;
 }
 
-const ROOT_ID = process.env.NEXT_PUBLIC_DRIVE_FOLDER_ID || '';
+const ROOT_ID = 'ROOT';
 const isFolder = (f: DriveFile) => f.mimeType === 'application/vnd.google-apps.folder';
 const isImage = (f: DriveFile) => f.mimeType.startsWith('image/');
 const isVideo = (f: DriveFile) => f.mimeType.startsWith('video/');
 const isConvertible = (f: DriveFile) => {
-  const mime = f.mimeType;
   return mime.startsWith('application/vnd.google-apps.') || 
          mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
          mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||

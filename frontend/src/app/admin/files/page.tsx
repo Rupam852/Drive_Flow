@@ -17,7 +17,7 @@ interface DriveFile {
   modifiedTime: string;
 }
 
-const ROOT_ID = process.env.NEXT_PUBLIC_DRIVE_FOLDER_ID || '';
+const ROOT_ID = 'ROOT';
 
 const isFolder = (f: DriveFile) => f.mimeType === 'application/vnd.google-apps.folder';
 const isImage = (f: DriveFile) => f.mimeType.startsWith('image/');
