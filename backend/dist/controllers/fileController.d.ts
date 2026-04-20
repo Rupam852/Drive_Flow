@@ -1,0 +1,18 @@
+import { Request, Response } from 'express';
+import multer from 'multer';
+import { AuthRequest } from '../middleware/authMiddleware';
+export declare const upload: multer.Multer;
+export declare const listFiles: (req: Request, res: Response) => Promise<void>;
+export declare const uploadFile: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const createFolder: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const createDoc: (req: AuthRequest, res: Response) => Promise<void>;
+export declare const renameFile: (req: Request, res: Response) => Promise<void>;
+export declare const moveFiles: (req: Request, res: Response) => Promise<void>;
+export declare const deleteFiles: (req: Request, res: Response) => Promise<void>;
+export declare const downloadFile: (req: Request, res: Response) => Promise<void>;
+export declare const getDriveStats: (req: Request, res: Response) => Promise<void>;
+export declare const bulkDownload: (req: Request, res: Response) => Promise<void>;
+export declare const getActivityLogs: (req: Request, res: Response) => Promise<void>;
+export declare const getTrashedFiles: (req: Request, res: Response) => Promise<void>;
+export declare const restoreFile: (req: Request, res: Response) => Promise<void>;
+export declare const getAllUsers: (req: Request, res: Response) => Promise<void>;
