@@ -126,7 +126,14 @@ export default function UserFilesPage() {
       return true;
     };
 
-    return files.filter(matchesCategory);
+    const sorted = files.filter(matchesCategory).sort((a, b) => {
+      const aFolder = isFolder(a);
+      const bFolder = isFolder(b);
+      if (aFolder && !bFolder) return -1;
+      if (!aFolder && bFolder) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    return sorted;
   }, [files, activeCategory]);
 
   const navigate = (folder: DriveFile) => {
