@@ -15,6 +15,7 @@ router.get('/user-logs', authMiddleware_1.protect, fileController_1.getUserActiv
 router.delete('/admin-logs', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.clearActivityLogs);
 router.get('/admin-trash', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.getTrashedFiles);
 router.get('/admin-users', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.getAllUsers);
+router.get('/admin-duplicates', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.findDuplicates);
 router.put('/:id/restore', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.restoreFile);
 router.put('/trash/restore-all', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.restoreAll);
 router.put('/trash/restore-bulk', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.restoreBulk);
@@ -35,6 +36,7 @@ router.delete('/', authMiddleware_1.protect, authMiddleware_1.approved, fileCont
 router.get('/:id/download', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.downloadFile);
 router.get('/:id/direct-download', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.getDownloadLink);
 router.post('/upload-session', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.getUploadSession);
+router.put('/upload-proxy', authMiddleware_1.protect, authMiddleware_1.approved, express_1.default.raw({ type: '*/*', limit: '10mb' }), fileController_1.uploadProxy);
 router.post('/upload-complete', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.finalizeUpload);
 router.get('/:id/metadata', authMiddleware_1.protect, fileController_1.getFileMetadata);
 exports.default = router;
