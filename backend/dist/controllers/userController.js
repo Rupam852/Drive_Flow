@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteUser = exports.rejectUser = exports.approveUser = exports.getUsers = void 0;
+exports.deleteUser = exports.pendingUser = exports.rejectUser = exports.approveUser = exports.getUsers = void 0;
 const User_1 = require("../models/User");
 // @desc    Get all users (Admin only)
 // @route   GET /api/users
@@ -55,6 +55,26 @@ const rejectUser = async (req, res) => {
     }
 };
 exports.rejectUser = rejectUser;
+// @desc    Set user as pending
+// @route   PUT /api/users/:id/pending
+// @access  Private/Admin
+const pendingUser = async (req, res) => {
+    try {
+        const user = await User_1.User.findById(req.params.id);
+        if (user) {
+            user.status = 'pending';
+            const updatedUser = await user.save();
+            res.json({ message: 'User moved to pending successfully', user: updatedUser });
+        }
+        else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.pendingUser = pendingUser;
 // @desc    Delete user
 // @route   DELETE /api/users/:id
 // @access  Private/Admin
