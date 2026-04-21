@@ -20,8 +20,8 @@ dotenv_1.default.config();
 const app = (0, express_1.default)();
 // Middleware
 app.use((0, cors_1.default)());
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: true }));
+app.use(express_1.default.json({ limit: '50mb' }));
+app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
@@ -34,8 +34,8 @@ app.use('/api/users', userRoutes_1.default);
 app.use('/api/files', fileRoutes_1.default);
 // Error Middleware
 app.use(errorMiddleware_1.errorHandler);
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+const PORT = parseInt(process.env.PORT || '5000', 10);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT} across all network interfaces`);
 });
 //# sourceMappingURL=index.js.map

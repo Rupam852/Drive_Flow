@@ -42,7 +42,13 @@ const fileMetadataSchema = new mongoose_1.Schema({
     size: { type: Number },
     ownerUserId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     parentId: { type: String },
+    rootId: { type: String, index: true },
     status: { type: String, enum: ['active', 'deleted', 'trashed'], default: 'active' },
 }, { timestamps: true });
+// Optimize queries for stats and listing
+fileMetadataSchema.index({ fileId: 1 });
+fileMetadataSchema.index({ parentId: 1 });
+fileMetadataSchema.index({ status: 1 });
+fileMetadataSchema.index({ type: 1 });
 exports.FileMetadata = mongoose_1.default.model('FileMetadata', fileMetadataSchema);
 //# sourceMappingURL=FileMetadata.js.map

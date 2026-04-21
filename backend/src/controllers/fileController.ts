@@ -24,24 +24,7 @@ const bufferToStream = (buffer: Buffer) => {
   return readable;
 };
 
-// Helper to calculate folder size recursively from DB
-const getFolderSize = async (folderId: string): Promise<number> => {
-  try {
-    const children = await FileMetadata.find({ parentId: folderId, status: 'active' });
-    let total = 0;
-    for (const child of children) {
-      if (child.type === 'application/vnd.google-apps.folder' || child.type === 'folder') {
-        total += await getFolderSize(child.fileId);
-      } else {
-        total += (child.size || 0);
-      }
-    }
-    return total;
-  } catch (err) {
-    console.error(`Error calculating size for folder ${folderId}:`, err);
-    return 0;
-  }
-};
+
 
 // @desc  List all files/folders
 // @route GET /api/files?parentId=xxx
@@ -74,18 +57,7 @@ export const listFiles = async (req: Request, res: Response) => {
       return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
     });
 
-    // Calculate sizes for folders
-    const filesWithFolderSizes = await Promise.all(
-      files.map(async (file) => {
-        if (file.mimeType === 'application/vnd.google-apps.folder') {
-          const folderSize = await getFolderSize(file.id!);
-          return { ...file, size: folderSize.toString() };
-        }
-        return file;
-      })
-    );
-
-    res.json(filesWithFolderSizes);
+    res.json(files);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }
@@ -653,11 +625,10 @@ export const searchFiles = async (req: Request, res: Response) => {
       name: { $regex: regex }
     }).limit(100);
 
-    const mapped = await Promise.all(files.map(async (f) => {
+    const mapped = files.map((f) => {
       let size = f.size?.toString() || '0';
       if (f.type === 'application/vnd.google-apps.folder' || f.type === 'folder') {
-        const folderSize = await getFolderSize(f.fileId);
-        size = folderSize.toString();
+        size = '0'; // Folders don't report size
       }
       return {
         id: f.fileId,
@@ -666,7 +637,7 @@ export const searchFiles = async (req: Request, res: Response) => {
         size,
         modifiedTime: (f as any).updatedAt || new Date().toISOString()
       };
-    }));
+    });
 
     res.json(mapped);
   } catch (error) {
