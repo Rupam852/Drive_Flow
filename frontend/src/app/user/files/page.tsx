@@ -59,8 +59,10 @@ export default function UserFilesPage() {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState<any>(null);
   const [movingIds, setMovingIds] = useState<string[]>([]);
+  const [showMoveModal, setShowMoveModal] = useState(false);
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([]);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+
 
   const currentFolder = path[path.length - 1]!;
 
@@ -96,6 +98,14 @@ export default function UserFilesPage() {
     }
   }, [searchQuery, currentFolder.id]);
 
+  // Push a sentinel history entry whenever a modal opens, so back gesture closes it
+  useEffect(() => {
+    const anyModalOpen = !!previewFile || showDownloadModal || showMoveModal;
+    if (anyModalOpen) {
+      window.history.pushState({ modal: true }, '');
+    }
+  }, [previewFile, showDownloadModal, showMoveModal]);
+
   useEffect(() => {
     if (!searchQuery) {
       loadFiles(currentFolder.id);
@@ -103,6 +113,12 @@ export default function UserFilesPage() {
     fetchStats();
 
     const handlePopState = (e: PopStateEvent) => {
+      // If a modal is open, close it and stay on the page
+      if (previewFile)       { setPreviewFile(null);        return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showMoveModal)     { setShowMoveModal(false);     return; }
+
+      // Otherwise handle folder navigation
       if (e.state?.path) {
         setPath(e.state.path);
         loadFiles(e.state.path[e.state.path.length - 1].id);
@@ -126,7 +142,8 @@ export default function UserFilesPage() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentFolder.id]);
+  }, [currentFolder.id, previewFile, showDownloadModal, showMoveModal]);
+
 
   const filteredFiles = useMemo(() => {
     const matchesCategory = (f: DriveFile) => {
