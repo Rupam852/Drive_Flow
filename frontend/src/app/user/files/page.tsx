@@ -729,40 +729,72 @@ export default function UserFilesPage() {
       {/* Download Progress Overlay */}
       <AnimatePresence>
         {downloadProgress !== null && (
-          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card p-8 rounded-3xl max-w-sm w-full text-center border border-white/20 shadow-2xl">
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }}
+              className="glass-card p-8 rounded-3xl max-w-xs w-full text-center border border-white/20 shadow-2xl">
+
+              {/* Circular Progress */}
               <div className="relative w-24 h-24 mx-auto mb-6">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
-                  <motion.circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent"
+                <svg viewBox="0 0 96 96" className="w-full h-full -rotate-90">
+                  <circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
+                  <motion.circle
+                    cx="48" cy="48" r="40"
+                    fill="none"
+                    stroke="url(#dlGradUser)"
+                    strokeWidth="8"
+                    strokeLinecap="round"
                     strokeDasharray={251}
-                    animate={{ strokeDashoffset: downloadProgress === -1 ? 125 : 251 - (251 * downloadProgress) / 100 }}
-                    transition={downloadProgress === -1 ? { duration: 1.5, repeat: Infinity, ease: "linear" } : { duration: 0.5 }}
-                    className="text-purple-500" />
+                    animate={downloadProgress === -1
+                      ? { strokeDashoffset: [210, 20, 210], rotate: [0, 360] }
+                      : { strokeDashoffset: 251 - (251 * downloadProgress) / 100 }
+                    }
+                    transition={downloadProgress === -1
+                      ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
+                      : { duration: 0.4, ease: "easeOut" }
+                    }
+                    style={{ originX: '50%', originY: '50%' }}
+                  />
+                  <defs>
+                    <linearGradient id="dlGradUser" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#8b5cf6" />
+                      <stop offset="100%" stopColor="#ec4899" />
+                    </linearGradient>
+                  </defs>
                 </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white">
-                  {downloadProgress === -1 ? '...' : `${downloadProgress}%`}
+                <div className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white">
+                  {downloadProgress === -1 ? '···' : `${downloadProgress}%`}
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                {downloadProgress === -1 ? 'Preparing Download...' : 'Downloading...'}
+
+              <h3 className="text-lg font-bold text-white mb-1">
+                {downloadProgress === -1 ? 'Preparing...' : `Downloading ${downloadProgress}%`}
               </h3>
-              <p className="text-sm text-gray-400">
-                {downloadProgress === -1 ? 'Calculating size and zipping files. Please wait...' : 'Please wait while we prepare and download your files.'}
+              <p className="text-xs text-gray-400 leading-relaxed">
+                {downloadProgress === -1 ? 'Zipping your files, please wait' : 'Downloading your files...'}
               </p>
-              
-              <div className="mt-8 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }} 
-                  animate={downloadProgress === -1 ? { x: ["-100%", "100%"] } : { width: `${downloadProgress}%` }}
-                  transition={downloadProgress === -1 ? { duration: 1.5, repeat: Infinity, ease: "linear" } : { duration: 0.5 }}
-                  className={`h-full bg-gradient-to-r from-purple-600 to-pink-600 ${downloadProgress === -1 ? 'w-1/2' : ''}`} />
+
+              {/* Shimmer / Fill bar */}
+              <div className="mt-6 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                {downloadProgress === -1 ? (
+                  <motion.div
+                    className="h-full w-1/2 bg-gradient-to-r from-transparent via-purple-500 to-transparent rounded-full"
+                    animate={{ x: ["-100%", "250%"] }}
+                    transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                  />
+                ) : (
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-purple-600 to-pink-500 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${downloadProgress}%` }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                )}
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
     </motion.div>
   );
 }
