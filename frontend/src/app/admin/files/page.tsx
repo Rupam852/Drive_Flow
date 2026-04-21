@@ -795,124 +795,128 @@ export default function AdminFilesPage() {
         </div>
       </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pb-2">
-          {selected.size > 0 && (
-            <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/10">
-              <span className="text-sm text-gray-400 px-3 font-medium">{selected.size} selected</span>
-              <button onClick={() => { setMovingIds(Array.from(selected)); setShowMoveModal(true); }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm">
-                <Move className="w-4 h-4" /> Move
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-2">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto pb-2">
+            {selected.size > 0 && (
+              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/10 shrink-0">
+                <span className="text-sm text-gray-400 px-3 font-medium whitespace-nowrap">{selected.size} selected</span>
+                <button onClick={() => { setMovingIds(Array.from(selected)); setShowMoveModal(true); }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm whitespace-nowrap">
+                  <Move className="w-4 h-4" /> Move
+                </button>
+                <button onClick={async () => {
+                  const token = localStorage.getItem('token');
+                  const res = await api.post('/files/bulk-download', { fileIds: Array.from(selected) }, { responseType: 'blob' });
+                  const url = window.URL.createObjectURL(new Blob([res.data]));
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.setAttribute('download', 'bulk-download.zip');
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm whitespace-nowrap">
+                  <Download className="w-4 h-4" /> Download
+                </button>
+                <button onClick={() => handleDelete(Array.from(selected))}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors text-sm whitespace-nowrap">
+                  <Trash2 className="w-4 h-4" /> Delete
+                </button>
+                <button onClick={() => setSelected(new Set())}
+                  className="p-2 text-gray-400 hover:text-white transition-colors" title="Clear selection">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            {/* View Toggle */}
+            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
+              <button onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                <MoreVertical className="w-4 h-4 rotate-90" />
               </button>
-              <button onClick={async () => {
-                const token = localStorage.getItem('token');
-                const res = await api.post('/files/bulk-download', { fileIds: Array.from(selected) }, { responseType: 'blob' });
-                const url = window.URL.createObjectURL(new Blob([res.data]));
-                const link = document.createElement('a');
-                link.href = url;
-                link.setAttribute('download', 'bulk-download.zip');
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-              }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm">
-                <Download className="w-4 h-4" /> Download
-              </button>
-              <button onClick={() => handleDelete(Array.from(selected))}
-                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors text-sm">
-                <Trash2 className="w-4 h-4" /> Delete
-              </button>
-              <button onClick={() => setSelected(new Set())}
-                className="p-2 text-gray-400 hover:text-white transition-colors" title="Clear selection">
-                <X className="w-4 h-4" />
+              <button onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+                <Square className="w-4 h-4" />
               </button>
             </div>
-          )}
 
-          {/* View Toggle */}
-          <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
-            <button onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-              <MoreVertical className="w-4 h-4 rotate-90" />
+            <button onClick={fetchLogs}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
+              <MoreVertical className="w-4 h-4" /> Activity
             </button>
-            <button onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-              <Square className="w-4 h-4" />
+
+            <button onClick={fetchTrash}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
+              <Trash2 className="w-4 h-4" /> Trash
+            </button>
+
+            <button onClick={fetchUsers}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
+              <Users className="w-4 h-4" /> Users
             </button>
           </div>
 
-          <button onClick={fetchLogs}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
-            <MoreVertical className="w-4 h-4" /> Activity
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* New */}
+            <div className="relative">
+              <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
+                className="flex items-center gap-1.5 px-4 py-2 glass border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors text-sm">
+                <FilePlus className="w-4 h-4" /> New
+              </button>
+              <AnimatePresence>
+                {showNewMenu && (
+                  <>
+                    <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowNewMenu(false)} />
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                      className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
+                      <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                        <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
+                      </button>
+                      <button onClick={() => { handleCreateDoc(); setShowNewMenu(false); }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                        <FileText className="w-4 h-4 text-blue-300" /> New Document
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
 
-          <button onClick={fetchTrash}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
-            <Trash2 className="w-4 h-4" /> Trash
-          </button>
-
-          <button onClick={fetchUsers}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
-            <Users className="w-4 h-4" /> Users
-          </button>
-
-          {/* New */}
-          <div className="relative">
-            <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
-              className="flex items-center gap-1.5 px-4 py-2 glass border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors text-sm">
-              <FilePlus className="w-4 h-4" /> New
-            </button>
-            <AnimatePresence>
-              {showNewMenu && (
-                <>
-                  <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowNewMenu(false)} />
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                    className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
-                    <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
-                    </button>
-                    <button onClick={() => { handleCreateDoc(); setShowNewMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <FileText className="w-4 h-4 text-blue-300" /> New Document
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Upload */}
-          <div className="relative">
-            <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl text-sm shadow-lg shadow-purple-500/20">
-              <Upload className="w-4 h-4" /> Upload
-            </button>
-            <AnimatePresence>
-              {showUploadMenu && (
-                <>
-                  <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowUploadMenu(false)} />
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                    className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
-                    <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <File className="w-4 h-4" /> Upload File
-                    </button>
-                    <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-            <input ref={fileInput} type="file" className="hidden" onChange={handleUpload} />
-            <input
-              ref={folderInput}
-              type="file"
-              className="hidden"
-              onChange={handleFolderUpload}
-              {...({ webkitdirectory: '', directory: '' } as any)}
-            />
+            {/* Upload */}
+            <div className="relative">
+              <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
+                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl text-sm shadow-lg shadow-purple-500/20">
+                <Upload className="w-4 h-4" /> Upload
+              </button>
+              <AnimatePresence>
+                {showUploadMenu && (
+                  <>
+                    <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowUploadMenu(false)} />
+                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                      className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
+                      <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                        <File className="w-4 h-4" /> Upload File
+                      </button>
+                      <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                        <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+              <input ref={fileInput} type="file" className="hidden" onChange={handleUpload} />
+              <input
+                ref={folderInput}
+                type="file"
+                className="hidden"
+                onChange={handleFolderUpload}
+                {...({ webkitdirectory: '', directory: '' } as any)}
+              />
+            </div>
           </div>
         </div>
 
