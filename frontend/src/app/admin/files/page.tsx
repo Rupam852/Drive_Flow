@@ -178,6 +178,44 @@ export default function AdminFilesPage() {
 
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
+
+  // Grouped Queue for UI
+  const groupedQueue = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    const singleFiles: any[] = [];
+
+    uploadQueue.forEach(item => {
+      if (item.name.includes('/')) {
+        const root = item.name.split('/')[0];
+        if (!groups[root]) groups[root] = [];
+        groups[root].push(item);
+      } else {
+        singleFiles.push({ ...item, isGroup: false });
+      }
+    });
+
+    const result = Object.entries(groups).map(([name, items]) => {
+      const done = items.filter(i => i.status === 'done').length;
+      const total = items.length;
+      const totalProgress = items.reduce((acc, i) => acc + (i.progress || 0), 0);
+      const progress = Math.round(totalProgress / total);
+      const status = items.every(i => i.status === 'done') ? 'done' :
+        items.some(i => i.status === 'error') ? 'error' :
+          items.some(i => i.status === 'uploading') ? 'uploading' : 'pending';
+
+      return {
+        name,
+        isGroup: true,
+        count: total,
+        doneCount: done,
+        progress,
+        status,
+        size: items.reduce((acc, i) => acc + i.size, 0)
+      };
+    });
+
+    return [...result, ...singleFiles];
+  }, [uploadQueue]);
   const uploadXhrRef = useRef<XMLHttpRequest | null>(null);
 
   const currentFolder = path[path.length - 1]!;
@@ -1170,45 +1208,7 @@ export default function AdminFilesPage() {
         </div>
       </div>
 
-  // Grouped Queue for UI
-  const groupedQueue = useMemo(() => {
-    const groups: Record<string, any[]> = {};
-    const singleFiles: any[] = [];
-
-    uploadQueue.forEach(item => {
-      if (item.name.includes('/')) {
-        const root = item.name.split('/')[0];
-        if (!groups[root]) groups[root] = [];
-        groups[root].push(item);
-      } else {
-        singleFiles.push({ ...item, isGroup: false });
-      }
-    });
-
-    const result = Object.entries(groups).map(([name, items]) => {
-      const done = items.filter(i => i.status === 'done').length;
-      const total = items.length;
-      const totalProgress = items.reduce((acc, i) => acc + (i.progress || 0), 0);
-      const progress = Math.round(totalProgress / total);
-      const status = items.every(i => i.status === 'done') ? 'done' :
-        items.some(i => i.status === 'error') ? 'error' :
-          items.some(i => i.status === 'uploading') ? 'uploading' : 'pending';
-
-      return {
-        name,
-        isGroup: true,
-        count: total,
-        doneCount: done,
-        progress,
-        status,
-        size: items.reduce((acc, i) => acc + i.size, 0)
-      };
-    });
-
-    return [...result, ...singleFiles];
-  }, [uploadQueue]);
-
-  {/* Batch Upload Queue Modal */}
+      {/* Batch Upload Queue Modal */}
       <AnimatePresence>
         {showUploadModal && (
           <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
