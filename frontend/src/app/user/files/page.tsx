@@ -65,6 +65,9 @@ export default function UserFilesPage() {
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([]);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [fakeProgress, setFakeProgress] = useState(0);
+  const [zipNameModal, setZipNameModal] = useState(false);
+  const [zipName, setZipName] = useState('');
+  const zipNameRef = useRef<HTMLInputElement>(null);
 
   // Animate fake counter 1→99 during indeterminate download phase
   useEffect(() => {
@@ -274,8 +277,16 @@ export default function UserFilesPage() {
     setShowDownloadModal(false);
   };
 
-  const handleBulkDownload = async () => {
+  const handleBulkDownload = () => {
     if (selected.size === 0) return;
+    setZipName(`driveflow-${new Date().toISOString().slice(0,10)}`);
+    setZipNameModal(true);
+    setTimeout(() => zipNameRef.current?.select(), 100);
+  };
+
+  const confirmBulkDownload = async () => {
+    setZipNameModal(false);
+    const finalName = zipName.trim() || 'driveflow-downloads';
     addToast('Preparing ZIP file...');
     try {
       const ids = Array.from(selected);
@@ -292,12 +303,13 @@ export default function UserFilesPage() {
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'driveflow-downloads.zip');
+      link.setAttribute('download', `${finalName}.zip`);
       document.body.appendChild(link);
       link.click();
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
       setSelected(new Set());
+      addToast(`Downloaded as "${finalName}.zip"`);
     } catch (e) {
       console.error(e);
       addToast('Error downloading files', 'error');
@@ -573,9 +585,7 @@ export default function UserFilesPage() {
                   <p className="text-white text-xs font-medium truncate mb-1">{file.name}</p>
                   <p className="text-gray-500 text-[10px] font-medium">{fmt(file.size, isFolder(file))}</p>
                 </div>
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 rounded-3xl flex items-center justify-center transition-all">
-                  <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"><Download className="w-5 h-5" /></button>
-                </div>
+
               </motion.div>
             ))}
           </div>
@@ -819,6 +829,54 @@ export default function UserFilesPage() {
                 )}
               </div>
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ZIP Name Modal */}
+      <AnimatePresence>
+        {zipNameModal && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-xl px-4">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-sm glass-card rounded-3xl p-6 border border-white/10 shadow-2xl"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-4 mx-auto">
+                <Download className="w-6 h-6 text-purple-400" />
+              </div>
+              <h3 className="text-white font-bold text-lg text-center mb-1">Name your ZIP file</h3>
+              <p className="text-gray-400 text-sm text-center mb-5">
+                {selected.size} item{selected.size !== 1 ? 's' : ''} selected
+              </p>
+              <div className="relative mb-5">
+                <input
+                  ref={zipNameRef}
+                  type="text"
+                  value={zipName}
+                  onChange={e => setZipName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && confirmBulkDownload()}
+                  placeholder="Enter ZIP file name..."
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all pr-16"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">.zip</span>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setZipNameModal(false)}
+                  className="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-2xl font-medium transition-all active:scale-95"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmBulkDownload}
+                  className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-purple-600/20"
+                >
+                  Download
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
