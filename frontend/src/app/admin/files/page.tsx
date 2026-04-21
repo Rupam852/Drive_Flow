@@ -1168,7 +1168,7 @@ export default function AdminFilesPage() {
                         {item.status === 'uploading' ? `${item.progress}%`
                           : item.status === 'done' ? '✓'
                           : item.status === 'error' ? 'ERR'
-                          : fmt(item.size)}
+                          : fmt(String(item.size))}
                       </span>
                     </div>
                     {/* Per-file progress bar */}
