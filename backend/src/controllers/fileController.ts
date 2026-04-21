@@ -397,9 +397,9 @@ export const downloadFile = async (req: Request, res: Response) => {
         }
 
         const isInline = req.query.inline === 'true';
-        const disposition = isInline ? 'inline' : 'attachment';
+        const disposition = isInline ? 'inline' : `attachment; filename="${safeName}${ext}"; filename*=UTF-8''${safeName}${ext}`;
 
-        res.setHeader('Content-Disposition', `${disposition}; filename="${safeName}${ext}"; filename*=UTF-8''${safeName}${ext}`);
+        res.setHeader('Content-Disposition', disposition);
         res.setHeader('Content-Type', exportMime);
         
         response.data.on('error', (err: any) => {
@@ -439,9 +439,9 @@ export const downloadFile = async (req: Request, res: Response) => {
               }
               const safeName = encodeURIComponent(fileName);
               const isInline = req.query.inline === 'true';
-              const disposition = isInline ? 'inline' : 'attachment';
+              const disposition = isInline ? 'inline' : `attachment; filename="${safeName}.pdf"; filename*=UTF-8''${safeName}.pdf`;
 
-              res.setHeader('Content-Disposition', `${disposition}; filename="${safeName}.pdf"; filename*=UTF-8''${safeName}.pdf`);
+              res.setHeader('Content-Disposition', disposition);
               res.setHeader('Content-Type', 'application/pdf');
 
               exportRes.data.on('end', async () => {
@@ -481,9 +481,9 @@ export const downloadFile = async (req: Request, res: Response) => {
         // Use URI encoding for filename to support spaces and special chars
         const safeName = encodeURIComponent(fileName);
         const isInline = req.query.inline === 'true';
-        const disposition = isInline ? 'inline' : 'attachment';
+        const disposition = isInline ? 'inline' : `attachment; filename="${safeName}"; filename*=UTF-8''${safeName}`;
 
-        res.setHeader('Content-Disposition', `${disposition}; filename="${safeName}"; filename*=UTF-8''${safeName}`);
+        res.setHeader('Content-Disposition', disposition);
         res.setHeader('Content-Type', mimeType);
         
         response.data.on('error', (err: any) => {
