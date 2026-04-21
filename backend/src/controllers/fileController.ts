@@ -88,16 +88,38 @@ export const listFiles = async (req: Request, res: Response) => {
       return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
     });
 
+    // Determine if requester is admin
+    const isAdmin = (req as any).user?.role === 'admin';
+
+    // Fetch hidden status from DB for all files in this folder
+    const fileIds = files.map(f => f.id).filter(Boolean) as string[];
+    const hiddenMetas = await FileMetadata.find(
+      { fileId: { $in: fileIds }, isHidden: true },
+      'fileId isHidden'
+    ).lean();
+    const hiddenSet = new Set(hiddenMetas.map(m => m.fileId));
+
     // Fast memory-based folder size calculation
     const getFolderSize = await createFolderSizeCalculator();
 
-    const filesWithFolderSizes = files.map((file) => {
-      if (file.mimeType === 'application/vnd.google-apps.folder') {
-        const folderSize = getFolderSize(file.id!);
-        return { ...file, size: folderSize.toString() };
-      }
-      return file;
-    });
+    const filesWithFolderSizes = files
+      .filter(file => {
+        // Non-admin: skip hidden files
+        if (!isAdmin && hiddenSet.has(file.id!)) return false;
+        return true;
+      })
+      .map((file) => {
+        let sized: any = file;
+        if (file.mimeType === 'application/vnd.google-apps.folder') {
+          const folderSize = getFolderSize(file.id!);
+          sized = { ...file, size: folderSize.toString() };
+        }
+        // Attach isHidden flag for admin UI
+        if (isAdmin) {
+          sized = { ...sized, isHidden: hiddenSet.has(file.id!) };
+        }
+        return sized;
+      });
 
     res.json(filesWithFolderSizes);
   } catch (error) {
@@ -712,11 +734,19 @@ export const searchFiles = async (req: Request, res: Response) => {
     const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(escaped, 'i');
 
-    const files = await FileMetadata.find({
+    const isAdmin = (req as any).user?.role === 'admin';
+
+    const query: any = {
       rootId: DRIVE_FOLDER_ID,
       status: 'active',
       name: { $regex: regex }
-    }).limit(100);
+    };
+    // Non-admin users cannot see hidden files in search
+    if (!isAdmin) {
+      query.isHidden = { $ne: true };
+    }
+
+    const files = await FileMetadata.find(query).limit(100);
 
     const getFolderSize = await createFolderSizeCalculator();
 
@@ -730,7 +760,8 @@ export const searchFiles = async (req: Request, res: Response) => {
         name: f.name,
         mimeType: f.type,
         size,
-        modifiedTime: (f as any).updatedAt || new Date().toISOString()
+        modifiedTime: (f as any).updatedAt || new Date().toISOString(),
+        isHidden: isAdmin ? f.isHidden : undefined,
       };
     });
 
@@ -1149,6 +1180,41 @@ export const findDuplicates = async (req: Request, res: Response) => {
       }));
 
     res.json(duplicates);
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc  Toggle hide/unhide a file or folder (Admin only)
+// @route PUT /api/files/:id/hide
+export const toggleHideFile = async (req: Request, res: Response) => {
+  try {
+    const fileId = req.params['id'] as string;
+    const { hide } = req.body as { hide: boolean };
+
+    if (typeof hide !== 'boolean') {
+      res.status(400).json({ message: '`hide` must be a boolean (true or false)' });
+      return;
+    }
+
+    const updated = await FileMetadata.findOneAndUpdate(
+      { fileId },
+      { isHidden: hide },
+      { new: true }
+    );
+
+    if (!updated) {
+      res.status(404).json({ message: 'File not found in database' });
+      return;
+    }
+
+    await logActivity(
+      (req as any).user?._id,
+      hide ? 'hide_file' : 'unhide_file',
+      `${hide ? 'Hidden' : 'Unhidden'} file: ${updated.name}`
+    );
+
+    res.json({ message: `File ${hide ? 'hidden' : 'visible'} successfully`, isHidden: hide });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }

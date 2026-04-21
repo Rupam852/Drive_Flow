@@ -7,7 +7,7 @@ import {
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
   MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink,
   Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2, Loader2, Plus, RefreshCw,
-  CheckCircle, AlertCircle, AlertTriangle, Info
+  CheckCircle, AlertCircle, AlertTriangle, Info, Eye, EyeOff
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -19,6 +19,7 @@ interface DriveFile {
   size?: string;
   modifiedTime: string;
   webViewLink?: string;
+  isHidden?: boolean;
 }
 
 const ROOT_ID = 'ROOT';
@@ -969,6 +970,17 @@ function AdminFilesContent() {
     finally { setDeletingIds(prev => prev.filter(id => !ids.includes(id))); }
   };
 
+  const handleToggleHide = async (file: DriveFile) => {
+    const newHidden = !file.isHidden;
+    try {
+      await api.put(`/files/${file.id}/hide`, { hide: newHidden });
+      setFiles(prev => prev.map(f => f.id === file.id ? { ...f, isHidden: newHidden } : f));
+      addToast(newHidden ? `"${file.name}" hidden from users` : `"${file.name}" visible to users`);
+    } catch (e) {
+      addToast('Failed to update visibility', 'error');
+    }
+  };
+
   const handleBulkDownload = async (customName?: string) => {
     if (selected.size === 0) return;
     
@@ -1377,7 +1389,9 @@ function AdminFilesContent() {
               <tbody>
                 {filteredFiles.map((file, i) => (
                   <motion.tr key={file.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.01 }}
-                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${selected.has(file.id) ? 'bg-purple-500/10' : ''}`}>
+                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${
+                      file.isHidden ? 'opacity-50 bg-amber-500/5 border-amber-500/10' : selected.has(file.id) ? 'bg-purple-500/10' : ''
+                    }`}>
                     <td className="px-4 py-3 text-center">
                       <button onClick={() => toggleSelect(file.id)}>
                         {selected.has(file.id) ? <CheckSquare className="w-4 h-4 text-purple-400" /> : <Square className="w-4 h-4 text-gray-500 hover:text-gray-300" />}
@@ -1389,6 +1403,7 @@ function AdminFilesContent() {
                         className="flex items-center gap-3 text-white hover:text-purple-300 transition-colors w-full text-left">
                         <FileIcon file={file} />
                         <span className="text-sm font-medium truncate max-w-[150px] sm:max-w-[300px]">{file.name}</span>
+                        {file.isHidden && <EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" title="Hidden from users" />}
                       </button>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-sm">{fmt(file.size, isFolder(file))}</td>
@@ -1406,6 +1421,10 @@ function AdminFilesContent() {
                         <button onClick={(e) => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }} title="Move"
                           className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                           <Move className="w-4 h-4" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); handleToggleHide(file); }} title={file.isHidden ? 'Unhide (show to users)' : 'Hide from users'}
+                          className={`p-1.5 rounded-lg transition-colors ${file.isHidden ? 'text-amber-400 hover:bg-amber-500/20 hover:text-amber-300' : 'text-gray-400 hover:bg-amber-500/10 hover:text-amber-400'}`}>
+                          {file.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); handleDelete([file.id]); }} title="Delete"
                           disabled={deletingIds.includes(file.id)}
@@ -1451,7 +1470,7 @@ function AdminFilesContent() {
                   }
                 }}
                 className={`relative p-4 rounded-3xl border transition-all cursor-pointer group flex flex-col items-center gap-3
-                  ${selected.has(file.id)
+                  ${file.isHidden ? 'opacity-50 border-amber-500/30 bg-amber-500/5' : selected.has(file.id)
                     ? 'bg-purple-500/10 border-purple-500/40'
                     : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'}`}
                 onClick={() => handleItemClick(file)}
@@ -1459,6 +1478,12 @@ function AdminFilesContent() {
                 onTouchEnd={handleItemTouchEnd}
                 onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
               >
+                {/* Hidden Badge for admin */}
+                {file.isHidden && (
+                  <div className="absolute top-2 right-2 z-10 bg-amber-500/20 border border-amber-500/40 rounded-lg p-1" title="Hidden from users">
+                    <EyeOff className="w-3 h-3 text-amber-400" />
+                  </div>
+                )}
                 {/* Selection Checkbox */}
                 <div className={`absolute top-2 left-2 z-10 transition-all duration-200 
                   ${selected.has(file.id) ? 'opacity-100 scale-100' : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'}`}
@@ -1480,10 +1505,13 @@ function AdminFilesContent() {
                 </div>
                 {/* Grid Hover Actions */}
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 rounded-3xl flex items-center justify-center gap-2 transition-all">
-                  <button onClick={e => { e.stopPropagation(); handleDownload(file); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"><Download className="w-4 h-4" /></button>
-                  <button onClick={e => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"><Pencil className="w-4 h-4" /></button>
-                  <button onClick={e => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"><Move className="w-4 h-4" /></button>
-                  <button onClick={e => { e.stopPropagation(); handleDelete([file.id]); }} className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400"><Trash2 className="w-4 h-4" /></button>
+                  <button onClick={e => { e.stopPropagation(); handleDownload(file); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Download"><Download className="w-4 h-4" /></button>
+                  <button onClick={e => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Rename"><Pencil className="w-4 h-4" /></button>
+                  <button onClick={e => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Move"><Move className="w-4 h-4" /></button>
+                  <button onClick={e => { e.stopPropagation(); handleToggleHide(file); }} className={`p-2 rounded-lg transition-colors ${file.isHidden ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-white/10 text-white hover:bg-amber-500/20 hover:text-amber-400'}`} title={file.isHidden ? 'Unhide' : 'Hide'}>
+                    {file.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  </button>
+                  <button onClick={e => { e.stopPropagation(); handleDelete([file.id]); }} className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400" title="Delete"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </motion.div>
             ))}

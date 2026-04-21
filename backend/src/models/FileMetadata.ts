@@ -9,6 +9,7 @@ export interface IFileMetadata extends Document {
   parentId?: string;
   rootId?: string;
   status: 'active' | 'deleted' | 'trashed';
+  isHidden: boolean; // Admin can hide files from user view
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +24,7 @@ const fileMetadataSchema = new Schema<IFileMetadata>(
     parentId: { type: String },
     rootId: { type: String, index: true },
     status: { type: String, enum: ['active', 'deleted', 'trashed'], default: 'active' },
+    isHidden: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
