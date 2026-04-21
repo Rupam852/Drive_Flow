@@ -22,19 +22,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   useEffect(() => {
+    console.log('[AdminLayout] Checking auth...');
     try {
       const role = localStorage.getItem('role');
+      console.log('[AdminLayout] Role found:', role);
       if (role !== 'admin') {
+        console.warn('[AdminLayout] Unauthorized, redirecting to login');
         router.replace('/login');
       } else {
         setMounted(true);
       }
     } catch (e) {
+      console.error('[AdminLayout] Auth check failed:', e);
       router.replace('/login');
     }
   }, [router]);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {
