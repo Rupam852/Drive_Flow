@@ -49,6 +49,24 @@ export const rejectUser = async (req: Request, res: Response) => {
   }
 };
 
+// @desc    Set user as pending
+// @route   PUT /api/users/:id/pending
+// @access  Private/Admin
+export const pendingUser = async (req: Request, res: Response) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (user) {
+      user.status = 'pending';
+      const updatedUser = await user.save();
+      res.json({ message: 'User moved to pending successfully', user: updatedUser });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
 // @desc    Delete user
 // @route   DELETE /api/users/:id
 // @access  Private/Admin
