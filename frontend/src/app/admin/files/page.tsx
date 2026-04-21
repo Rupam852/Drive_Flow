@@ -562,8 +562,10 @@ export default function AdminFilesPage() {
   };
 
   const handleMove = async (targetId: string, idsToMove?: string[]) => {
+    if (actionLoading) return;
     const ids = idsToMove || movingIds;
     if (ids.length === 0) return;
+    setActionLoading(true);
     try {
       await api.put('/files/move', { fileIds: ids, targetParentId: targetId });
       setFiles(prev => prev.filter(f => !ids.includes(f.id)));
@@ -571,6 +573,7 @@ export default function AdminFilesPage() {
       setShowMoveModal(false);
       addToast('Moved successfully');
     } catch (e) { addToast('Move failed', 'error'); }
+    finally { setActionLoading(false); }
   };
 
   const performDirectUpload = async (file: File, parentId: string) => {
@@ -810,7 +813,8 @@ export default function AdminFilesPage() {
   };
 
   const createNewFolder = async () => {
-    if (!newFolderName) return;
+    if (!newFolderName || actionLoading) return;
+    setActionLoading(true);
     try {
       await api.post('/files/folder', { name: newFolderName, parentId: currentFolder.id });
       setNewFolderName('');
@@ -820,16 +824,21 @@ export default function AdminFilesPage() {
       addToast('Folder created!');
     } catch (e) {
       addToast('Error creating folder', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleCreateDoc = async () => {
+    if (actionLoading) return;
+    setActionLoading(true);
     try {
       const res = await api.post('/files/doc', { name: 'Untitled Document', parentId: currentFolder.id });
       window.open(res.data.webViewLink, '_blank');
       await loadFiles(currentFolder.id);
       fetchStats();
     } catch (e) { console.error(e); }
+    finally { setActionLoading(false); }
   };
 
   const handleRename = async () => {
@@ -1553,12 +1562,16 @@ export default function AdminFilesPage() {
               className="glass-card max-w-sm w-full p-6 rounded-2xl">
               <h3 className="text-white font-semibold text-lg mb-4">New Folder</h3>
               <input autoFocus value={newFolderName} onChange={e => setNewFolderName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && createNewFolder()}
+                onKeyDown={e => e.key === 'Enter' && !actionLoading && createNewFolder()}
                 placeholder="Folder name"
-                className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] mb-4" />
+                disabled={actionLoading}
+                className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4 disabled:opacity-50" />
               <div className="flex gap-2 justify-end">
-                <button onClick={() => setShowNewFolderModal(false)} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">Cancel</button>
-                <button onClick={createNewFolder} className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-white hover:bg-purple-500 transition-colors">Create</button>
+                <button onClick={() => setShowNewFolderModal(false)} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors disabled:opacity-50">Cancel</button>
+                <button onClick={createNewFolder} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-500 transition-all flex items-center gap-2 disabled:opacity-50">
+                  {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {actionLoading ? 'Creating...' : 'Create'}
+                </button>
               </div>
             </motion.div>
           </div>
@@ -2004,15 +2017,29 @@ export default function AdminFilesPage() {
               <p className="text-sm text-gray-400 mb-8 leading-relaxed px-2">{confirmModal.message}</p>
               <div className="flex gap-3">
                 <button onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
-                  className="flex-1 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-all font-medium border border-white/5">
+                  disabled={actionLoading}
+                  className="flex-1 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-all font-medium border border-white/5 disabled:opacity-50">
                   Cancel
                 </button>
-                <button onClick={confirmModal.onConfirm}
-                  className={`flex-1 py-3 rounded-xl text-white font-bold transition-all active:scale-95
+                <button onClick={async () => {
+                  if (actionLoading) return;
+                  setActionLoading(true);
+                  try {
+                    await confirmModal.onConfirm();
+                    setConfirmModal(prev => ({ ...prev, show: false }));
+                  } catch (e) {
+                    console.error(e);
+                  } finally {
+                    setActionLoading(false);
+                  }
+                }}
+                  disabled={actionLoading}
+                  className={`flex-1 py-3 rounded-xl text-white font-bold transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50
                     ${confirmModal.isDanger
                       ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-600/20'
                       : 'bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-600/20'}`}>
-                  Confirm
+                  {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {actionLoading ? 'Processing...' : 'Confirm'}
                 </button>
               </div>
             </motion.div>
