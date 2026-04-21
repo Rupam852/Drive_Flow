@@ -507,16 +507,27 @@ export const downloadFile = async (req: Request, res: Response) => {
 // @route GET /api/files/stats
 export const getDriveStats = async (req: Request, res: Response) => {
   try {
-    // Helper to sync Drive files to DB recursively
+    const userId = (req as any).user?._id;
+
+    // Helper to sync Drive files to DB recursively and CLEAN UP missing files
     const syncDriveData = async (parentId: string, userId: string, rootId: string) => {
       try {
-        const res = await drive.files.list({
+        const driveRes = await drive.files.list({
           q: `'${parentId}' in parents and trashed = false`,
           fields: 'files(id, name, mimeType, size)',
         });
 
-        const files = res.data.files || [];
-        for (const file of files) {
+        const driveFiles = driveRes.data.files || [];
+        const driveFileIds = new Set(driveFiles.map(f => f.id));
+
+        // 1. Mark files as trashed if they are in DB but no longer in this Drive folder
+        await FileMetadata.updateMany(
+          { parentId, status: 'active', fileId: { $nin: Array.from(driveFileIds) } },
+          { status: 'trashed' }
+        );
+
+        // 2. Update/Insert found files
+        for (const file of driveFiles) {
           await FileMetadata.findOneAndUpdate(
             { fileId: file.id },
             {
@@ -529,7 +540,7 @@ export const getDriveStats = async (req: Request, res: Response) => {
               ownerUserId: new mongoose.Types.ObjectId(userId),
               status: 'active'
             },
-            { upsert: true, new: true }
+            { upsert: true }
           );
 
           if (file.mimeType === 'application/vnd.google-apps.folder') {
@@ -541,15 +552,22 @@ export const getDriveStats = async (req: Request, res: Response) => {
       }
     };
 
-    const userId = (req as any).user?._id;
-    
-    // Trigger a sync of the root folder in the background so it doesn't block the dashboard load
-    // This allows the dashboard to render instantly using the MongoDB cache
+    // Trigger sync in background
     syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
-    // Total Files: Recursive count (all files anywhere in the storage)
-    const totalFiles = await FileMetadata.countDocuments({ rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } });
+
+    // Get REAL-TIME storage usage from Google Drive directly
+    const driveAbout = await drive.about.get({ fields: 'storageQuota' });
+    const usedBytes = parseInt(driveAbout.data.storageQuota?.usage || '0');
+    const limitBytes = parseInt(driveAbout.data.storageQuota?.limit || (15 * 1024 * 1024 * 1024).toString());
+
+    // Count Active Files recursively
+    const totalFiles = await FileMetadata.countDocuments({ 
+      rootId: DRIVE_FOLDER_ID, 
+      status: 'active', 
+      type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } 
+    });
     
-    // Total Folders: ONLY count folders that are directly in the main storage folder (root)
+    // Count Root Folders
     const totalFolders = await FileMetadata.countDocuments({ 
       rootId: DRIVE_FOLDER_ID,
       status: 'active', 
@@ -557,16 +575,7 @@ export const getDriveStats = async (req: Request, res: Response) => {
       parentId: DRIVE_FOLDER_ID 
     });
 
-    // Global storage usage
-    const totalSizeRes = await FileMetadata.aggregate([
-      { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
-      { $group: { _id: null, total: { $sum: '$size' } } }
-    ]);
-    const usedBytes = totalSizeRes[0]?.total || 0;
-
-    const APP_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10GB
-
-    // File type breakdown for chart
+    // File type breakdown
     const typesRes = await FileMetadata.aggregate([
       { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
       { $group: { _id: '$type', count: { $sum: 1 } } },
@@ -575,7 +584,7 @@ export const getDriveStats = async (req: Request, res: Response) => {
 
     res.json({
       used: usedBytes.toString(), 
-      limit: APP_LIMIT_BYTES.toString(),
+      limit: limitBytes.toString(),
       totalFiles,
       totalFolders,
       types: typesRes,
