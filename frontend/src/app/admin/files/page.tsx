@@ -1452,77 +1452,86 @@ export default function AdminFilesPage() {
       {/* Users Modal */}
       <AnimatePresence>
         {showUsers && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md sm:p-4"
             onClick={() => setShowUsers(false)}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+            <motion.div
+              initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card max-w-2xl w-full max-h-[80vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl">
-              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Users className="w-5 h-5 text-emerald-400" /> Users Management
+              className="glass-card w-full sm:max-w-2xl min-h-[60vh] max-h-[92vh] sm:max-h-[80vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
+            >
+              {/* Header */}
+              <div className="px-4 pt-4 pb-3 border-b border-white/10 bg-white/5 flex items-center justify-between shrink-0">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-emerald-400 shrink-0" /> Users Management
+                  {users.length > 0 && (
+                    <span className="text-xs font-normal text-gray-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                      {users.length}
+                    </span>
+                  )}
                 </h3>
-                <button onClick={() => setShowUsers(false)} className="text-gray-400 hover:text-white p-2 hover:bg-white/5 rounded-full transition-all">
-                  <X className="w-6 h-6" />
+                <button onClick={() => setShowUsers(false)}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all shrink-0">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
+
+              {/* User List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
                 {loadingUsers ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse" />
                   ))
                 ) : users.length === 0 ? (
                   <div className="py-20 text-center text-gray-500 italic">No users found</div>
                 ) : (
-                  users.map((u, i) => (
-                    <div key={u._id} className="p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between gap-4 group hover:bg-white/10 transition-all">
-                      <div className="flex items-center gap-4 flex-1">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400 font-bold uppercase shrink-0">
-                            {u.name[0]}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-white text-sm font-medium truncate">{u.name}</p>
-                            <p className="text-[10px] text-gray-500 truncate">{u.email}</p>
-                          </div>
+                  users.map((u) => (
+                    <div key={u._id} className="p-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all">
+                      {/* Row 1: Avatar + Name + Status badge */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 flex items-center justify-center text-purple-300 font-bold text-sm uppercase shrink-0 border border-white/10">
+                          {u.name[0]}
                         </div>
-                        <div className="hidden sm:flex flex-col items-start">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest
-                            ${u.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
-                              u.status === 'rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                                'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
-                            {u.status || 'pending'}
-                          </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-white text-sm font-semibold truncate">{u.name}</p>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0
+                              ${u.status === 'approved'
+                                ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                                : u.status === 'rejected'
+                                  ? 'bg-red-500/15 text-red-400 border border-red-500/30'
+                                  : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'}`}>
+                              {u.status || 'pending'}
+                            </span>
+                            <span className="text-[10px] text-purple-400 font-bold uppercase shrink-0">{u.role}</span>
+                          </div>
+                          <p className="text-[11px] text-gray-500 truncate mt-0.5">{u.email}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex flex-col items-end">
-                          <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest">{u.role}</p>
-                          <p className="text-[10px] text-gray-500 mt-0.5">Joined: {new Date(u.createdAt).toLocaleDateString()}</p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {u.status !== 'approved' && (
-                            <button onClick={() => handleUpdateUserStatus(u._id, 'approved')} title="Approve"
-                              className="p-2 bg-emerald-500/10 text-emerald-400 rounded-lg hover:bg-emerald-500/20 transition-all">
-                              <Check className="w-4 h-4" />
-                            </button>
-                          )}
-                          {u.status !== 'rejected' && (
-                            <button onClick={() => handleUpdateUserStatus(u._id, 'rejected')} title="Reject"
-                              className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all">
-                              <X className="w-4 h-4" />
-                            </button>
-                          )}
-                          {u.status !== 'pending' && (
-                            <button onClick={() => handleUpdateUserStatus(u._id, 'pending')} title="Reset to Pending"
-                              className="p-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition-all">
-                              <Clock className="w-4 h-4" />
-                            </button>
-                          )}
-                          <button onClick={() => handleDeleteUser(u._id, u.name)} title="Delete User"
-                            className="p-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition-all ml-2">
-                            <Trash2 className="w-4 h-4" />
+
+                      {/* Row 2: Action buttons — full width, with labels */}
+                      <div className="flex items-center gap-2">
+                        {u.status !== 'approved' && (
+                          <button onClick={() => handleUpdateUserStatus(u._id, 'approved')}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 rounded-xl hover:bg-emerald-500/25 active:scale-95 transition-all text-xs font-semibold">
+                            <Check className="w-3.5 h-3.5" /> Approve
                           </button>
-                        </div>
+                        )}
+                        {u.status !== 'rejected' && (
+                          <button onClick={() => handleUpdateUserStatus(u._id, 'rejected')}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/20 active:scale-95 transition-all text-xs font-semibold">
+                            <X className="w-3.5 h-3.5" /> Reject
+                          </button>
+                        )}
+                        {u.status !== 'pending' && (
+                          <button onClick={() => handleUpdateUserStatus(u._id, 'pending')}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-xl hover:bg-amber-500/20 active:scale-95 transition-all text-xs font-semibold">
+                            <Clock className="w-3.5 h-3.5" /> Pending
+                          </button>
+                        )}
+                        <button onClick={() => handleDeleteUser(u._id, u.name)}
+                          className="p-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl hover:bg-red-500/25 active:scale-90 transition-all" title="Delete User">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   ))
@@ -1532,6 +1541,7 @@ export default function AdminFilesPage() {
           </div>
         )}
       </AnimatePresence>
+
 
       <AnimatePresence>
         {showDownloadModal && downloadingFile && (
