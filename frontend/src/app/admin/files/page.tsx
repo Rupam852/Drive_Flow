@@ -131,19 +131,28 @@ export default function AdminFilesPage() {
       loadFiles(currentFolder.id);
     }
 
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state?.path) {
+        setPath(e.state.path);
+        loadFiles(e.state.path[e.state.path.length - 1].id);
+        return;
+      }
+      
       const params = new URLSearchParams(window.location.search);
       const folderId = params.get('folder') || ROOT_ID;
-      // Find folder name from current path or default to Root
       const existing = path.find(p => p.id === folderId);
       if (existing) {
         setPath(path.slice(0, path.indexOf(existing) + 1));
+        loadFiles(folderId);
       } else {
-        // If not in current path, we can't easily reconstruct, 
-        // so we just jump there (limited breadcrumb).
-        setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: 'Folder' }]);
+        // Fallback: Fetch metadata to get the name
+        api.get(`/files/${folderId}/metadata`).then(res => {
+          setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: res.data.name }]);
+        }).catch(() => {
+          setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: 'Folder' }]);
+        });
+        loadFiles(folderId);
       }
-      if (!searchQuery) loadFiles(folderId);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -645,11 +654,12 @@ export default function AdminFilesPage() {
   };
 
   const navigate = (folder: DriveFile) => {
-    setSearchQuery(''); // Clear search when navigating into a folder
-    setPath(p => [...p, { id: folder.id, name: folder.name }]);
+    setSearchQuery(''); 
+    const newPath = [...path, { id: folder.id, name: folder.name }];
+    setPath(newPath);
     const url = new URL(window.location.href);
     url.searchParams.set('folder', folder.id);
-    window.history.pushState({}, '', url);
+    window.history.pushState({ path: newPath }, '', url);
   };
 
   const breadcrumbNav = (idx: number) => {
@@ -657,7 +667,7 @@ export default function AdminFilesPage() {
     setPath(newPath);
     const url = new URL(window.location.href);
     url.searchParams.set('folder', newPath[newPath.length - 1].id);
-    window.history.pushState({}, '', url);
+    window.history.pushState({ path: newPath }, '', url);
   };
 
   const toggleSelect = (id: string) => {

@@ -990,3 +990,27 @@ export const clearActivityLogs = async (req: Request, res: Response) => {
     res.status(500).json({ message: (error as Error).message });
   }
 };
+// @desc  Get single file metadata
+// @route GET /api/files/:id/metadata
+export const getFileMetadata = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    let fileId = id as string;
+    if (fileId === 'ROOT') fileId = DRIVE_FOLDER_ID;
+
+    // Try DB first
+    let meta = await FileMetadata.findOne({ fileId });
+    if (!meta) {
+      // Fallback to Drive if not in DB
+      const driveMeta = await drive.files.get({ fileId, fields: 'id, name, mimeType' });
+      meta = {
+        fileId: driveMeta.data.id,
+        name: driveMeta.data.name,
+        mimeType: driveMeta.data.mimeType
+      } as any;
+    }
+    res.json(meta);
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};

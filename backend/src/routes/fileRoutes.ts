@@ -27,6 +27,7 @@ import {
   finalizeUpload,
   getDownloadLink,
   searchFiles,
+  getFileMetadata,
 } from '../controllers/fileController';
 import { protect, admin, approved } from '../middleware/authMiddleware';
 
@@ -62,5 +63,6 @@ router.get('/:id/download', protect, approved, downloadFile);
 router.get('/:id/direct-download', protect, approved, getDownloadLink);
 router.post('/upload-session', protect, approved, getUploadSession);
 router.post('/upload-complete', protect, approved, finalizeUpload);
+router.get('/:id/metadata', protect, getFileMetadata);
 
 export default router;
