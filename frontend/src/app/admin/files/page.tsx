@@ -94,6 +94,29 @@ export default function AdminFilesPage() {
       setFakeProgress(0);
     }
   }, [downloadProgress]);
+  
+  // Real-time Overall Upload Progress based on bytes
+  useEffect(() => {
+    if (uploadQueue.length === 0) {
+      setUploadProgress(0);
+      return;
+    }
+    const totalBytes = uploadQueue.reduce((acc, f) => acc + f.size, 0);
+    if (totalBytes === 0) {
+      // Fallback if sizes are 0 (e.g. empty files)
+      const doneCount = uploadQueue.filter(q => q.status === 'done').length;
+      setUploadProgress(Math.round((doneCount * 100) / uploadQueue.length));
+      return;
+    }
+    
+    const uploadedBytes = uploadQueue.reduce((acc, f) => {
+      if (f.status === 'done') return acc + f.size;
+      if (f.status === 'uploading') return acc + (f.size * (f.progress / 100));
+      return acc;
+    }, 0);
+    
+    setUploadProgress(Math.round((uploadedBytes * 100) / totalBytes));
+  }, [uploadQueue]);
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean,
     title: string,
@@ -639,7 +662,6 @@ export default function AdminFilesPage() {
         setUploadQueue(prev => prev.map((q, idx) =>
           idx === i ? { ...q, status: 'done', progress: 100 } : q
         ));
-        setUploadProgress(Math.round((doneCount * 100) / files.length));
       } catch (err: any) {
         setUploadQueue(prev => prev.map((q, idx) =>
           idx === i ? { ...q, status: 'error', error: err.message } : q

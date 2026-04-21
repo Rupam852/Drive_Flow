@@ -907,8 +907,8 @@ export const getUploadSession = async (req: AuthRequest, res: Response) => {
     let targetParentId = parentId || DRIVE_FOLDER_ID;
     if (targetParentId === 'ROOT') targetParentId = DRIVE_FOLDER_ID;
 
-    const oauth2Client = (drive as any).context._options.auth;
-    const { token } = await oauth2Client.getAccessToken();
+    const { auth } = require('../config/googleDrive');
+    const { token } = await auth.getAccessToken();
 
     // Make a POST request to Google Drive to start a resumable session
     const response = await axios.post('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
