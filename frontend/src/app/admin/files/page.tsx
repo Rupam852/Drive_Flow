@@ -6,7 +6,7 @@ import {
   Folder, File, Files, Upload, FolderPlus, FilePlus, Download, Pencil,
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
   MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink,
-  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2
+  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2, Loader2
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -176,6 +176,7 @@ export default function AdminFilesPage() {
   const [stats, setStats] = useState<any>(null);
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([]);
   const [isUploadMinimized, setIsUploadMinimized] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -832,7 +833,8 @@ export default function AdminFilesPage() {
   };
 
   const handleRename = async () => {
-    if (!renaming || !newName) return;
+    if (!renaming || !newName || actionLoading) return;
+    setActionLoading(true);
     try {
       await api.put(`/files/${renaming.id}/rename`, { name: newName });
       setFiles(prev => prev.map(f => f.id === renaming.id ? { ...f, name: newName } : f));
@@ -840,6 +842,8 @@ export default function AdminFilesPage() {
       addToast('File renamed!');
     } catch (e) {
       addToast('Error renaming', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -1526,11 +1530,15 @@ export default function AdminFilesPage() {
               className="glass-card max-w-sm w-full p-6 rounded-2xl">
               <h3 className="text-white font-semibold text-lg mb-4">Rename</h3>
               <input autoFocus value={newName} onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleRename()}
-                className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] mb-4" />
+                onKeyDown={e => e.key === 'Enter' && !actionLoading && handleRename()}
+                disabled={actionLoading}
+                className="w-full px-4 py-3 bg-black/30 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 mb-4 disabled:opacity-50" />
               <div className="flex gap-2 justify-end">
-                <button onClick={() => setRenaming(null)} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors">Cancel</button>
-                <button onClick={handleRename} className="px-4 py-2 rounded-xl bg-[var(--color-primary)] text-white hover:bg-purple-500 transition-colors">Rename</button>
+                <button onClick={() => setRenaming(null)} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors disabled:opacity-50">Cancel</button>
+                <button onClick={handleRename} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-500 transition-all flex items-center gap-2 disabled:opacity-50">
+                  {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {actionLoading ? 'Renaming...' : 'Rename'}
+                </button>
               </div>
             </motion.div>
           </div>
