@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Folder, File, Upload, FolderPlus, FilePlus, Download, Pencil,
+  Folder, File, Files, Upload, FolderPlus, FilePlus, Download, Pencil,
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
   MoreVertical, Check, Users, Clock, Square, CheckSquare, Search
 } from 'lucide-react';
@@ -61,6 +61,14 @@ export default function AdminFilesPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showUploadMenu, setShowUploadMenu] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<{
+    name: string;
+    size: number;
+    status: 'pending' | 'uploading' | 'done' | 'error';
+    progress: number;
+    error?: string;
+  }[]>([]);
   const [showNewMenu, setShowNewMenu] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
@@ -519,21 +527,108 @@ export default function AdminFilesPage() {
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const filesList = e.target.files;
+    if (!filesList || filesList.length === 0) return;
+    e.target.value = ''; // reset input so same files can be re-selected
+
+    const files = Array.from(filesList);
+
+    // Build initial queue
+    const queue = files.map(f => ({
+      name: f.webkitRelativePath || f.name,
+      size: f.size,
+      status: 'pending' as const,
+      progress: 0,
+    }));
+    setUploadQueue(queue);
+    setShowUploadModal(true);
     setUploading(true);
-    setUploadProgress(0);
-    try {
-      await performDirectUpload(file, currentFolder.id);
-      await loadFiles(currentFolder.id);
-      fetchStats();
-      addToast('File uploaded successfully!');
-    } catch (e: any) {
-      console.error(e);
-      addToast(`Upload failed: ${e.message || 'Unknown error'}`, 'error');
+    setShowUploadMenu(false);
+
+    // Folder structure cache: relative_path -> drive folder id
+    const folderCache: Record<string, string> = { '': currentFolder.id };
+    let doneCount = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const relativePath = (file as any).webkitRelativePath || '';
+      const pathParts = relativePath ? relativePath.split('/').slice(0, -1) : [];
+
+      // Mark as uploading
+      setUploadQueue(prev => prev.map((q, idx) =>
+        idx === i ? { ...q, status: 'uploading' } : q
+      ));
+
+      try {
+        // Ensure folder hierarchy exists
+        let parentId = currentFolder.id;
+        let currentPath = '';
+        for (const part of pathParts) {
+          const nextPath = currentPath ? `${currentPath}/${part}` : part;
+          if (!folderCache[nextPath]) {
+            const res = await api.post('/files/folder', { name: part, parentId });
+            folderCache[nextPath] = res.data.id;
+          }
+          parentId = folderCache[nextPath];
+          currentPath = nextPath;
+        }
+
+        // Upload this file with per-file XHR progress
+        const sessionRes = await api.post('/files/upload-session', {
+          name: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          parentId,
+          size: file.size
+        });
+        const { uploadUrl } = sessionRes.data;
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          uploadXhrRef.current = xhr;
+          xhr.open('PUT', uploadUrl, true);
+          xhr.upload.onprogress = (ev) => {
+            if (ev.lengthComputable) {
+              const pct = Math.round((ev.loaded * 100) / ev.total);
+              setUploadQueue(prev => prev.map((q, idx) =>
+                idx === i ? { ...q, progress: pct } : q
+              ));
+            }
+          };
+          xhr.onload = () => {
+            uploadXhrRef.current = null;
+            if (xhr.status >= 200 && xhr.status < 300) resolve();
+            else reject(new Error(`HTTP ${xhr.status}`));
+          };
+          xhr.onerror = () => { uploadXhrRef.current = null; reject(new Error('Network error')); };
+          xhr.onabort = () => { uploadXhrRef.current = null; reject(new Error('Cancelled')); };
+          xhr.send(file);
+        });
+
+        await api.post('/files/upload-complete', {
+          fileId: '', // placeholder — backend infers from uploadUrl
+          name: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          size: file.size,
+          parentId
+        });
+
+        doneCount++;
+        setUploadQueue(prev => prev.map((q, idx) =>
+          idx === i ? { ...q, status: 'done', progress: 100 } : q
+        ));
+        setUploadProgress(Math.round((doneCount * 100) / files.length));
+      } catch (err: any) {
+        setUploadQueue(prev => prev.map((q, idx) =>
+          idx === i ? { ...q, status: 'error', error: err.message } : q
+        ));
+      }
     }
-    finally { setUploading(false); setShowUploadMenu(false); }
+
+    await loadFiles(currentFolder.id);
+    fetchStats();
+    setUploading(false);
   };
+
 
   const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const filesList = e.target.files;
@@ -958,52 +1053,139 @@ export default function AdminFilesPage() {
                 <>
                   <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowUploadMenu(false)} />
                   <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                    className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
+                    className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[190px]">
+                    {/* Multi-file pick */}
                     <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <File className="w-4 h-4" /> Upload File
+                      className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                      <Files className="w-4 h-4 text-purple-400" /> Upload Files
+                      <span className="ml-auto text-[10px] text-gray-500 bg-white/5 px-1.5 rounded">multi</span>
                     </button>
+                    {/* Folder pick */}
                     <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                      className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
                       <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
+                      <span className="ml-auto text-[10px] text-gray-500 bg-white/5 px-1.5 rounded">dir</span>
                     </button>
                   </motion.div>
                 </>
               )}
             </AnimatePresence>
-            <input ref={fileInput} type="file" className="hidden" onChange={handleUpload} />
+            {/* Multi-file input */}
+            <input ref={fileInput} type="file" multiple className="hidden" onChange={handleUpload} />
+            {/* Folder input (uses handleUpload too — webkitRelativePath will be set) */}
             <input
               ref={folderInput}
               type="file"
+              multiple
               className="hidden"
-              onChange={handleFolderUpload}
+              onChange={handleUpload}
               {...({ webkitdirectory: '', directory: '' } as any)}
             />
           </div>
         </div>
       </div>
 
-      {/* Upload progress */}
+      {/* Batch Upload Queue Modal */}
       <AnimatePresence>
-        {uploading && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="glass-card p-4 rounded-xl border border-white/10">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                <span className="text-sm text-white font-medium">Uploading...</span>
+        {showUploadModal && (
+          <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
+            onClick={() => { if (!uploading) { setShowUploadModal(false); setUploadQueue([]); } }}>
+            <motion.div
+              initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="glass-card w-full sm:max-w-lg max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
+            >
+              {/* Header */}
+              <div className="px-4 pt-4 pb-3 border-b border-white/10 bg-white/5 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                  <div>
+                    <h3 className="text-base font-bold text-white">Uploading Files</h3>
+                    <p className="text-[11px] text-gray-400">
+                      {uploadQueue.filter(q => q.status === 'done').length} / {uploadQueue.length} completed
+                      {uploading && ` · ${uploadProgress}% overall`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {uploading && (
+                    <button onClick={cancelUpload}
+                      className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-all">
+                      Cancel
+                    </button>
+                  )}
+                  {!uploading && (
+                    <button onClick={() => { setShowUploadModal(false); setUploadQueue([]); }}
+                      className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all">
+                      <X className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-gray-400 font-mono">{uploadProgress}%</span>
-                <button onClick={cancelUpload} className="text-[10px] uppercase tracking-wider text-red-400 hover:text-red-300 font-bold px-2 py-1 bg-red-500/10 rounded-lg transition-colors">
-                  Cancel
-                </button>
+
+              {/* Overall progress bar */}
+              <div className="h-1 bg-white/5 shrink-0">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                  animate={{ width: `${uploadProgress}%` }}
+                  transition={{ duration: 0.3 }}
+                />
               </div>
-            </div>
-            <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-              <motion.div animate={{ width: `${uploadProgress}%` }} className="h-full bg-gradient-to-r from-purple-500 to-pink-500" />
-            </div>
-          </motion.div>
+
+              {/* File list */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
+                {uploadQueue.map((item, i) => (
+                  <div key={i} className={`p-3 rounded-2xl border transition-all
+                    ${item.status === 'done' ? 'bg-emerald-500/5 border-emerald-500/20'
+                      : item.status === 'error' ? 'bg-red-500/5 border-red-500/20'
+                      : item.status === 'uploading' ? 'bg-purple-500/10 border-purple-500/30'
+                      : 'bg-white/3 border-white/5'}`}>
+                    <div className="flex items-center gap-2.5">
+                      {/* Status icon */}
+                      <div className="shrink-0">
+                        {item.status === 'done' && <Check className="w-4 h-4 text-emerald-400" />}
+                        {item.status === 'error' && <X className="w-4 h-4 text-red-400" />}
+                        {item.status === 'uploading' && (
+                          <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                        )}
+                        {item.status === 'pending' && (
+                          <div className="w-4 h-4 rounded-full border border-white/20" />
+                        )}
+                      </div>
+                      {/* Name + size */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-white truncate">{item.name.split('/').pop()}</p>
+                        {item.name.includes('/') && (
+                          <p className="text-[10px] text-gray-500 truncate">{item.name.split('/').slice(0, -1).join('/')}</p>
+                        )}
+                        {item.status === 'error' && (
+                          <p className="text-[10px] text-red-400">{item.error}</p>
+                        )}
+                      </div>
+                      {/* Progress / size */}
+                      <span className={`text-[10px] font-mono shrink-0
+                        ${item.status === 'done' ? 'text-emerald-400' : item.status === 'error' ? 'text-red-400' : 'text-gray-400'}`}>
+                        {item.status === 'uploading' ? `${item.progress}%`
+                          : item.status === 'done' ? '✓'
+                          : item.status === 'error' ? 'ERR'
+                          : fmt(item.size)}
+                      </span>
+                    </div>
+                    {/* Per-file progress bar */}
+                    {item.status === 'uploading' && (
+                      <div className="mt-2 h-0.5 bg-white/5 rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-purple-500"
+                          animate={{ width: `${item.progress}%` }}
+                          transition={{ duration: 0.2 }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
