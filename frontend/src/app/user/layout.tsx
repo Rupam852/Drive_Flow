@@ -13,13 +13,20 @@ const navItems = [
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [authorized, setAuthorized] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     const role = localStorage.getItem('role');
-    if (!role || role === 'admin') router.replace('/login');
+    if (role !== 'user') {
+      router.replace('/login');
+    } else {
+      setAuthorized(true);
+    }
   }, [router]);
+
+  if (!authorized) return null;
 
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {

@@ -20,9 +20,17 @@ export default function LoginPage() {
 
   // Server health check on mount
   useEffect(() => {
+    // Check if already logged in
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    if (token && role) {
+      router.replace(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+      return;
+    }
+
     const checkServer = async () => {
       try {
-        await api.get('/auth/health'); // We need to add this health route in backend
+        await api.get('/auth/health'); 
         setLoading(false);
       } catch (err) {
         // If it fails, we might just stop loading after a timeout to not block forever
@@ -30,7 +38,7 @@ export default function LoginPage() {
       }
     };
     checkServer();
-  }, []);
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,12 +47,13 @@ export default function LoginPage() {
     
     try {
       const res = await api.post('/auth/login', { email, password });
-      const { token, role, status } = res.data;
+      const userData = res.data;
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('role', role);
+      localStorage.setItem('token', userData.token);
+      localStorage.setItem('role', userData.role);
+      localStorage.setItem('user', JSON.stringify(userData));
 
-      if (role === 'admin') {
+      if (userData.role === 'admin') {
         router.push('/admin/dashboard');
       } else {
         router.push('/user/dashboard');

@@ -33,14 +33,10 @@ export default function Home() {
         setTimeout(() => {
           // Check if user is already logged in
           const token = localStorage.getItem('token');
-          const userStr = localStorage.getItem('user');
-          if (token && userStr) {
-            try {
-              const user = JSON.parse(userStr);
-              router.push(user.role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
-            } catch {
-              router.push('/login');
-            }
+          const role = localStorage.getItem('role');
+          
+          if (token && role) {
+            router.push(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
           } else {
             router.push('/login');
           }
