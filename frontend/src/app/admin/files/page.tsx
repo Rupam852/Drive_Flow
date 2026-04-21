@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Folder, File, Files, Upload, FolderPlus, FilePlus, Download, Pencil,
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
-  MoreVertical, Check, Users, Clock, Square, CheckSquare, Search
+  MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -1455,6 +1455,12 @@ export default function AdminFilesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
+                    <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
+                      className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
+                      <ExternalLink className="w-5 h-5" />
+                    </button>
+                  )}
                   <button onClick={() => handleDownload(previewFile)}
                     className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
                     <Download className="w-5 h-5" />
