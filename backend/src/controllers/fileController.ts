@@ -73,7 +73,7 @@ export const listFiles = async (req: Request, res: Response) => {
     console.log(`[listFiles] Requesting files for parentId: ${parentId}`);
     const driveRes = await drive.files.list({
       q: `'${parentId}' in parents and trashed = false`,
-      fields: 'files(id, name, mimeType, size, createdTime, modifiedTime)',
+      fields: 'files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink)',
       orderBy: 'folder,name',
     });
 
@@ -396,7 +396,10 @@ export const downloadFile = async (req: Request, res: Response) => {
           safeName = safeName.substring(0, safeName.lastIndexOf('.'));
         }
 
-        res.setHeader('Content-Disposition', `attachment; filename="${safeName}${ext}"; filename*=UTF-8''${safeName}${ext}`);
+        const isInline = req.query.inline === 'true';
+        const disposition = isInline ? 'inline' : 'attachment';
+
+        res.setHeader('Content-Disposition', `${disposition}; filename="${safeName}${ext}"; filename*=UTF-8''${safeName}${ext}`);
         res.setHeader('Content-Type', exportMime);
         
         response.data.on('error', (err: any) => {
@@ -435,7 +438,10 @@ export const downloadFile = async (req: Request, res: Response) => {
                 fileName = fileName.substring(0, fileName.lastIndexOf('.'));
               }
               const safeName = encodeURIComponent(fileName);
-              res.setHeader('Content-Disposition', `attachment; filename="${safeName}.pdf"; filename*=UTF-8''${safeName}.pdf`);
+              const isInline = req.query.inline === 'true';
+              const disposition = isInline ? 'inline' : 'attachment';
+
+              res.setHeader('Content-Disposition', `${disposition}; filename="${safeName}.pdf"; filename*=UTF-8''${safeName}.pdf`);
               res.setHeader('Content-Type', 'application/pdf');
 
               exportRes.data.on('end', async () => {
@@ -474,7 +480,10 @@ export const downloadFile = async (req: Request, res: Response) => {
 
         // Use URI encoding for filename to support spaces and special chars
         const safeName = encodeURIComponent(fileName);
-        res.setHeader('Content-Disposition', `attachment; filename="${safeName}"; filename*=UTF-8''${safeName}`);
+        const isInline = req.query.inline === 'true';
+        const disposition = isInline ? 'inline' : 'attachment';
+
+        res.setHeader('Content-Disposition', `${disposition}; filename="${safeName}"; filename*=UTF-8''${safeName}`);
         res.setHeader('Content-Type', mimeType);
         
         response.data.on('error', (err: any) => {

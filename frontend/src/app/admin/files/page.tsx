@@ -15,6 +15,7 @@ interface DriveFile {
   mimeType: string;
   size?: string;
   modifiedTime: string;
+  webViewLink?: string;
 }
 
 const ROOT_ID = 'ROOT';
@@ -1473,7 +1474,7 @@ export default function AdminFilesPage() {
 
                 {isImage(previewFile) ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}`}
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true`}
                     alt={previewFile.name}
                     className="max-h-full max-w-full object-contain shadow-2xl relative z-10" />
                 ) : isVideo(previewFile) ? (
@@ -1481,11 +1482,11 @@ export default function AdminFilesPage() {
                     controls
                     autoPlay
                     className="max-h-full w-full relative z-10 shadow-2xl"
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}`} />
-                ) : previewFile.mimeType === 'application/pdf' ? (
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true`} />
+                ) : (previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) ? (
                   <iframe
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}#toolbar=0`}
-                    className="w-full h-full border-none relative z-10" />
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}#toolbar=0`}
+                    className="w-full h-full border-none relative z-10 bg-white" />
                 ) : (
                   <div className="flex flex-col items-center gap-6 text-gray-500 relative z-10">
                     <div className="w-24 h-24 bg-white/5 rounded-[32px] flex items-center justify-center border border-white/5 shadow-2xl">
