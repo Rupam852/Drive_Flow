@@ -19,14 +19,31 @@
   --foreground: #f8fafc;
 }
 
+/* ── Base ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Prevent horizontal overflow on mobile */
+  overflow-x: hidden;
+  /* Better font rendering on phones */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
+  /* Safe area for phones with notches / home indicator */
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Glassmorphism Utilities */
+/* ── Glassmorphism Utilities ── */
 .glass {
   background: var(--color-surface);
   backdrop-filter: blur(12px);
@@ -42,26 +59,32 @@ body {
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* ── Hide scrollbar but keep scroll functionality ── */
+.no-scrollbar {
+  -ms-overflow-style: none;    /* IE and Edge */
+  scrollbar-width: none;       /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, Opera */
 }
 
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 4px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* Dynamic Gradients */
+/* ── Dynamic animated gradient background ── */
 .bg-gradient-dynamic {
   background: linear-gradient(-45deg, #0f172a, #1e1b4b, #312e81, #1e1b4b);
   background-size: 400% 400%;
@@ -69,24 +92,30 @@ body {
 }
 
 @keyframes gradientBG {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Global Cursor for Interactive Elements */
-button, 
-a, 
-input[type="button"], 
-input[type="submit"], 
-[role="button"], 
+/* ── Interactive cursor ── */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+[role="button"],
 label,
 .cursor-pointer {
   cursor: pointer !important;
+}
+
+/* ── Prevent text selection on interactive elements ── */
+button {
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ── Safe-area-aware sticky/fixed headers ── */
+header[class*="sticky"],
+header[class*="fixed"] {
+  padding-top: env(safe-area-inset-top);
 }

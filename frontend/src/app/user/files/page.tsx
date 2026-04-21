@@ -332,39 +332,41 @@ export default function UserFilesPage() {
         }
       }}
     >
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        {/* Left: back button + title + breadcrumb */}
+        <div className="flex items-start gap-3 min-w-0">
           {path.length > 1 && (
             <button onClick={() => breadcrumbNav(path.length - 2)} 
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors" title="Go Back">
+              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors shrink-0 mt-0.5" title="Go Back">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
           )}
-          <div>
+          <div className="min-w-0">
             <h2 className="text-2xl font-bold text-white">My Files</h2>
-            <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[80vw]">
-            {searchQuery ? (
-              <span className="text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
-                <Search className="w-4 h-4" /> Search results for "{searchQuery}"
-              </span>
-            ) : (
-              path.map((p, i) => (
-                <span key={i} className="flex items-center gap-1 shrink-0">
-                  {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
-                  <button onClick={() => breadcrumbNav(i)}
-                    className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}>
-                    {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
-                  </button>
+            <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[70vw] sm:max-w-sm">
+              {searchQuery ? (
+                <span className="text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
+                  <Search className="w-4 h-4" /> Search results for "{searchQuery}"
                 </span>
-              ))
-            )}
+              ) : (
+                path.map((p, i) => (
+                  <span key={i} className="flex items-center gap-1 shrink-0">
+                    {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
+                    <button onClick={() => breadcrumbNav(i)}
+                      className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}>
+                      {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
+                    </button>
+                  </span>
+                ))
+              )}
+            </div>
           </div>
         </div>
-      </div>
-        
-        <div className="flex items-center gap-2">
+
+        {/* Right: storage bar + view toggle */}
+        <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
           {stats && (
-            <div className="w-full sm:w-48 bg-white/5 p-2 px-3 rounded-2xl border border-white/10">
+            <div className="w-40 sm:w-48 bg-white/5 p-2 px-3 rounded-2xl border border-white/10">
               <div className="flex justify-between text-[9px] text-gray-400 mb-1 font-medium uppercase tracking-wider">
                 <span>Storage</span>
                 <span>{fmt(stats.used)} / {fmt(stats.limit)}</span>
@@ -388,6 +390,7 @@ export default function UserFilesPage() {
           </div>
         </div>
       </div>
+
 
       {/* Search & Categories */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-2">

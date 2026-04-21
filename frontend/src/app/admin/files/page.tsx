@@ -706,15 +706,16 @@ export default function AdminFilesPage() {
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        {/* Left: back button + title + breadcrumb */}
+        <div className="flex items-start gap-3 min-w-0">
           {path.length > 1 && (
             <button onClick={() => breadcrumbNav(path.length - 2)} 
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors" title="Go Back">
+              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors shrink-0 mt-0.5" title="Go Back">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
           )}
-          <div>
+          <div className="min-w-0">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               File Manager
             {stats && (
@@ -724,7 +725,7 @@ export default function AdminFilesPage() {
             )}
           </h2>
           {/* Breadcrumb */}
-          <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[80vw]">
+          <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[70vw] sm:max-w-sm">
             {searchQuery ? (
               <span className="text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
                 <Search className="w-4 h-4" /> Search results for "{searchQuery}"
@@ -746,8 +747,9 @@ export default function AdminFilesPage() {
         </div>
       </div>
         
+        {/* Right: storage bar */}
         {stats && (
-          <div className="w-full sm:w-56 bg-white/5 p-3 rounded-2xl border border-white/10">
+          <div className="w-full sm:w-56 bg-white/5 p-3 rounded-2xl border border-white/10 shrink-0 self-start sm:self-auto">
             <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium uppercase tracking-wider">
               <span>Storage Usage</span>
               <span>{fmt(stats.used)} / {fmt(stats.limit)}</span>
@@ -762,6 +764,7 @@ export default function AdminFilesPage() {
           </div>
         )}
       </div>
+
 
       {/* Search & Categories */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-2">
