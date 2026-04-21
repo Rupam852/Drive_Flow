@@ -68,7 +68,7 @@ const listFiles = async (req, res) => {
         console.log(`[listFiles] Requesting files for parentId: ${parentId}`);
         const driveRes = await googleDrive_1.default.files.list({
             q: `'${parentId}' in parents and trashed = false`,
-            fields: 'files(id, name, mimeType, size, createdTime, modifiedTime)',
+            fields: 'files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink)',
             orderBy: 'folder,name',
         });
         const files = driveRes.data.files || [];
@@ -228,7 +228,11 @@ exports.renameFile = renameFile;
 const moveFiles = async (req, res) => {
     try {
         const { fileIds, targetParentId, newParentId } = req.body;
-        const targetId = targetParentId || newParentId;
+        let targetId = targetParentId || newParentId;
+        // Failsafe for Root folder ID translation
+        if (!targetId || targetId === 'ROOT' || targetId === 'root' || targetId === 'null' || targetId === 'undefined') {
+            targetId = DRIVE_FOLDER_ID;
+        }
         const results = [];
         for (const fileId of fileIds) {
             const fileData = await googleDrive_1.default.files.get({ fileId, fields: 'parents' });
@@ -262,7 +266,7 @@ const getAllChildIds = async (folderIds) => {
         allIds = [...allIds, ...childIds];
         // Only continue with folders for next level
         currentFolders = children
-            .filter(c => c.type === 'folder')
+            .filter(c => c.type === 'folder' || c.type === 'application/vnd.google-apps.folder')
             .map(c => c.fileId);
     }
     return allIds;
@@ -360,7 +364,9 @@ const downloadFile = async (req, res) => {
                 if (safeName.toLowerCase().endsWith('.docx') || safeName.toLowerCase().endsWith('.xlsx') || safeName.toLowerCase().endsWith('.pptx') || safeName.toLowerCase().endsWith('.pdf')) {
                     safeName = safeName.substring(0, safeName.lastIndexOf('.'));
                 }
-                res.setHeader('Content-Disposition', `attachment; filename="${safeName}${ext}"; filename*=UTF-8''${safeName}${ext}`);
+                const isInline = req.query.inline === 'true';
+                const disposition = isInline ? 'inline' : `attachment; filename="${safeName}${ext}"; filename*=UTF-8''${safeName}${ext}`;
+                res.setHeader('Content-Disposition', disposition);
                 res.setHeader('Content-Type', exportMime);
                 response.data.on('error', (err) => {
                     console.error('Export stream error:', err);
@@ -393,7 +399,9 @@ const downloadFile = async (req, res) => {
                                 fileName = fileName.substring(0, fileName.lastIndexOf('.'));
                             }
                             const safeName = encodeURIComponent(fileName);
-                            res.setHeader('Content-Disposition', `attachment; filename="${safeName}.pdf"; filename*=UTF-8''${safeName}.pdf`);
+                            const isInline = req.query.inline === 'true';
+                            const disposition = isInline ? 'inline' : `attachment; filename="${safeName}.pdf"; filename*=UTF-8''${safeName}.pdf`;
+                            res.setHeader('Content-Disposition', disposition);
                             res.setHeader('Content-Type', 'application/pdf');
                             exportRes.data.on('end', async () => {
                                 try {
@@ -428,7 +436,9 @@ const downloadFile = async (req, res) => {
                 }
                 // Use URI encoding for filename to support spaces and special chars
                 const safeName = encodeURIComponent(fileName);
-                res.setHeader('Content-Disposition', `attachment; filename="${safeName}"; filename*=UTF-8''${safeName}`);
+                const isInline = req.query.inline === 'true';
+                const disposition = isInline ? 'inline' : `attachment; filename="${safeName}"; filename*=UTF-8''${safeName}`;
+                res.setHeader('Content-Disposition', disposition);
                 res.setHeader('Content-Type', mimeType);
                 response.data.on('error', (err) => {
                     console.error('Download stream error:', err);
@@ -447,15 +457,26 @@ exports.downloadFile = downloadFile;
 // @route GET /api/files/stats
 const getDriveStats = async (req, res) => {
     try {
-        // Helper to sync Drive files to DB recursively
+        const userId = req.user?._id;
+        // Helper to sync Drive files to DB recursively and CLEAN UP missing files
         const syncDriveData = async (parentId, userId, rootId) => {
             try {
-                const res = await googleDrive_1.default.files.list({
+                const driveRes = await googleDrive_1.default.files.list({
                     q: `'${parentId}' in parents and trashed = false`,
                     fields: 'files(id, name, mimeType, size)',
                 });
-                const files = res.data.files || [];
-                for (const file of files) {
+                const driveFiles = driveRes.data.files || [];
+                const driveFileIds = driveFiles.map(f => f.id).filter((id) => !!id);
+                // 1. Mark files as trashed if they are in DB but no longer in this Drive folder
+                const trashedFromDrive = await FileMetadata_1.FileMetadata.find({ parentId: String(parentId), status: 'active', fileId: { $nin: driveFileIds } }, 'fileId type');
+                if (trashedFromDrive.length > 0) {
+                    const trashedIds = trashedFromDrive.map(f => f.fileId);
+                    const nestedIds = await getAllChildIds(trashedIds);
+                    const allToTrash = [...trashedIds, ...nestedIds];
+                    await FileMetadata_1.FileMetadata.updateMany({ fileId: { $in: allToTrash } }, { status: 'trashed' });
+                }
+                // 2. Update/Insert found files
+                for (const file of driveFiles) {
                     await FileMetadata_1.FileMetadata.findOneAndUpdate({ fileId: file.id }, {
                         fileId: file.id,
                         name: file.name,
@@ -465,7 +486,7 @@ const getDriveStats = async (req, res) => {
                         rootId: rootId,
                         ownerUserId: new mongoose_1.default.Types.ObjectId(userId),
                         status: 'active'
-                    }, { upsert: true, new: true });
+                    }, { upsert: true });
                     if (file.mimeType === 'application/vnd.google-apps.folder') {
                         await syncDriveData(file.id, userId, rootId);
                     }
@@ -475,27 +496,25 @@ const getDriveStats = async (req, res) => {
                 console.error('Sync error:', error);
             }
         };
-        const userId = req.user?._id;
-        // Trigger a sync of the root folder in the background so it doesn't block the dashboard load
-        // This allows the dashboard to render instantly using the MongoDB cache
+        // Trigger sync in background
         syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
-        // Total Files: Recursive count (all files anywhere in the storage)
-        const totalFiles = await FileMetadata_1.FileMetadata.countDocuments({ rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } });
-        // Total Folders: ONLY count folders that are directly in the main storage folder (root)
-        const totalFolders = await FileMetadata_1.FileMetadata.countDocuments({
+        // Get REAL-TIME storage usage from Google Drive directly
+        const driveAbout = await googleDrive_1.default.about.get({ fields: 'storageQuota' });
+        const usedBytes = parseInt(driveAbout.data.storageQuota?.usage || '0');
+        const limitBytes = parseInt(driveAbout.data.storageQuota?.limit || (15 * 1024 * 1024 * 1024).toString());
+        // Count ALL Active Files recursively (Strictly excluding folders)
+        const totalFiles = await FileMetadata_1.FileMetadata.countDocuments({
             rootId: DRIVE_FOLDER_ID,
+            status: 'active',
+            type: { $ne: 'application/vnd.google-apps.folder' }
+        });
+        // Count ONLY Root Folders (immediate children of the main drive folder)
+        const totalFolders = await FileMetadata_1.FileMetadata.countDocuments({
             status: 'active',
             type: 'application/vnd.google-apps.folder',
             parentId: DRIVE_FOLDER_ID
         });
-        // Global storage usage
-        const totalSizeRes = await FileMetadata_1.FileMetadata.aggregate([
-            { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
-            { $group: { _id: null, total: { $sum: '$size' } } }
-        ]);
-        const usedBytes = totalSizeRes[0]?.total || 0;
-        const APP_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10GB
-        // File type breakdown for chart
+        // File type breakdown
         const typesRes = await FileMetadata_1.FileMetadata.aggregate([
             { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
             { $group: { _id: '$type', count: { $sum: 1 } } },
@@ -503,7 +522,7 @@ const getDriveStats = async (req, res) => {
         ]);
         res.json({
             used: usedBytes.toString(),
-            limit: APP_LIMIT_BYTES.toString(),
+            limit: limitBytes.toString(),
             totalFiles,
             totalFolders,
             types: typesRes,
@@ -844,8 +863,8 @@ const getUploadSession = async (req, res) => {
         let targetParentId = parentId || DRIVE_FOLDER_ID;
         if (targetParentId === 'ROOT')
             targetParentId = DRIVE_FOLDER_ID;
-        const oauth2Client = googleDrive_1.default.context._options.auth;
-        const { token } = await oauth2Client.getAccessToken();
+        const { auth } = require('../config/googleDrive');
+        const { token } = await auth.getAccessToken();
         // Make a POST request to Google Drive to start a resumable session
         const response = await axios_1.default.post('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
             name,

@@ -283,7 +283,7 @@ const getAllChildIds = async (folderIds: string[]): Promise<string[]> => {
     
     // Only continue with folders for next level
     currentFolders = children
-      .filter(c => c.type === 'folder')
+      .filter(c => c.type === 'folder' || c.type === 'application/vnd.google-apps.folder')
       .map(c => c.fileId);
   }
   return allIds;
@@ -337,28 +337,34 @@ export const downloadFile = async (req: Request, res: Response) => {
       archive.pipe(res);
 
       const addFolderToZip = async (fId: string, zip: any, folderPath: string) => {
-        const listRes = await drive.files.list({
-          q: `'${fId}' in parents and trashed = false`,
-          fields: 'files(id, name, mimeType)',
-        });
-        const items = listRes.data.files || [];
+        // Use our database to find all children for speed and reliability
+        const items = await FileMetadata.find({ parentId: fId, status: 'active' });
+        
         for (const item of items) {
           const itemPath = folderPath + item.name;
-          if (item.mimeType === 'application/vnd.google-apps.folder') {
-            await addFolderToZip(item.id!, zip, itemPath + '/');
-          } else if (item.mimeType?.startsWith('application/vnd.google-apps.')) {
-            // Google Docs to PDF in ZIP
-            const exportRes: any = await drive.files.export(
-              { fileId: item.id!, mimeType: 'application/pdf' },
-              { responseType: 'stream' } as any
-            );
-            zip.append(exportRes.data, { name: itemPath + '.pdf' });
+          const isFolder = item.type === 'application/vnd.google-apps.folder' || item.type === 'folder';
+
+          if (isFolder) {
+            await addFolderToZip(item.fileId, zip, itemPath + '/');
           } else {
-            const downRes: any = await drive.files.get(
-              { fileId: item.id!, alt: 'media' },
-              { responseType: 'stream' } as any
-            );
-            zip.append(downRes.data, { name: itemPath });
+            try {
+              const isGoogleDoc = item.type?.startsWith('application/vnd.google-apps.');
+              if (isGoogleDoc) {
+                const exportRes: any = await drive.files.export(
+                  { fileId: item.fileId, mimeType: 'application/pdf' },
+                  { responseType: 'stream' } as any
+                );
+                zip.append(exportRes.data, { name: itemPath + '.pdf' });
+              } else {
+                const downRes: any = await drive.files.get(
+                  { fileId: item.fileId, alt: 'media' },
+                  { responseType: 'stream' } as any
+                );
+                zip.append(downRes.data, { name: itemPath });
+              }
+            } catch (err) {
+              console.error(`Error adding file ${item.fileId} to ZIP:`, err);
+            }
           }
         }
       };
@@ -509,6 +515,12 @@ export const getDriveStats = async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?._id;
 
+    // ONE-TIME CLEANUP: If user is seeing ghost files, we purge active records and re-sync
+    if (req.query.cleanup === 'true') {
+      console.log('[getDriveStats] Performing Deep Clean...');
+      await FileMetadata.deleteMany({ rootId: DRIVE_FOLDER_ID });
+    }
+
     // Helper to sync Drive files to DB recursively and CLEAN UP missing files
     const syncDriveData = async (parentId: string, userId: string, rootId: string) => {
       try {
@@ -518,13 +530,24 @@ export const getDriveStats = async (req: Request, res: Response) => {
         });
 
         const driveFiles = driveRes.data.files || [];
-        const driveFileIds = new Set(driveFiles.map(f => f.id));
+        const driveFileIds = driveFiles.map(f => f.id).filter((id): id is string => !!id);
 
         // 1. Mark files as trashed if they are in DB but no longer in this Drive folder
-        await FileMetadata.updateMany(
-          { parentId, status: 'active', fileId: { $nin: Array.from(driveFileIds) } },
-          { status: 'trashed' }
+        const trashedFromDrive = await FileMetadata.find(
+          { parentId: String(parentId), status: 'active', fileId: { $nin: driveFileIds } },
+          'fileId type'
         );
+
+        if (trashedFromDrive.length > 0) {
+          const trashedIds = trashedFromDrive.map(f => f.fileId);
+          const nestedIds = await getAllChildIds(trashedIds);
+          const allToTrash = [...trashedIds, ...nestedIds];
+          
+          await FileMetadata.updateMany(
+            { fileId: { $in: allToTrash } },
+            { status: 'trashed' }
+          );
+        }
 
         // 2. Update/Insert found files
         for (const file of driveFiles) {
@@ -555,24 +578,28 @@ export const getDriveStats = async (req: Request, res: Response) => {
     // Trigger sync in background
     syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
 
-    // Get REAL-TIME storage usage from Google Drive directly
-    const driveAbout = await drive.about.get({ fields: 'storageQuota' });
-    const usedBytes = parseInt(driveAbout.data.storageQuota?.usage || '0');
-    const limitBytes = parseInt(driveAbout.data.storageQuota?.limit || (15 * 1024 * 1024 * 1024).toString());
+    // Calculate usedBytes from our LOCAL DB (Sum of all managed active files)
+    const statsResult = await FileMetadata.aggregate([
+      { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
+      { $group: { _id: null, totalSize: { $sum: '$size' } } }
+    ]);
+    const usedBytes = statsResult.length > 0 ? statsResult[0].totalSize : 0;
 
-    // Count Active Files recursively
+    // Set a VIRTUAL storage limit of exactly 10GB for our app
+    const limitBytes = 10737418240; // 10 GB in bytes (10 * 1024 * 1024 * 1024)
+
+    // Count ALL Active Files recursively (Strictly excluding folders)
     const totalFiles = await FileMetadata.countDocuments({ 
-      rootId: DRIVE_FOLDER_ID, 
-      status: 'active', 
-      type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } 
-    });
-    
-    // Count Root Folders
-    const totalFolders = await FileMetadata.countDocuments({ 
       rootId: DRIVE_FOLDER_ID,
       status: 'active', 
-      type: 'application/vnd.google-apps.folder', 
-      parentId: DRIVE_FOLDER_ID 
+      type: { $ne: 'application/vnd.google-apps.folder' } 
+    });
+    
+    // Count ONLY Root Folders (immediate children of the main drive folder)
+    const totalFolders = await FileMetadata.countDocuments({ 
+      status: 'active', 
+      type: 'application/vnd.google-apps.folder',
+      parentId: DRIVE_FOLDER_ID
     });
 
     // File type breakdown
@@ -944,8 +971,7 @@ export const getUploadSession = async (req: AuthRequest, res: Response) => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'X-Upload-Content-Type': mimeType,
-        'Origin': req.headers.origin || 'http://localhost:3000',
-        ...(size ? { 'X-Upload-Content-Length': size.toString() } : {})
+        'X-Upload-Content-Length': size ? size.toString() : '0'
       }
     });
 
@@ -1048,6 +1074,44 @@ export const getFileMetadata = async (req: Request, res: Response) => {
       } as any;
     }
     res.json(meta);
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+// @desc  Find duplicate files (Admin only)
+// @route GET /api/files/admin-duplicates
+export const findDuplicates = async (req: Request, res: Response) => {
+  try {
+    // Get all active files that are NOT folders
+    const allFiles = await FileMetadata.find({ 
+      status: 'active', 
+      type: { $ne: 'application/vnd.google-apps.folder' } 
+    });
+    
+    const groups: Record<string, any[]> = {};
+    allFiles.forEach(f => {
+      // Grouping by Name + Size as a reliable duplicate indicator
+      const key = `${f.name}::${f.size}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(f);
+    });
+
+    const duplicates = Object.entries(groups)
+      .filter(([_, items]) => items.length > 1)
+      .map(([key, items]) => ({
+        key,
+        name: items[0].name,
+        size: items[0].size,
+        type: items[0].type,
+        count: items.length,
+        items: items.map(i => ({ 
+          fileId: i.fileId, 
+          parentId: i.parentId, 
+          createdAt: i.createdAt 
+        }))
+      }));
+
+    res.json(duplicates);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }

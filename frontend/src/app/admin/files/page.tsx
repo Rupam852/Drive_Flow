@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Folder, File, Files, Upload, FolderPlus, FilePlus, Download, Pencil,
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
   MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink,
-  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2, Loader2
+  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2, Loader2, Plus, RefreshCw
 } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 
 interface DriveFile {
@@ -82,7 +83,9 @@ const fmt = (bytes?: string, isFolder?: boolean) => {
   return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
-export default function AdminFilesPage() {
+function AdminFilesContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [path, setPath] = useState<{ id: string; name: string }[]>([{ id: ROOT_ID, name: 'Root' }]);
@@ -177,6 +180,12 @@ export default function AdminFilesPage() {
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([]);
   const [isUploadMinimized, setIsUploadMinimized] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [showDuplicates, setShowDuplicates] = useState(false);
+  const [duplicates, setDuplicates] = useState<any[]>([]);
+  const [loadingDuplicates, setLoadingDuplicates] = useState(false);
+  const [showZipModal, setShowZipModal] = useState(false);
+  const [zipFileName, setZipFileName] = useState('DriveFlow_Export');
+  const isCancelledBatch = useRef(false);
 
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -248,78 +257,74 @@ export default function AdminFilesPage() {
     }
   }, [searchQuery, currentFolder.id]);
 
-  // Push a sentinel history entry whenever a modal opens, so back gesture closes it
+  // ── Sync Path with URL on Load ──────────────────────────────────
   useEffect(() => {
-    const anyModalOpen = !!previewFile || !!renaming || showLogs || showTrash || showUsers || showMoveModal || showDownloadModal || showNewFolderModal;
-    if (anyModalOpen) {
-      window.history.pushState({ modal: true }, '');
+    const folderId = searchParams.get('folder');
+    if (folderId && folderId !== ROOT_ID && path.length === 1) {
+      // If we land on a subfolder directly, try to resolve its name or just show 'Folder'
+      api.get(`/files/${folderId}/metadata`).then(res => {
+        setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: res.data.name }]);
+      }).catch(() => {
+        setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: 'Folder' }]);
+      });
     }
-  }, [previewFile, renaming, showLogs, showTrash, showUsers, showMoveModal, showDownloadModal, showNewFolderModal]);
+  }, []);
 
+  // ── Popstate navigation handling ──────────────────────────────────
   useEffect(() => {
-    if (!searchQuery) {
-      loadFiles(currentFolder.id);
-    }
-
-    const handlePopState = (e: PopStateEvent) => {
-      // If a modal is open, close it and stay on the page
-      if (previewFile) { setPreviewFile(null); return; }
-      if (renaming) { setRenaming(null); return; }
-      if (showLogs) { setShowLogs(false); return; }
-      if (showTrash) { setShowTrash(false); return; }
-      if (showUsers) { setShowUsers(false); return; }
-      if (showMoveModal) { setShowMoveModal(false); return; }
-      if (showDownloadModal) { setShowDownloadModal(false); return; }
-      if (showNewFolderModal) { setShowNewFolderModal(false); return; }
-      if (confirmModal.show) { setConfirmModal(c => ({ ...c, show: false })); return; }
-
-      // Otherwise handle folder navigation
-      if (e.state?.path) {
-        setPath(e.state.path);
-        loadFiles(e.state.path[e.state.path.length - 1].id);
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
+      const modalOpen = previewFile || renaming || showLogs || showTrash || showUsers || showMoveModal || showDownloadModal || showNewFolderModal || confirmModal.show;
+      
+      if (modalOpen) {
+        setPreviewFile(null); setRenaming(null); setShowLogs(false); setShowTrash(false); setShowUsers(false); setShowMoveModal(false); setShowDownloadModal(false); setShowNewFolderModal(false); setConfirmModal(c => ({ ...c, show: false }));
         return;
       }
 
-      const params = new URLSearchParams(window.location.search);
-      const folderId = params.get('folder') || ROOT_ID;
-      const existing = path.find(p => p.id === folderId);
-      if (existing) {
-        setPath(path.slice(0, path.indexOf(existing) + 1));
-        loadFiles(folderId);
-      } else {
-        api.get(`/files/${folderId}/metadata`).then(res => {
-          setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: res.data.name }]);
-        }).catch(() => {
-          setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: 'Folder' }]);
-        });
-        loadFiles(folderId);
+      if (state?.path) {
+        setPath(state.path);
+        loadFiles(state.path[state.path.length - 1].id);
+      } else if (path.length > 1) {
+        const newPath = path.slice(0, -1);
+        setPath(newPath);
+        loadFiles(newPath[newPath.length - 1].id);
       }
     };
-
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentFolder.id, previewFile, renaming, showLogs, showTrash, showUsers, showMoveModal, showDownloadModal, showNewFolderModal, confirmModal.show]);
+  }, [path, previewFile, renaming, showLogs, showTrash, showUsers, showMoveModal, showDownloadModal, showNewFolderModal, confirmModal.show]);
 
+  const navigateToFolder = (folder: { id: string, name: string }) => {
+    const newPath = [...path, folder];
+    setPath(newPath);
+    window.history.pushState({ path: newPath }, '', `?folder=${folder.id}`);
+    loadFiles(folder.id);
+  };
+  // ──────────────────────────────────────────────────────────────────
 
   const filteredFiles = useMemo(() => {
     const matchesCategory = (f: DriveFile) => {
       if (activeCategory === 'all') return true;
-      if (activeCategory === 'folders') return f.mimeType === 'application/vnd.google-apps.folder';
-      if (activeCategory === 'images') return f.mimeType.startsWith('image/');
-      if (activeCategory === 'docs') return (f.mimeType.includes('document') || f.mimeType.includes('pdf') || f.mimeType.includes('text'));
-      if (activeCategory === 'videos') return f.mimeType.startsWith('video/');
+      if (activeCategory === 'folders') return isFolder(f);
+      if (activeCategory === 'images') return isImage(f);
+      if (activeCategory === 'docs') return isDoc(f);
+      if (activeCategory === 'videos') return isVideo(f);
       return true;
     };
 
-    const sorted = files.filter(matchesCategory).sort((a, b) => {
-      const aFolder = isFolder(a);
-      const bFolder = isFolder(b);
-      if (aFolder && !bFolder) return -1;
-      if (!aFolder && bFolder) return 1;
-      return a.name.localeCompare(b.name);
+    return files.filter(matchesCategory).sort((a, b) => {
+      // 1. Folders first
+      const aIsFolder = isFolder(a);
+      const bIsFolder = isFolder(b);
+      if (aIsFolder && !bIsFolder) return -1;
+      if (!aIsFolder && bIsFolder) return 1;
+
+      // 2. Natural sorting for names (handles numbers like 1, 2, 10 correctly)
+      return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
     });
-    return sorted;
   }, [files, activeCategory]);
+
+  const [refreshingStats, setRefreshingStats] = useState(false);
 
   const addToast = (msg: string, type: 'success' | 'error' = 'success') => {
     const id = Date.now();
@@ -327,19 +332,41 @@ export default function AdminFilesPage() {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   };
 
-  const fetchStats = async () => {
+  const fetchStats = async (cleanup = false) => {
     try {
-      const res = await api.get(`/files/admin-stats?parentId=${currentFolder.id}`);
+      if (cleanup) setRefreshingStats(true);
+      const res = await api.get(`/files/admin-stats?parentId=${currentFolder.id}${cleanup ? '&cleanup=true' : ''}`);
       setStats(res.data);
-    } catch (e) { console.error(e); }
+      if (cleanup) addToast('Statistics cleaned and re-synced', 'success');
+    } catch (e) { 
+      console.error(e); 
+      if (cleanup) addToast('Refresh failed', 'error');
+    } finally {
+      setRefreshingStats(false);
+    }
   };
 
   const cancelUpload = () => {
+    isCancelledBatch.current = true;
     if (uploadXhrRef.current) {
       uploadXhrRef.current.abort();
-      setUploading(false);
-      setUploadProgress(0);
-      addToast('Upload cancelled', 'error');
+    }
+    setUploading(false);
+    addToast('Upload batch cancelled', 'error');
+  };
+
+  const cancelSingleUpload = (index: number) => {
+    setUploadQueue(prev => {
+      const n = [...prev];
+      if (n[index] && n[index].status !== 'done') {
+        n[index] = { ...n[index], status: 'error', error: 'Cancelled by user' };
+      }
+      return n;
+    });
+    // If it's the currently uploading file, abort it
+    const currentlyUploadingIdx = uploadQueue.findIndex(q => q.status === 'uploading');
+    if (currentlyUploadingIdx === index && uploadXhrRef.current) {
+      uploadXhrRef.current.abort();
     }
   };
 
@@ -347,22 +374,16 @@ export default function AdminFilesPage() {
     fetchStats();
   }, [currentFolder.id]);
 
-  // Escape key closes the topmost modal (mirrors back gesture)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return;
-      if (previewFile) { setPreviewFile(null); return; }
-      if (renaming) { setRenaming(null); return; }
-      if (showNewFolderModal) { setShowNewFolderModal(false); return; }
-      if (showDownloadModal) { setShowDownloadModal(false); return; }
-      if (showMoveModal) { setShowMoveModal(false); return; }
-      if (showLogs) { setShowLogs(false); return; }
-      if (showTrash) { setShowTrash(false); return; }
-      if (showUsers) { setShowUsers(false); return; }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [previewFile, renaming, showNewFolderModal, showDownloadModal, showMoveModal, showLogs, showTrash, showUsers]);
+  const handleItemClick = (file: DriveFile) => {
+    if (selected.size > 0) {
+      toggleSelect(file.id);
+    } else if (isFolder(file)) {
+      navigateToFolder({ id: file.id, name: file.name });
+    } else {
+      setPreviewFile(file);
+      window.history.pushState({ modal: 'preview' }, '');
+    }
+  };
 
   const fetchLogs = async () => {
     setLoadingLogs(true);
@@ -536,6 +557,20 @@ export default function AdminFilesPage() {
     finally { setLoadingUsers(false); }
   };
 
+  const fetchDuplicates = async () => {
+    setLoadingDuplicates(true);
+    try {
+      const res = await api.get('/files/admin-duplicates');
+      setDuplicates(res.data);
+      setShowDuplicates(true);
+    } catch (e) { 
+      console.error(e); 
+      addToast('Error fetching duplicates', 'error');
+    } finally { 
+      setLoadingDuplicates(false); 
+    }
+  };
+
   const [longPressTimer, setLongPressTimer] = useState<any>(null);
 
   const handleItemTouchStart = (id: string) => {
@@ -550,17 +585,6 @@ export default function AdminFilesPage() {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       setLongPressTimer(null);
-    }
-  };
-
-  const handleItemClick = (file: DriveFile) => {
-    // If we are in selection mode, click toggles selection
-    if (selected.size > 0) {
-      toggleSelect(file.id);
-    } else {
-      // Normal navigation
-      if (file.mimeType === 'application/vnd.google-apps.folder') navigate(file);
-      else setPreviewFile(file);
     }
   };
 
@@ -603,10 +627,15 @@ export default function AdminFilesPage() {
       uploadReq.onload = () => {
         uploadXhrRef.current = null;
         if (uploadReq.status >= 200 && uploadReq.status < 300) {
-          resolve(JSON.parse(uploadReq.responseText));
+          try {
+            const res = JSON.parse(uploadReq.responseText);
+            if (res.id) resolve(res);
+            else reject(new Error('Google did not return a File ID'));
+          } catch (e) {
+            reject(new Error('Invalid response from Google'));
+          }
         } else {
-          console.error('Upload failed with status:', uploadReq.status, uploadReq.responseText);
-          reject(new Error(`Upload failed: ${uploadReq.statusText || 'Unknown Error'}`));
+          reject(new Error(`Upload failed: ${uploadReq.status} ${uploadReq.statusText}`));
         }
       };
       uploadReq.onerror = () => {
@@ -635,7 +664,6 @@ export default function AdminFilesPage() {
     if (!filesList || filesList.length === 0) return;
     const files = Array.from(filesList);
 
-    // Build initial queue
     const queue = files.map(f => ({
       name: f.webkitRelativePath || f.name,
       size: f.size,
@@ -646,17 +674,13 @@ export default function AdminFilesPage() {
     setShowUploadModal(true);
     setUploading(true);
     setShowUploadMenu(false);
+    isCancelledBatch.current = false;
 
-    // ── Smart folder cache ─────────────────────────────────────────────
-    // Key: "parentId::folderName" → existing or newly-created drive folder id
-    // This prevents creating duplicate folders even across multiple upload sessions
     const folderCache: Record<string, string> = {};
-
     const getOrCreateFolder = async (name: string, parentId: string): Promise<string> => {
       const cacheKey = `${parentId}::${name}`;
       if (folderCache[cacheKey]) return folderCache[cacheKey];
 
-      // Check if a folder with this name already exists under parentId
       try {
         const res = await api.get(`/files?parentId=${parentId}`);
         const existing = (res.data as any[]).find(
@@ -666,34 +690,35 @@ export default function AdminFilesPage() {
           folderCache[cacheKey] = existing.id;
           return existing.id;
         }
-      } catch { /* fall through to create */ }
+      } catch { }
 
-      // Doesn't exist → create it
       const created = await api.post('/files/folder', { name, parentId });
       folderCache[cacheKey] = created.data.id;
       return created.data.id;
     };
-    // ──────────────────────────────────────────────────────────────────
-
-    let doneCount = 0;
 
     for (let i = 0; i < files.length; i++) {
+      if (isCancelledBatch.current) break;
+      
       const file = files[i];
+      // Check if this specific item was already cancelled via UI
+      const currentStatus = (uploadQueue[i] || {}).status;
+      if (currentStatus === 'error') continue; // Already marked as cancelled
+
       const relativePath = (file as any).webkitRelativePath || '';
       const pathParts = relativePath ? relativePath.split('/').slice(0, -1) : [];
 
-      setUploadQueue(prev => prev.map((q, idx) =>
-        idx === i ? { ...q, status: 'uploading' } : q
-      ));
+      setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'uploading' } : q));
 
       try {
-        // Resolve the correct parent folder, creating missing folders along the way
         let parentId = currentFolder.id;
         for (const part of pathParts) {
+          if (isCancelledBatch.current) throw new Error('Cancelled');
           parentId = await getOrCreateFolder(part, parentId);
         }
 
-        // Upload file
+        if (isCancelledBatch.current) throw new Error('Cancelled');
+
         const sessionRes = await api.post('/files/upload-session', {
           name: file.name,
           mimeType: file.type || 'application/octet-stream',
@@ -709,26 +734,27 @@ export default function AdminFilesPage() {
           xhr.upload.onprogress = (ev) => {
             if (ev.lengthComputable) {
               const pct = Math.round((ev.loaded * 100) / ev.total);
-              setUploadQueue(prev => prev.map((q, idx) =>
-                idx === i ? { ...q, progress: pct } : q
-              ));
+              setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, progress: pct } : q));
             }
           };
           xhr.onload = () => {
             uploadXhrRef.current = null;
             if (xhr.status >= 200 && xhr.status < 300) {
-              try {
-                const res = JSON.parse(xhr.responseText);
-                resolve(res.id || '');
-              } catch (e) {
-                resolve('');
+              try { 
+                const res = JSON.parse(xhr.responseText); 
+                if (res.id) resolve(res.id);
+                else reject(new Error('Google did not return a File ID'));
+              } catch (e) { 
+                reject(new Error('Invalid response from Google'));
               }
-            } else reject(new Error(`HTTP ${xhr.status}`));
+            } else reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
           };
           xhr.onerror = () => { uploadXhrRef.current = null; reject(new Error('Network error')); };
           xhr.onabort = () => { uploadXhrRef.current = null; reject(new Error('Cancelled')); };
           xhr.send(file);
         });
+
+        if (isCancelledBatch.current) throw new Error('Cancelled');
 
         await api.post('/files/upload-complete', {
           fileId,
@@ -738,83 +764,21 @@ export default function AdminFilesPage() {
           parentId
         });
 
-        doneCount++;
-        setUploadQueue(prev => prev.map((q, idx) =>
-          idx === i ? { ...q, status: 'done', progress: 100 } : q
-        ));
+        setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'done', progress: 100 } : q));
       } catch (err: any) {
-        setUploadQueue(prev => prev.map((q, idx) =>
-          idx === i ? { ...q, status: 'error', error: err.message } : q
-        ));
+        if (err.message === 'Cancelled' || isCancelledBatch.current) {
+          setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'error', error: 'Cancelled' } : q));
+        } else {
+          setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'error', error: err.message } : q));
+        }
       }
     }
 
     await loadFiles(currentFolder.id);
     fetchStats();
     setUploading(false);
-    targetInput.value = ''; // Reset input at the very end
-
-    // Auto close modal after 2 seconds if everything finished
-    setTimeout(() => {
-      setShowUploadModal(false);
-      setUploadQueue([]);
-    }, 2000);
-  };
-
-
-
-  const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const filesList = e.target.files;
-    if (!filesList || filesList.length === 0) return;
-
-    setUploading(true);
-    setUploadProgress(0);
-    const totalFiles = filesList.length;
-    let uploadedCount = 0;
-
-    // Map to keep track of created folder IDs to avoid duplicates
-    const folderCache: Record<string, string> = { '': currentFolder.id };
-
-    try {
-      for (let i = 0; i < filesList.length; i++) {
-        const file = filesList[i];
-        const relativePath = (file as any).webkitRelativePath || '';
-        const pathParts = relativePath.split('/');
-        pathParts.pop(); // Remove filename
-
-        // Ensure all folders in the path exist
-        let parentId = currentFolder.id;
-        let currentPath = '';
-
-        for (const part of pathParts) {
-          const nextPath = currentPath ? `${currentPath}/${part}` : part;
-          if (!folderCache[nextPath]) {
-            // Create folder
-            const res = await api.post('/files/folder', { name: part, parentId });
-            folderCache[nextPath] = res.data.id;
-          }
-          parentId = folderCache[nextPath];
-          currentPath = nextPath;
-        }
-
-        // Upload file to the resolved parentId
-        const form = new FormData();
-        form.append('file', file);
-        form.append('parentId', parentId);
-        await api.post('/files/upload', form, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        uploadedCount++;
-        setUploadProgress(Math.round((uploadedCount * 100) / totalFiles));
-      }
-      await loadFiles(currentFolder.id);
-    } catch (e) {
-      console.error('Folder upload failed:', e);
-    } finally {
-      setUploading(false);
-      setShowUploadMenu(false);
-    }
+    targetInput.value = ''; 
+    setTimeout(() => { setShowUploadModal(false); setUploadQueue([]); }, 2000);
   };
 
   const createNewFolder = async () => {
@@ -876,6 +840,56 @@ export default function AdminFilesPage() {
     finally { setDeletingIds(prev => prev.filter(id => !ids.includes(id))); }
   };
 
+  const handleBulkDownload = async (customName?: string) => {
+    if (selected.size === 0) return;
+    
+    // If only one item is selected and no custom name yet, use the item's name directly
+    if (selected.size === 1 && !customName) {
+      const item = filteredFiles.find(f => selected.has(f.id));
+      if (item) {
+        handleBulkDownload(item.name);
+        return;
+      }
+    }
+
+    // If no name provided for multiple items, show our beautiful modal
+    if (!customName) {
+      setZipFileName(`DriveFlow_Export_${new Date().toLocaleDateString().replace(/\//g, '-')}`);
+      setShowZipModal(true);
+      return;
+    }
+
+    const zipName = customName;
+    setShowZipModal(false);
+    addToast('Preparing multi-item ZIP...');
+    setDownloadProgress(-1);
+    try {
+      const res = await api.post('/files/bulk-download', { 
+        fileIds: Array.from(selected) 
+      }, {
+        responseType: 'blob',
+        onDownloadProgress: (progressEvent: any) => {
+          if (progressEvent.total) {
+            setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+          }
+        }
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${zipName}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode?.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      setSelected(new Set());
+    } catch (e) {
+      addToast('Bulk download failed', 'error');
+    } finally {
+      setDownloadProgress(null);
+    }
+  };
+
   const handleDownload = async (file: DriveFile, format?: string) => {
     if (isConvertible(file) && !format && !isFolder(file)) {
       setDownloadingFile(file);
@@ -895,10 +909,9 @@ export default function AdminFilesPage() {
       return;
     }
 
-    // If it's a folder, use the bulk-download endpoint to zip it
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
-      setDownloadProgress(-1); // Show overlay immediately
+      setDownloadProgress(-1); 
       try {
         const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, {
           responseType: 'blob',
@@ -906,7 +919,7 @@ export default function AdminFilesPage() {
             if (progressEvent.total && progressEvent.total > 0) {
               setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
             } else {
-              setDownloadProgress(-1); // indeterminate
+              setDownloadProgress(-1);
             }
           }
         });
@@ -927,7 +940,6 @@ export default function AdminFilesPage() {
       return;
     }
 
-    // Regular file — show progress then direct download
     setDownloadProgress(-1);
     try {
       addToast('Preparing direct download...');
@@ -953,21 +965,11 @@ export default function AdminFilesPage() {
     setShowDownloadModal(false);
   };
 
-  const navigate = (folder: DriveFile) => {
-    setSearchQuery('');
-    const newPath = [...path, { id: folder.id, name: folder.name }];
-    setPath(newPath);
-    const url = new URL(window.location.href);
-    url.searchParams.set('folder', folder.id);
-    window.history.pushState({ path: newPath }, '', url);
-  };
-
   const breadcrumbNav = (idx: number) => {
     const newPath = path.slice(0, idx + 1);
     setPath(newPath);
-    const url = new URL(window.location.href);
-    url.searchParams.set('folder', newPath[newPath.length - 1].id);
-    window.history.pushState({ path: newPath }, '', url);
+    loadFiles(newPath[newPath.length - 1].id);
+    window.history.pushState({ path: newPath }, '', `?folder=${newPath[newPath.length - 1].id}`);
   };
 
   const toggleSelect = (id: string) => {
@@ -981,12 +983,6 @@ export default function AdminFilesPage() {
   return (
     <motion.div
       className="space-y-4"
-      onPanEnd={(_, info) => {
-        // Swipe from left to right (offset x > 100) and path length > 1
-        if (info.offset.x > 100 && Math.abs(info.offset.y) < 50 && path.length > 1) {
-          breadcrumbNav(path.length - 2);
-        }
-      }}
       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
       onDrop={async (e) => {
         e.preventDefault();
@@ -1004,9 +1000,7 @@ export default function AdminFilesPage() {
         finally { setUploading(false); }
       }}
     >
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        {/* Left: back button + title + breadcrumb */}
         <div className="flex items-start gap-3 min-w-0">
           {path.length > 1 && (
             <button onClick={() => breadcrumbNav(path.length - 2)}
@@ -1017,36 +1011,33 @@ export default function AdminFilesPage() {
           <div className="min-w-0">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               File Manager
+              <button onClick={() => fetchStats(true)} disabled={refreshingStats}
+                className={`p-1.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all ${refreshingStats ? 'opacity-50' : ''}`}
+                title="Deep Refresh Stats">
+                <RefreshCw className={`w-3 h-3 text-purple-400 ${refreshingStats ? 'animate-spin' : ''}`} />
+              </button>
               {stats && (
                 <span className="text-[10px] font-normal bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-400">
                   {stats.totalFiles} Files • {stats.totalFolders} Folders
                 </span>
               )}
             </h2>
-            {/* Breadcrumb */}
             <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[70vw] sm:max-w-sm">
-              {searchQuery ? (
-                <span className="text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
-                  <Search className="w-4 h-4" /> Search results for "{searchQuery}"
+              {path.map((p, i) => (
+                <span key={i} className="flex items-center gap-1 shrink-0">
+                  {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
+                  <button
+                    onClick={() => breadcrumbNav(i)}
+                    className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
+                  </button>
                 </span>
-              ) : (
-                path.map((p, i) => (
-                  <span key={i} className="flex items-center gap-1 shrink-0">
-                    {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
-                    <button
-                      onClick={() => breadcrumbNav(i)}
-                      className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
-                    >
-                      {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
-                    </button>
-                  </span>
-                ))
-              )}
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Right: storage bar */}
         {stats && (
           <div className="w-full sm:w-56 bg-white/5 p-3 rounded-2xl border border-white/10 shrink-0 self-start sm:self-auto">
             <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium uppercase tracking-wider">
@@ -1064,8 +1055,6 @@ export default function AdminFilesPage() {
         )}
       </div>
 
-
-      {/* Search & Categories */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-2">
         <div className="relative w-full md:max-w-md group">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-purple-400 transition-colors">
@@ -1080,330 +1069,157 @@ export default function AdminFilesPage() {
           />
         </div>
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto pb-1">
-          {[
-            { id: 'all', label: 'All', icon: <Home className="w-3 h-3" /> },
-            { id: 'folders', label: 'Folders', icon: <Folder className="w-3 h-3 text-yellow-400" /> },
-            { id: 'images', label: 'Images', icon: <Image className="w-3 h-3" /> },
-            { id: 'docs', label: 'Docs', icon: <FileText className="w-3 h-3" /> },
-            { id: 'videos', label: 'Videos', icon: <Film className="w-3 h-3" /> },
-          ].map(cat => (
-            <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all border
-                ${activeCategory === cat.id
-                  ? 'bg-purple-600 text-white border-purple-500'
-                  : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:border-white/20'}`}>
-              {cat.icon} {cat.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-2">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto pb-2">
-          {selected.size > 0 && (
-            <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/10 shrink-0">
-              <span className="text-sm text-gray-400 px-3 font-medium whitespace-nowrap">{selected.size} selected</span>
-              <button onClick={() => { setMovingIds(Array.from(selected)); setShowMoveModal(true); }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm whitespace-nowrap">
-                <Move className="w-4 h-4" /> Move
+          {selected.size > 0 ? (
+            <div className="flex items-center gap-2 bg-purple-500/10 p-1 rounded-2xl border border-purple-500/20 shrink-0">
+              <span className="text-xs text-purple-400 px-3 font-bold whitespace-nowrap">{selected.size} selected</span>
+              <button onClick={handleBulkDownload}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap shadow-lg shadow-blue-600/20">
+                <Download className="w-3.5 h-3.5" /> Download
               </button>
-              <button onClick={async () => {
-                const token = localStorage.getItem('token');
-                const res = await api.post('/files/bulk-download', { fileIds: Array.from(selected) }, { responseType: 'blob' });
-                const url = window.URL.createObjectURL(new Blob([res.data]));
-                const link = document.createElement('a');
-                link.href = url;
-                link.setAttribute('download', 'bulk-download.zip');
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-              }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm whitespace-nowrap">
-                <Download className="w-4 h-4" /> Download
+              <button onClick={() => { setMovingIds(Array.from(selected)); setShowMoveModal(true); }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap shadow-lg shadow-purple-600/20">
+                <Move className="w-3.5 h-3.5" /> Move
               </button>
               <button onClick={() => handleDelete(Array.from(selected))}
-                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors text-sm whitespace-nowrap">
-                <Trash2 className="w-4 h-4" /> Delete
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-xl transition-all text-xs font-bold whitespace-nowrap border border-red-500/10">
+                <Trash2 className="w-3.5 h-3.5" /> Delete
               </button>
               <button onClick={() => setSelected(new Set())}
-                className="p-2 text-gray-400 hover:text-white transition-colors" title="Clear selection">
+                className="p-2 text-gray-500 hover:text-white transition-colors" title="Clear selection">
                 <X className="w-4 h-4" />
               </button>
             </div>
+          ) : (
+            [
+              { id: 'all', label: 'All', icon: <Home className="w-3 h-3" /> },
+              { id: 'folders', label: 'Folders', icon: <Folder className="w-3 h-3 text-yellow-400" /> },
+              { id: 'images', label: 'Images', icon: <Image className="w-3 h-3" /> },
+              { id: 'docs', label: 'Docs', icon: <FileText className="w-3 h-3" /> },
+              { id: 'videos', label: 'Videos', icon: <Film className="w-3 h-3" /> },
+            ].map(cat => (
+              <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all border
+                  ${activeCategory === cat.id
+                    ? 'bg-purple-600 text-white border-purple-500'
+                    : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:border-white/20'}`}>
+                {cat.icon} {cat.label}
+              </button>
+            ))
           )}
-
-          {/* View Toggle */}
-          <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
-            <button onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-              <MoreVertical className="w-4 h-4 rotate-90" />
-            </button>
-            <button onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-              <Square className="w-4 h-4" />
-            </button>
-          </div>
-
-          <button onClick={fetchLogs}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
-            <MoreVertical className="w-4 h-4" /> Activity
-          </button>
-
-          <button onClick={fetchTrash}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
-            <Trash2 className="w-4 h-4" /> Trash
-          </button>
-
-          <button onClick={fetchUsers}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
-            <Users className="w-4 h-4" /> Users
-          </button>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-          {/* New */}
-          <div className="relative">
-            <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors text-sm font-medium">
-              <FilePlus className="w-4 h-4" /> New
-            </button>
-            <AnimatePresence>
-              {showNewMenu && (
-                <>
-                  <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowNewMenu(false)} />
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                    className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
-                    <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
-                    </button>
-                    <button onClick={() => { handleCreateDoc(); setShowNewMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <FileText className="w-4 h-4 text-blue-300" /> New Document
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+      <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mb-2">
+        <div className="flex flex-wrap items-center gap-3 shrink-0 ml-auto w-full sm:w-auto justify-end">
+          {/* Admin Tools Group */}
+          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto no-scrollbar max-w-full shrink-0 py-1">
+            {/* View Toggle */}
+            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
+              <button onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
+                <MoreVertical className="w-4 h-4 rotate-90" />
+              </button>
+              <button onClick={() => setViewMode('grid')}
+                className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
+                <Square className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="h-6 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+            {/* Activity / Trash / Users */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={fetchLogs}
+                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
+                title="Activity">
+                <Clock className="w-4 h-4 text-purple-400" /> <span className="whitespace-nowrap">Activity</span>
+              </button>
+
+              <button onClick={fetchTrash}
+                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
+                title="Trash">
+                <Trash2 className="w-4 h-4 text-red-400" /> <span className="whitespace-nowrap">Trash</span>
+              </button>
+
+              <button onClick={fetchUsers}
+                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
+                title="Users">
+                <Users className="w-4 h-4 text-emerald-400" /> <span className="whitespace-nowrap">Users</span>
+              </button>
+
+              <button onClick={fetchDuplicates}
+                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
+                title="Duplicates">
+                <Files className="w-4 h-4 text-blue-400" /> <span className="whitespace-nowrap">Duplicates</span>
+              </button>
+            </div>
           </div>
 
-          {/* Upload */}
-          <div className="relative">
-            <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-500 transition-all active:scale-95">
-              <Upload className="w-4 h-4" /> Upload
-            </button>
-            <AnimatePresence>
-              {showUploadMenu && (
-                <>
-                  <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowUploadMenu(false)} />
-                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                    className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[190px]">
-                    {/* Multi-file pick */}
-                    <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <Files className="w-4 h-4 text-purple-400" /> Upload Files
-                      <span className="ml-auto text-[10px] text-gray-500 bg-white/5 px-1.5 rounded">multi</span>
-                    </button>
-                    {/* Folder pick */}
-                    <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
-                      className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                      <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
-                      <span className="ml-auto text-[10px] text-gray-500 bg-white/5 px-1.5 rounded">dir</span>
-                    </button>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-            {/* Multi-file input */}
-            <input ref={fileInput} type="file" multiple className="hidden" onChange={handleUpload} />
-            {/* Folder input (uses handleUpload too — webkitRelativePath will be set) */}
-            <input
-              ref={folderInput}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleUpload}
-              {...({ webkitdirectory: '', directory: '' } as any)}
-            />
+          {/* New / Upload Group (Separated for Mobile Wrap) */}
+          <div className="flex items-center gap-2 shrink-0 py-1">
+            <div className="relative">
+              <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
+                className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
+                <Plus className="w-4 h-4 text-purple-400" /> New
+              </button>
+              <AnimatePresence>
+                {showNewMenu && (
+                  <>
+                    <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowNewMenu(false)} />
+                    <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                      className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[180px] shadow-2xl">
+                      <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
+                        <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
+                      </button>
+                      <button onClick={() => { handleCreateDoc(); setShowNewMenu(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
+                        <FileText className="w-4 h-4 text-blue-400" /> New Document
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Upload Menu */}
+            <div className="relative">
+              <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-bold hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-95 shadow-lg shadow-purple-600/25 border border-white/10">
+                <Upload className="w-4 h-4" /> Upload
+              </button>
+              <AnimatePresence>
+                {showUploadMenu && (
+                  <>
+                    <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowUploadMenu(false)} />
+                    <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                      className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[200px] shadow-2xl">
+                      <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
+                        <Files className="w-4 h-4 text-purple-400" /> Upload Files
+                      </button>
+                      <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
+                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
+                        <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
+                      </button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+              <input ref={fileInput} type="file" multiple className="hidden" onChange={handleUpload} />
+              <input ref={folderInput} type="file" multiple className="hidden" onChange={handleUpload} {...({ webkitdirectory: '', directory: '' } as any)} />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Batch Upload Queue Modal */}
-      <AnimatePresence>
-        {showUploadModal && !isUploadMinimized && (
-          <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
-            onClick={() => { if (!uploading) { setShowUploadModal(false); setUploadQueue([]); } }}>
-            <motion.div
-              initial={{ y: 60, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0, scale: 0.95 }}
-              onClick={e => e.stopPropagation()}
-              className="glass-card w-full sm:max-w-lg max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
-            >
-              {/* Header */}
-              <div className="px-4 pt-4 pb-3 border-b border-white/10 bg-white/5 flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                  <div>
-                    <h3 className="text-base font-bold text-white">Uploading Files</h3>
-                    <p className="text-[11px] text-gray-400">
-                      {uploadQueue.filter(q => q.status === 'done').length} / {uploadQueue.length} completed
-                      {uploading && ` · ${uploadProgress}% overall`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {uploading && (
-                    <>
-                      <button onClick={() => setIsUploadMinimized(true)}
-                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all" title="Minimize">
-                        <Minus className="w-5 h-5" />
-                      </button>
-                      <button onClick={cancelUpload}
-                        className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-all">
-                        Cancel
-                      </button>
-                    </>
-                  )}
-                  {!uploading && (
-                    <button onClick={() => { setShowUploadModal(false); setUploadQueue([]); }}
-                      className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all">
-                      <X className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Overall progress bar */}
-              <div className="h-1 bg-white/5 shrink-0">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
-                  animate={{ width: `${uploadProgress}%` }}
-                  transition={{ duration: 0.3 }}
-                />
-              </div>
-
-              {/* File list */}
-              <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
-                {groupedQueue.map((item, i) => (
-                  <div key={i} className={`p-3 rounded-2xl border transition-all
-                    ${item.status === 'done' ? 'bg-emerald-500/5 border-emerald-500/20'
-                      : item.status === 'error' ? 'bg-red-500/5 border-red-500/20'
-                        : item.status === 'uploading' ? 'bg-purple-500/10 border-purple-500/30'
-                          : 'bg-white/3 border-white/5'}`}>
-                    <div className="flex items-center gap-2.5">
-                      {/* Status icon */}
-                      <div className="shrink-0">
-                        {item.status === 'done' && <Check className="w-4 h-4 text-emerald-400" />}
-                        {item.status === 'error' && <X className="w-4 h-4 text-red-400" />}
-                        {item.status === 'uploading' && (
-                          <div className="w-4 h-4 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                        )}
-                        {item.status === 'pending' && (
-                          <div className="w-4 h-4 rounded-full border border-white/20" />
-                        )}
-                      </div>
-                      {/* Name + info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          {item.isGroup ? <Folder className="w-3.5 h-3.5 text-yellow-500" /> : <FileIcon file={{ mimeType: 'file', name: item.name } as any} />}
-                          <p className="text-xs font-medium text-white truncate">{item.name}</p>
-                        </div>
-                        {item.isGroup ? (
-                          <p className="text-[10px] text-gray-500 truncate">Folder · {item.doneCount} / {item.count} files</p>
-                        ) : (
-                          <p className="text-[10px] text-gray-500 truncate">{fmt(String(item.size))}</p>
-                        )}
-                        {item.status === 'error' && (
-                          <p className="text-[10px] text-red-400">{(item as any).error}</p>
-                        )}
-                      </div>
-                      {/* Progress */}
-                      <div className="shrink-0 text-right">
-                        {item.status === 'uploading' || item.status === 'done' ? (
-                          <span className={`text-[10px] font-bold ${item.status === 'done' ? 'text-emerald-400' : 'text-purple-400'}`}>
-                            {item.progress}%
-                          </span>
-                        ) : (
-                          <span className="text-[10px] text-gray-600">
-                            {item.isGroup ? fmt(String(item.size)) : ''}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {/* Progress bar */}
-                    {(item.status === 'uploading' || (item.isGroup && item.progress > 0 && item.progress < 100)) && (
-                      <div className="mt-2 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-purple-500"
-                          initial={{ width: 0 }}
-                          animate={{ width: `${item.progress}%` }}
-                          transition={{ duration: 0.3 }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Floating Upload Indicator (Minimized) */}
-      <AnimatePresence>
-        {showUploadModal && isUploadMinimized && (
-          <motion.div
-            initial={{ y: 100, opacity: 0, scale: 0.9 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 100, opacity: 0, scale: 0.9 }}
-            whileHover={{ scale: 1.02 }}
-            className="fixed bottom-6 right-6 z-[130] glass-card p-4 rounded-3xl flex items-center gap-4 shadow-2xl border border-purple-500/30 min-w-[280px] max-w-[320px]"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center shrink-0 border border-purple-500/20">
-              <Upload className="w-6 h-6 text-purple-400 animate-bounce" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-sm font-bold text-white">Uploading...</p>
-                <span className="text-xs font-black text-purple-400">{uploadProgress}%</span>
-              </div>
-              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
-                  animate={{ width: `${uploadProgress}%` }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
-              <p className="text-[10px] text-gray-500 mt-2 truncate">
-                {uploadQueue.filter(q => q.status === 'done').length} / {uploadQueue.length} files done
-              </p>
-            </div>
-            <button
-              onClick={() => setIsUploadMinimized(false)}
-              className="p-3 bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 rounded-2xl transition-all active:scale-90"
-              title="Maximize"
-            >
-              <Maximize2 className="w-5 h-5" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* File Grid/List View */}
-      <div className="glass-card rounded-2xl overflow-hidden min-h-[400px]">
-        {loading ? (
-          <div className={`p-6 ${viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4' : 'space-y-3'}`}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className={`bg-white/5 animate-pulse rounded-xl ${viewMode === 'grid' ? 'h-32' : 'h-12'}`} />
-            ))}
-          </div>
-        ) : filteredFiles.length === 0 ? (
-          <div className="py-20 text-center text-gray-500 flex flex-col items-center gap-3">
-            <Folder className="w-12 h-12 opacity-20" />
-            <p>{searchQuery ? 'No matches found' : 'This folder is empty'}</p>
-          </div>
-        ) : viewMode === 'list' ? (
+      {/* File List */}
+      <motion.div className="glass-card rounded-2xl overflow-hidden min-h-[400px]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        key={currentFolder.id}
+      >
+        {viewMode === 'list' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
@@ -1422,7 +1238,7 @@ export default function AdminFilesPage() {
               </thead>
               <tbody>
                 {filteredFiles.map((file, i) => (
-                  <motion.tr key={file.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
+                  <motion.tr key={file.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.01 }}
                     className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${selected.has(file.id) ? 'bg-purple-500/10' : ''}`}>
                     <td className="px-4 py-3 text-center">
                       <button onClick={() => toggleSelect(file.id)}>
@@ -1432,9 +1248,6 @@ export default function AdminFilesPage() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => handleItemClick(file)}
-                        onTouchStart={() => handleItemTouchStart(file.id)}
-                        onTouchEnd={handleItemTouchEnd}
-                        onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
                         className="flex items-center gap-3 text-white hover:text-purple-300 transition-colors w-full text-left">
                         <FileIcon file={file} />
                         <span className="text-sm font-medium truncate max-w-[150px] sm:max-w-[300px]">{file.name}</span>
@@ -1444,13 +1257,13 @@ export default function AdminFilesPage() {
                     <td className="px-4 py-3 text-gray-400 text-sm whitespace-nowrap">{new Date(file.modifiedTime).toLocaleDateString()}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1 transition-opacity">
-                        <button onClick={(e) => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} title="Rename"
-                          className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
-                          <Pencil className="w-4 h-4" />
-                        </button>
                         <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }} title="Download"
                           className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                           <Download className="w-4 h-4" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} title="Rename"
+                          className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
+                          <Pencil className="w-4 h-4" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }} title="Move"
                           className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
@@ -1530,6 +1343,7 @@ export default function AdminFilesPage() {
                 {/* Grid Hover Actions */}
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 rounded-3xl flex items-center justify-center gap-2 transition-all">
                   <button onClick={e => { e.stopPropagation(); handleDownload(file); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"><Download className="w-4 h-4" /></button>
+                  <button onClick={e => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"><Pencil className="w-4 h-4" /></button>
                   <button onClick={e => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white"><Move className="w-4 h-4" /></button>
                   <button onClick={e => { e.stopPropagation(); handleDelete([file.id]); }} className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400"><Trash2 className="w-4 h-4" /></button>
                 </div>
@@ -1537,7 +1351,7 @@ export default function AdminFilesPage() {
             ))}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Rename Modal */}
       <AnimatePresence>
@@ -1962,6 +1776,84 @@ export default function AdminFilesPage() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {showDuplicates && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            onClick={() => setShowDuplicates(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass-card max-w-2xl w-full max-h-[85vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl">
+              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
+                    <Files className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white tracking-tight">Duplicate Files</h3>
+                    <p className="text-xs text-gray-400">Identified by name and exact file size</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowDuplicates(false)} className="text-gray-400 hover:text-white p-2 hover:bg-white/5 rounded-full transition-all">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar bg-black/20">
+                {loadingDuplicates ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-24 bg-white/5 rounded-2xl animate-pulse" />
+                  ))
+                ) : duplicates.length === 0 ? (
+                  <div className="py-20 text-center flex flex-col items-center gap-4">
+                    <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
+                      <Check className="w-8 h-8 text-emerald-400" />
+                    </div>
+                    <p className="text-gray-400 italic">No duplicate files found. Your storage is clean!</p>
+                  </div>
+                ) : (
+                  duplicates.map((group, groupIdx) => (
+                    <div key={groupIdx} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden shadow-lg">
+                      <div className="px-4 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <FileIcon file={{ mimeType: group.type } as any} />
+                          <div className="min-w-0">
+                            <p className="text-sm font-bold text-white truncate">{group.name}</p>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">{fmt(group.size)} per file • {group.count} copies</p>
+                          </div>
+                        </div>
+                        <div className="bg-blue-500/10 px-2 py-1 rounded-lg border border-blue-500/20">
+                          <span className="text-[10px] text-blue-400 font-bold uppercase whitespace-nowrap">Waste: {fmt((group.size * (group.count - 1)).toString())}</span>
+                        </div>
+                      </div>
+                      <div className="divide-y divide-white/5">
+                        {group.items.map((item: any, itemIdx: number) => (
+                          <div key={itemIdx} className="px-4 py-3 flex items-center justify-between hover:bg-white/[0.02] transition-colors">
+                            <div className="min-w-0">
+                              <p className="text-[11px] text-gray-400 truncate">Uploaded: {new Date(item.createdAt).toLocaleString()}</p>
+                              <p className="text-[9px] text-gray-600 font-mono mt-0.5 truncate uppercase">ID: {item.fileId}</p>
+                            </div>
+                            <button onClick={() => handleDelete([item.fileId])}
+                              className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90"
+                              title="Delete this copy">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {duplicates.length > 0 && (
+                <div className="p-4 bg-white/5 border-t border-white/10 text-center">
+                  <p className="text-[10px] text-gray-500 italic font-medium uppercase tracking-widest">Groups are sorted by waste potential</p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showDownloadModal && downloadingFile && (
@@ -2013,6 +1905,120 @@ export default function AdminFilesPage() {
           </div>
         )}
       </AnimatePresence>
+      {/* Upload Progress Modal */}
+      <AnimatePresence>
+        {showUploadModal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className={`glass-card w-full max-w-md overflow-hidden flex flex-col transition-all duration-500 shadow-2xl border border-white/10 ${isUploadMinimized ? 'h-16' : 'max-h-[80vh]'}`}>
+              
+              {/* Header */}
+              <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                      <Upload className={`w-4 h-4 text-purple-400 ${uploading ? 'animate-bounce' : ''}`} />
+                    </div>
+                    {uploading && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full border-2 border-[#0a0a0c] animate-pulse" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white leading-tight">
+                      {uploading ? 'Uploading Files...' : 'Upload Complete'}
+                    </h3>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest font-bold">
+                      {uploadQueue.filter(q => q.status === 'done').length} / {uploadQueue.length} Done
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button onClick={() => setIsUploadMinimized(!isUploadMinimized)}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg transition-all">
+                    {isUploadMinimized ? <Maximize2 className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                  </button>
+                  {uploading && (
+                    <button onClick={cancelUpload}
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                      title="Cancel All">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                  {!uploading && (
+                    <button onClick={() => { setShowUploadModal(false); setUploadQueue([]); }}
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Overall Progress Bar (Sticky) */}
+              <div className="px-4 py-3 bg-black/20">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-purple-400 uppercase tracking-tighter">Overall Progress</span>
+                  <span className="text-xs font-black text-white">{uploadProgress}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                  <motion.div 
+                    className="h-full bg-gradient-to-r from-purple-600 via-fuchsia-500 to-pink-500"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${uploadProgress}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+              </div>
+
+              {/* Scrollable File List */}
+              {!isUploadMinimized && (
+                <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-black/40 no-scrollbar">
+                  {uploadQueue.map((item, idx) => (
+                    <div key={idx} className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center gap-3 group hover:bg-white/10 transition-all">
+                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
+                        <FileIcon file={{ mimeType: '' } as any} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="text-[11px] text-white font-medium truncate">{item.name}</p>
+                          <span className={`text-[9px] font-bold uppercase ${
+                            item.status === 'done' ? 'text-emerald-400' :
+                            item.status === 'error' ? 'text-red-400' :
+                            'text-purple-400'
+                          }`}>
+                            {item.status === 'done' ? 'Success' : 
+                             item.status === 'error' ? (item.error === 'Cancelled' ? 'Cancelled' : 'Failed') : 
+                             `${item.progress}%`}
+                          </span>
+                        </div>
+                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                          <motion.div 
+                            className={`h-full ${item.status === 'error' ? 'bg-red-500' : 'bg-purple-500'}`}
+                            animate={{ width: `${item.progress}%` }}
+                          />
+                        </div>
+                      </div>
+                      {(item.status === 'uploading' || item.status === 'pending') && (
+                        <button onClick={() => cancelSingleUpload(idx)}
+                          className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Action Bar (Only if Error) */}
+              {!isUploadMinimized && uploadQueue.some(q => q.status === 'error') && (
+                <div className="p-3 bg-red-500/10 border-t border-red-500/20">
+                  <p className="text-[10px] text-red-400 text-center font-medium">Some files failed to upload. Check your connection.</p>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Confirmation Modal */}
       <AnimatePresence>
         {confirmModal.show && (
@@ -2153,7 +2159,74 @@ export default function AdminFilesPage() {
           </div>
         )}
       </AnimatePresence>
+
+
+      {/* Zip Name Modal */}
+      <AnimatePresence>
+        {showZipModal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+            onClick={() => setShowZipModal(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass-card max-w-sm w-full p-6 rounded-[32px] shadow-2xl border border-white/10 relative overflow-hidden">
+              
+              {/* Decorative background element */}
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+              
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-500/10 flex items-center justify-center mb-6 border border-white/10 mx-auto">
+                  <Archive className="w-7 h-7 text-purple-400" />
+                </div>
+                
+                <h3 className="text-xl font-bold text-white text-center mb-2 tracking-tight">Name your ZIP file</h3>
+                <p className="text-xs text-gray-500 text-center mb-8 px-4">Enter a name for your compressed archive of {selected.size} items</p>
+
+                <div className="space-y-4">
+                  <div className="relative group">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={zipFileName}
+                      onChange={(e) => setZipFileName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleBulkDownload(zipFileName)}
+                      placeholder="Enter ZIP name..."
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all text-sm font-medium"
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-600 uppercase group-focus-within:text-purple-500 transition-colors">.zip</div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button onClick={() => setShowZipModal(false)}
+                      className="flex-1 py-3.5 rounded-2xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-xs font-bold uppercase tracking-widest">
+                      Cancel
+                    </button>
+                    <button onClick={() => handleBulkDownload(zipFileName)}
+                      className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/25 hover:shadow-purple-600/40 active:scale-95 transition-all text-xs font-bold uppercase tracking-widest">
+                      Download
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
+  );
+}
+
+export default function AdminFilesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-[#0a0a0c]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+          <p className="text-gray-400 text-sm animate-pulse">Initializing DriveFlow...</p>
+        </div>
+      </div>
+    }>
+      <AdminFilesContent />
+    </Suspense>
   );
 }
 
