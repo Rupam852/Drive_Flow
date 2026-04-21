@@ -1445,29 +1445,29 @@ export default function AdminFilesPage() {
 
               {/* Top Bar */}
               <div className="p-4 sm:p-6 flex items-center justify-between bg-white/5 border-b border-white/5">
-                <div className="flex items-center gap-4 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
                   <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
                     <FileIcon file={previewFile} />
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h3 className="text-white font-bold truncate text-sm sm:text-base">{previewFile.name}</h3>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">{previewFile.mimeType}</p>
+                    <p className="text-[9px] sm:text-[10px] text-gray-500 uppercase tracking-widest truncate">{previewFile.mimeType}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                   {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
                     <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
-                      className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
-                      <ExternalLink className="w-5 h-5" />
+                      className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
+                      <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
                   )}
                   <button onClick={() => handleDownload(previewFile)}
-                    className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
-                    <Download className="w-5 h-5" />
+                    className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
+                    <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
                   <button onClick={() => setPreviewFile(null)}
-                    className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-xl transition-all active:scale-90">
-                    <X className="w-6 h-6" />
+                    className="p-2 sm:p-3 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-xl transition-all active:scale-90">
+                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 </div>
               </div>
