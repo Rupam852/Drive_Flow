@@ -529,7 +529,7 @@ export default function AdminFilesPage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const filesList = e.target.files;
     if (!filesList || filesList.length === 0) return;
-    e.target.value = ''; // reset input so same files can be re-selected
+    e.target.value = '';
 
     const files = Array.from(filesList);
 
@@ -545,8 +545,34 @@ export default function AdminFilesPage() {
     setUploading(true);
     setShowUploadMenu(false);
 
-    // Folder structure cache: relative_path -> drive folder id
-    const folderCache: Record<string, string> = { '': currentFolder.id };
+    // ── Smart folder cache ─────────────────────────────────────────────
+    // Key: "parentId::folderName" → existing or newly-created drive folder id
+    // This prevents creating duplicate folders even across multiple upload sessions
+    const folderCache: Record<string, string> = {};
+
+    const getOrCreateFolder = async (name: string, parentId: string): Promise<string> => {
+      const cacheKey = `${parentId}::${name}`;
+      if (folderCache[cacheKey]) return folderCache[cacheKey];
+
+      // Check if a folder with this name already exists under parentId
+      try {
+        const res = await api.get(`/files?parentId=${parentId}`);
+        const existing = (res.data as any[]).find(
+          (f: any) => f.mimeType === 'application/vnd.google-apps.folder' && f.name === name
+        );
+        if (existing) {
+          folderCache[cacheKey] = existing.id;
+          return existing.id;
+        }
+      } catch { /* fall through to create */ }
+
+      // Doesn't exist → create it
+      const created = await api.post('/files/folder', { name, parentId });
+      folderCache[cacheKey] = created.data.id;
+      return created.data.id;
+    };
+    // ──────────────────────────────────────────────────────────────────
+
     let doneCount = 0;
 
     for (let i = 0; i < files.length; i++) {
@@ -554,26 +580,18 @@ export default function AdminFilesPage() {
       const relativePath = (file as any).webkitRelativePath || '';
       const pathParts = relativePath ? relativePath.split('/').slice(0, -1) : [];
 
-      // Mark as uploading
       setUploadQueue(prev => prev.map((q, idx) =>
         idx === i ? { ...q, status: 'uploading' } : q
       ));
 
       try {
-        // Ensure folder hierarchy exists
+        // Resolve the correct parent folder, creating missing folders along the way
         let parentId = currentFolder.id;
-        let currentPath = '';
         for (const part of pathParts) {
-          const nextPath = currentPath ? `${currentPath}/${part}` : part;
-          if (!folderCache[nextPath]) {
-            const res = await api.post('/files/folder', { name: part, parentId });
-            folderCache[nextPath] = res.data.id;
-          }
-          parentId = folderCache[nextPath];
-          currentPath = nextPath;
+          parentId = await getOrCreateFolder(part, parentId);
         }
 
-        // Upload this file with per-file XHR progress
+        // Upload file
         const sessionRes = await api.post('/files/upload-session', {
           name: file.name,
           mimeType: file.type || 'application/octet-stream',
@@ -605,7 +623,7 @@ export default function AdminFilesPage() {
         });
 
         await api.post('/files/upload-complete', {
-          fileId: '', // placeholder — backend infers from uploadUrl
+          fileId: '',
           name: file.name,
           mimeType: file.type || 'application/octet-stream',
           size: file.size,
@@ -628,6 +646,7 @@ export default function AdminFilesPage() {
     fetchStats();
     setUploading(false);
   };
+
 
 
   const handleFolderUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
