@@ -18,19 +18,32 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
 
   useEffect(() => {
+    console.log('[UserLayout] Checking auth...');
     try {
       const role = localStorage.getItem('role');
+      console.log('[UserLayout] Role found:', role);
       if (role !== 'user') {
+        console.warn('[UserLayout] Unauthorized, redirecting to login');
         router.replace('/login');
       } else {
         setMounted(true);
       }
     } catch (e) {
+      console.error('[UserLayout] Auth check failed:', e);
       router.replace('/login');
     }
   }, [router]);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-medium animate-pulse">Verifying Session...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {
