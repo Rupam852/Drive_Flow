@@ -399,8 +399,6 @@ function AdminFilesContent() {
       toggleSelect(file.id);
     } else if (isFolder(file)) {
       navigateToFolder({ id: file.id, name: file.name });
-    } else if (file.mimeType.startsWith('application/vnd.google-apps.') && file.webViewLink) {
-      window.open(file.webViewLink, '_blank');
     } else {
       setPreviewFile(file);
       window.history.pushState({ modal: 'preview' }, '');
@@ -1252,53 +1250,50 @@ function AdminFilesContent() {
       </div>
 
       <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mb-2">
-        <div className="flex flex-wrap items-center gap-3 shrink-0 ml-auto w-full sm:w-auto justify-end">
-          {/* Admin Tools Group */}
-          <div className="flex flex-nowrap items-center gap-3 overflow-x-auto no-scrollbar max-w-full shrink-0 py-1">
-            {/* View Toggle */}
-            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
-              <button onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
-                <MoreVertical className="w-4 h-4 rotate-90" />
-              </button>
-              <button onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
-                <Square className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="h-6 w-[1px] bg-white/10 mx-1 shrink-0" />
-
-            {/* Activity / Trash / Users */}
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={fetchLogs}
-                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
-                title="Activity">
-                <Clock className="w-4 h-4 text-purple-400" /> <span className="whitespace-nowrap">Activity</span>
-              </button>
-
-              <button onClick={fetchTrash}
-                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
-                title="Trash">
-                <Trash2 className="w-4 h-4 text-red-400" /> <span className="whitespace-nowrap">Trash</span>
-              </button>
-
-              <button onClick={fetchUsers}
-                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
-                title="Users">
-                <Users className="w-4 h-4 text-emerald-400" /> <span className="whitespace-nowrap">Users</span>
-              </button>
-
-              <button onClick={fetchDuplicates}
-                className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
-                title="Duplicates">
-                <Files className="w-4 h-4 text-blue-400" /> <span className="whitespace-nowrap">Duplicates</span>
-              </button>
-            </div>
+        <div className="flex flex-nowrap items-center gap-3 shrink-0 ml-auto w-full overflow-x-auto no-scrollbar justify-start sm:justify-end py-1">
+          {/* View Toggle */}
+          <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
+            <button onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
+              <MoreVertical className="w-4 h-4 rotate-90" />
+            </button>
+            <button onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
+              <Square className="w-4 h-4" />
+            </button>
           </div>
 
-          {/* New / Upload Group (Separated for Mobile Wrap) */}
-          <div className="flex items-center gap-2 shrink-0 py-1">
+          <div className="h-6 w-[1px] bg-white/10 mx-1 shrink-0" />
+
+          {/* Activity / Trash / Users */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={fetchLogs}
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
+              title="Activity">
+              <Clock className="w-4 h-4 text-purple-400" /> <span className="whitespace-nowrap">Activity</span>
+            </button>
+
+            <button onClick={fetchTrash}
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
+              title="Trash">
+              <Trash2 className="w-4 h-4 text-red-400" /> <span className="whitespace-nowrap">Trash</span>
+            </button>
+
+            <button onClick={fetchUsers}
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
+              title="Users">
+              <Users className="w-4 h-4 text-emerald-400" /> <span className="whitespace-nowrap">Users</span>
+            </button>
+
+            <button onClick={fetchDuplicates}
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-gray-300 rounded-xl hover:bg-white/10 hover:text-white transition-all text-sm font-medium shrink-0"
+              title="Duplicates">
+              <Files className="w-4 h-4 text-blue-400" /> <span className="whitespace-nowrap">Duplicates</span>
+            </button>
+          </div>
+
+          {/* New / Upload Group */}
+          <div className="flex items-center gap-2 shrink-0">
             <div className="relative">
               <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
                 className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
@@ -1566,6 +1561,13 @@ function AdminFilesContent() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
+                  {previewFile.webViewLink && (
+                    <button onClick={() => window.open(previewFile.webViewLink, '_blank')}
+                      className="p-2 sm:p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all active:scale-90 flex items-center gap-2 shadow-lg shadow-purple-600/20" title="Edit in Docs">
+                      <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
+                      <span className="hidden sm:inline text-xs font-bold whitespace-nowrap">Edit in Docs</span>
+                    </button>
+                  )}
                   {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
                     <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
                       className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
