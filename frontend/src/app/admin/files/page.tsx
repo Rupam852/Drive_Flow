@@ -529,9 +529,8 @@ export default function AdminFilesPage() {
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const filesList = e.target.files;
     if (!filesList || filesList.length === 0) return;
-    e.target.value = '';
-
     const files = Array.from(filesList);
+    e.target.value = ''; // reset input so same files can be re-selected
 
     // Build initial queue
     const queue = files.map(f => ({
