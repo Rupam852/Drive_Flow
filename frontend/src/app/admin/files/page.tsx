@@ -530,7 +530,9 @@ export default function AdminFilesPage() {
     const filesList = e.target.files;
     if (!filesList || filesList.length === 0) return;
     const files = Array.from(filesList);
-    e.target.value = ''; // reset input so same files can be re-selected
+
+    // reset input asynchronously so the browser doesn't clear the FileList reference before we use it
+    setTimeout(() => { e.target.value = ''; }, 100);
 
     // Build initial queue
     const queue = files.map(f => ({
