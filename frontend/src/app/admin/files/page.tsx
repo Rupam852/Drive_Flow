@@ -67,6 +67,25 @@ export default function AdminFilesPage() {
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
+  const [fakeProgress, setFakeProgress] = useState(0);
+
+  // Animate a fake counter 1→99 during indeterminate download phase
+  useEffect(() => {
+    if (downloadProgress === -1) {
+      setFakeProgress(1);
+      const interval = setInterval(() => {
+        setFakeProgress(prev => {
+          if (prev >= 99) { clearInterval(interval); return 99; }
+          // Slow down as it approaches 99
+          const step = prev < 30 ? 3 : prev < 60 ? 2 : prev < 85 ? 1 : 0.3;
+          return Math.min(99, prev + step);
+        });
+      }, 200);
+      return () => clearInterval(interval);
+    } else {
+      setFakeProgress(0);
+    }
+  }, [downloadProgress]);
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean,
     title: string,
@@ -1677,8 +1696,18 @@ export default function AdminFilesPage() {
                     </linearGradient>
                   </defs>
                 </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white">
-                  {downloadProgress === -1 ? '···' : `${downloadProgress}%`}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.span
+                    key={downloadProgress === -1 ? 'fake' : 'real'}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="text-xl font-bold text-white tabular-nums"
+                  >
+                    {downloadProgress === -1
+                      ? `${Math.round(fakeProgress)}%`
+                      : `${downloadProgress}%`
+                    }
+                  </motion.span>
                 </div>
               </div>
 
@@ -1691,13 +1720,13 @@ export default function AdminFilesPage() {
                   : 'Downloading your files...'}
               </p>
 
-              {/* Shimmer / Fill bar */}
+              {/* Progress bar */}
               <div className="mt-6 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                 {downloadProgress === -1 ? (
                   <motion.div
-                    className="h-full w-1/2 bg-gradient-to-r from-transparent via-purple-500 to-transparent rounded-full"
-                    animate={{ x: ["-100%", "250%"] }}
-                    transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut" }}
+                    className="h-full bg-gradient-to-r from-purple-600 to-pink-500 rounded-full"
+                    animate={{ width: `${Math.round(fakeProgress)}%` }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                   />
                 ) : (
                   <motion.div
