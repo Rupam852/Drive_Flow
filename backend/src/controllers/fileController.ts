@@ -24,6 +24,37 @@ const bufferToStream = (buffer: Buffer) => {
   return readable;
 };
 
+// Helper to calculate folder sizes in O(N) memory without lagging
+const createFolderSizeCalculator = async () => {
+  const allFiles = await FileMetadata.find({ status: 'active' }, 'fileId parentId size type').lean();
+  
+  const childrenMap: Record<string, any[]> = {};
+  for (const f of allFiles) {
+    if (!f.parentId) continue;
+    if (!childrenMap[f.parentId]) childrenMap[f.parentId] = [];
+    childrenMap[f.parentId].push(f);
+  }
+
+  const sizesMap: Record<string, number> = {};
+
+  const computeSize = (folderId: string): number => {
+    if (sizesMap[folderId] !== undefined) return sizesMap[folderId];
+    let total = 0;
+    const children = childrenMap[folderId] || [];
+    for (const child of children) {
+      if (child.type === 'application/vnd.google-apps.folder' || child.type === 'folder') {
+        total += computeSize(child.fileId);
+      } else {
+        total += (child.size || 0);
+      }
+    }
+    sizesMap[folderId] = total;
+    return total;
+  };
+
+  return computeSize;
+};
+
 
 
 // @desc  List all files/folders
@@ -57,7 +88,18 @@ export const listFiles = async (req: Request, res: Response) => {
       return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
     });
 
-    res.json(files);
+    // Fast memory-based folder size calculation
+    const getFolderSize = await createFolderSizeCalculator();
+
+    const filesWithFolderSizes = files.map((file) => {
+      if (file.mimeType === 'application/vnd.google-apps.folder') {
+        const folderSize = getFolderSize(file.id!);
+        return { ...file, size: folderSize.toString() };
+      }
+      return file;
+    });
+
+    res.json(filesWithFolderSizes);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }
@@ -625,10 +667,12 @@ export const searchFiles = async (req: Request, res: Response) => {
       name: { $regex: regex }
     }).limit(100);
 
+    const getFolderSize = await createFolderSizeCalculator();
+
     const mapped = files.map((f) => {
       let size = f.size?.toString() || '0';
       if (f.type === 'application/vnd.google-apps.folder' || f.type === 'folder') {
-        size = '0'; // Folders don't report size
+        size = getFolderSize(f.fileId).toString();
       }
       return {
         id: f.fileId,
