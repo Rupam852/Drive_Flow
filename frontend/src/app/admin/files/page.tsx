@@ -651,6 +651,12 @@ export default function AdminFilesPage() {
     fetchStats();
     setUploading(false);
     targetInput.value = ''; // Reset input at the very end
+
+    // Auto close modal after 2 seconds if everything finished
+    setTimeout(() => {
+      setShowUploadModal(false);
+      setUploadQueue([]);
+    }, 2000);
   };
 
 
