@@ -1403,7 +1403,7 @@ function AdminFilesContent() {
                         className="flex items-center gap-3 text-white hover:text-purple-300 transition-colors w-full text-left">
                         <FileIcon file={file} />
                         <span className="text-sm font-medium truncate max-w-[150px] sm:max-w-[300px]">{file.name}</span>
-                        {file.isHidden && <EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" title="Hidden from users" />}
+                        {file.isHidden && <span title="Hidden from users"><EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /></span>}
                       </button>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-sm">{fmt(file.size, isFolder(file))}</td>
