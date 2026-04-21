@@ -26,7 +26,13 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     }
   }, [router]);
 
-  if (!authorized) return null;
+  if (!authorized) {
+    return (
+      <div className="min-h-screen bg-[var(--background)] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {

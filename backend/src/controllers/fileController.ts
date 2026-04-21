@@ -1219,19 +1219,34 @@ export const toggleHideFile = async (req: Request, res: Response) => {
       return;
     }
 
-    const updated = await FileMetadata.findOneAndUpdate(
-      { fileId },
-      { isHidden: hide },
-      { new: true }
-    );
+    // Try to find the file in DB first to get its type
+    let fileMeta = await FileMetadata.findOne({ fileId });
 
-    if (!updated) {
-      res.status(404).json({ message: 'File not found in database' });
-      return;
+    // If not in DB, fetch from Drive to ensure we have type/name for the record
+    if (!fileMeta) {
+      try {
+        const driveMeta = await drive.files.get({ fileId, fields: 'id, name, mimeType' });
+        fileMeta = await FileMetadata.create({
+          fileId: driveMeta.data.id,
+          name: driveMeta.data.name,
+          type: driveMeta.data.mimeType,
+          rootId: DRIVE_FOLDER_ID,
+          ownerUserId: (req as any).user?._id,
+          status: 'active',
+          isHidden: hide
+        });
+      } catch (err) {
+        res.status(404).json({ message: 'File not found in Drive or Database' });
+        return;
+      }
+    } else {
+      // Update existing record
+      fileMeta.isHidden = hide;
+      await fileMeta.save();
     }
 
-    // If it's a folder, recursively apply the same to all children
-    if (updated.type === 'application/vnd.google-apps.folder' || updated.type === 'folder') {
+    // If it's a folder, recursively apply the same to all children in DB
+    if (fileMeta.type === 'application/vnd.google-apps.folder' || fileMeta.type === 'folder') {
       const childIds = await getAllChildIds([fileId]);
       if (childIds.length > 0) {
         await FileMetadata.updateMany(
@@ -1244,10 +1259,10 @@ export const toggleHideFile = async (req: Request, res: Response) => {
     await logActivity(
       (req as any).user?._id,
       hide ? 'hide_file' : 'unhide_file',
-      `${hide ? 'Hidden' : 'Unhidden'} file: ${updated.name}`
+      `${hide ? 'Hidden' : 'Unhidden'} item: ${fileMeta.name}`
     );
 
-    res.json({ message: `File and its contents ${hide ? 'hidden' : 'visible'} successfully`, isHidden: hide });
+    res.json({ message: `Visibility updated successfully`, isHidden: hide });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }
