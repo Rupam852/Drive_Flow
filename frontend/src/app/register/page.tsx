@@ -198,7 +198,7 @@ export default function RegisterPage() {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 px-4 mt-6 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] hover:from-[var(--color-primary-dark)] hover:to-pink-600 text-white rounded-xl font-medium shadow-lg shadow-purple-500/25 transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 px-4 mt-6 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] hover:from-[var(--color-primary-dark)] hover:to-pink-600 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
             >
               {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Register'}
             </motion.button>

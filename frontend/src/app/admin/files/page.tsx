@@ -1206,7 +1206,7 @@ function AdminFilesContent() {
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all outline-none shadow-lg shadow-black/20"
+            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all outline-none"
           />
         </div>
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto pb-1">
@@ -1214,11 +1214,11 @@ function AdminFilesContent() {
             <div className="flex items-center gap-2 bg-purple-500/10 p-1 rounded-2xl border border-purple-500/20 shrink-0">
               <span className="text-xs text-purple-400 px-3 font-bold whitespace-nowrap">{selected.size} selected</span>
               <button onClick={() => handleBulkDownload()}
-                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap shadow-lg shadow-blue-600/20">
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap">
                 <Download className="w-3.5 h-3.5" /> Download
               </button>
               <button onClick={() => { setMovingIds(Array.from(selected)); setShowMoveModal(true); }}
-                className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap shadow-lg shadow-purple-600/20">
+                className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap">
                 <Move className="w-3.5 h-3.5" /> Move
               </button>
               <button onClick={() => handleDelete(Array.from(selected))}
@@ -1255,11 +1255,11 @@ function AdminFilesContent() {
           {/* View Toggle */}
           <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
             <button onClick={() => setViewMode('list')}
-              className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
+              className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'list' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
               <MoreVertical className="w-4 h-4 rotate-90" />
             </button>
             <button onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/20' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
+              className={`p-1.5 rounded-lg transition-all duration-200 ${viewMode === 'grid' ? 'bg-purple-600 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}`}>
               <Square className="w-4 h-4" />
             </button>
           </div>
@@ -1323,7 +1323,7 @@ function AdminFilesContent() {
             {/* Upload Menu */}
             <div className="relative">
               <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-bold hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-95 shadow-lg shadow-purple-600/25 border border-white/10">
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-bold hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-95 border border-white/10">
                 <Upload className="w-4 h-4" /> Upload
               </button>
               <AnimatePresence>
@@ -1564,7 +1564,7 @@ function AdminFilesContent() {
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                   {previewFile.webViewLink && (
                     <button onClick={() => window.open(previewFile.webViewLink, '_blank')}
-                      className="p-2 sm:p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all active:scale-90 flex items-center gap-2 shadow-lg shadow-purple-600/20" title="Edit in Docs">
+                      className="p-2 sm:p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all active:scale-90 flex items-center gap-2" title="Edit in Docs">
                       <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span className="hidden sm:inline text-xs font-bold whitespace-nowrap">Edit in Docs</span>
                     </button>
@@ -1616,7 +1616,7 @@ function AdminFilesContent() {
                       <p className="text-white font-medium">No Live Preview</p>
                       <p className="text-xs text-gray-500 mt-1">Download to view this file type</p>
                       <button onClick={() => handleDownload(previewFile)}
-                        className="mt-6 px-6 py-2.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-purple-500 transition-all shadow-lg shadow-purple-600/20">
+                        className="mt-6 px-6 py-2.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-purple-500 transition-all">
                         Download Now
                       </button>
                     </div>
@@ -1759,11 +1759,11 @@ function AdminFilesContent() {
                     ) : (
                       <>
                         <button onClick={handleRestoreAll}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 active:scale-95 transition-all text-xs font-semibold shadow-lg shadow-purple-600/20">
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 active:scale-95 transition-all text-xs font-semibold">
                           <Check className="w-3.5 h-3.5" /> Restore All
                         </button>
                         <button onClick={handleEmptyTrash}
-                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-xl hover:bg-red-500 active:scale-95 transition-all text-xs font-semibold shadow-lg shadow-red-600/20">
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-xl hover:bg-red-500 active:scale-95 transition-all text-xs font-semibold">
                           <Trash2 className="w-3.5 h-3.5" /> Empty Trash
                         </button>
                       </>
@@ -2206,8 +2206,8 @@ function AdminFilesContent() {
                   disabled={actionLoading}
                   className={`flex-1 py-3 rounded-xl text-white font-bold transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50
                     ${confirmModal.isDanger
-                      ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-600/20'
-                      : 'bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-600/20'}`}>
+                      ? 'bg-red-600 hover:bg-red-500'
+                      : 'bg-purple-600 hover:bg-purple-500'}`}>
                   {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                   {actionLoading ? 'Processing...' : 'Confirm'}
                 </button>
@@ -2398,7 +2398,7 @@ function AdminFilesContent() {
                       Cancel
                     </button>
                     <button onClick={() => handleBulkDownload(zipFileName)}
-                      className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-600/25 hover:shadow-purple-600/40 active:scale-95 transition-all text-xs font-bold uppercase tracking-widest">
+                      className="flex-1 py-3.5 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white active:scale-95 transition-all text-xs font-bold uppercase tracking-widest">
                       Download
                     </button>
                   </div>
@@ -2495,7 +2495,7 @@ function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, a
           <button onClick={onClose} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors text-sm disabled:opacity-50">Cancel</button>
           <button onClick={() => onMove(currentPath[currentPath.length - 1].id)}
             disabled={actionLoading || currentPath[currentPath.length - 1].id === currentFolderId}
-            className="px-6 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm shadow-lg shadow-purple-600/20 flex items-center gap-2">
+            className="px-6 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center gap-2">
             {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {actionLoading ? 'Moving...' : 'Move Here'}
           </button>
