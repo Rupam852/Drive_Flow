@@ -239,7 +239,13 @@ export const renameFile = async (req: Request, res: Response) => {
 export const moveFiles = async (req: Request, res: Response) => {
   try {
     const { fileIds, targetParentId, newParentId } = req.body;
-    const targetId = targetParentId || newParentId;
+    let targetId = targetParentId || newParentId;
+
+    // Failsafe for Root folder ID translation
+    if (!targetId || targetId === 'ROOT' || targetId === 'root' || targetId === 'null' || targetId === 'undefined') {
+      targetId = DRIVE_FOLDER_ID;
+    }
+
     const results = [];
 
     for (const fileId of fileIds as string[]) {
