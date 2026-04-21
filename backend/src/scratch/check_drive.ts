@@ -1,31 +1,23 @@
-import { google } from 'googleapis';
+import drive from '../config/googleDrive';
 import dotenv from 'dotenv';
 import path from 'path';
 
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-
-const auth = new google.auth.OAuth2(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET
-);
-
-auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH_TOKEN });
-
-const drive = google.drive({ version: 'v3', auth });
+dotenv.config({ path: path.join(__dirname, '../../.env') });
 
 async function check() {
-  const rootId = process.env.GOOGLE_DRIVE_FOLDER_ID;
-  console.log('Checking Root ID:', rootId);
-  
+  const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID;
+  console.log('Managed Folder ID:', DRIVE_FOLDER_ID);
+
   const res = await drive.files.list({
-    q: `'${rootId}' in parents and trashed = false`,
-    fields: 'files(id, name, mimeType, size)',
+    pageSize: 20,
+    fields: 'files(id, name, mimeType, parents)',
+    q: "trashed = false"
   });
-  
-  console.log('Files in Root from Google Drive:');
+
+  console.log('Top 20 files in Drive (including outside managed folder):');
   res.data.files?.forEach(f => {
-    console.log(`- ${f.name} (${f.mimeType}) ID: ${f.id}`);
+    console.log(`- ${f.name} (${f.mimeType}) | Parents: ${f.parents?.join(', ')}`);
   });
 }
 
-check();
+check().catch(console.error);

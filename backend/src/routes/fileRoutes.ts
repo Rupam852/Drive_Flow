@@ -28,6 +28,7 @@ import {
   getDownloadLink,
   searchFiles,
   getFileMetadata,
+  findDuplicates,
 } from '../controllers/fileController';
 import { protect, admin, approved } from '../middleware/authMiddleware';
 
@@ -41,6 +42,7 @@ router.get('/user-logs', protect, getUserActivityLogs);
 router.delete('/admin-logs', protect, admin, clearActivityLogs);
 router.get('/admin-trash', protect, admin, getTrashedFiles);
 router.get('/admin-users', protect, admin, getAllUsers);
+router.get('/admin-duplicates', protect, admin, findDuplicates);
 router.put('/:id/restore', protect, admin, restoreFile);
 router.put('/trash/restore-all', protect, admin, restoreAll);
 router.put('/trash/restore-bulk', protect, admin, restoreBulk);

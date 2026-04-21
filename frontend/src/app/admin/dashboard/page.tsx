@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { HardDrive, File, Folder, Users, TrendingUp } from 'lucide-react';
+import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
 
@@ -50,24 +50,29 @@ export default function AdminDashboard() {
   const [userCount, setUserCount] = useState<number>(0);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = async (cleanup = false) => {
+    if (cleanup) setRefreshing(true);
+    else setLoading(true);
+    try {
+      const [statsRes, usersRes, logsRes] = await Promise.all([
+        api.get(`/files/admin-stats${cleanup ? '?cleanup=true' : ''}`),
+        api.get('/files/admin-users'),
+        api.get('/files/admin-logs'),
+      ]);
+      if (statsRes.data) setStats(statsRes.data);
+      if (usersRes.data) setUserCount(usersRes.data.length);
+      if (logsRes.data) setLogs(logsRes.data.slice(0, 5));
+    } catch (e) {
+      console.error('Dashboard load error:', e);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [statsRes, usersRes, logsRes] = await Promise.all([
-          api.get('/files/admin-stats'),
-          api.get('/files/admin-users'),
-          api.get('/files/admin-logs'),
-        ]);
-        if (statsRes.data) setStats(statsRes.data);
-        if (usersRes.data) setUserCount(usersRes.data.length);
-        if (logsRes.data) setLogs(logsRes.data.slice(0, 5)); // Only show last 5
-      } catch (e) {
-        console.error('Dashboard load error:', e);
-      } finally {
-        setLoading(false);
-      }
-    };
     load();
   }, []);
 
@@ -115,6 +120,11 @@ export default function AdminDashboard() {
           <p className="text-gray-400 text-sm">Welcome back, Admin</p>
         </div>
         <div className="hidden sm:flex items-center gap-3">
+          <button onClick={() => load(true)} disabled={refreshing}
+            className={`flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl transition-all text-sm font-medium ${refreshing ? 'opacity-50' : 'hover:bg-white/10 active:scale-95'}`}>
+            <RefreshCw className={`w-4 h-4 text-purple-400 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Cleaning...' : 'Deep Refresh'}
+          </button>
           <Link href="/admin/files" className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
             Manage Files
           </Link>
