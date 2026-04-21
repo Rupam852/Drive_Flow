@@ -153,6 +153,7 @@ export default function AdminFilesPage() {
   const filteredFiles = useMemo(() => {
     const matchesCategory = (f: DriveFile) => {
       if (activeCategory === 'all') return true;
+      if (activeCategory === 'folders') return f.mimeType === 'application/vnd.google-apps.folder';
       if (activeCategory === 'images') return f.mimeType.startsWith('image/');
       if (activeCategory === 'docs') return (f.mimeType.includes('document') || f.mimeType.includes('pdf') || f.mimeType.includes('text'));
       if (activeCategory === 'videos') return f.mimeType.startsWith('video/');
@@ -644,6 +645,7 @@ export default function AdminFilesPage() {
   };
 
   const navigate = (folder: DriveFile) => {
+    setSearchQuery(''); // Clear search when navigating into a folder
     setPath(p => [...p, { id: folder.id, name: folder.name }]);
     const url = new URL(window.location.href);
     url.searchParams.set('folder', folder.id);
@@ -767,6 +769,7 @@ export default function AdminFilesPage() {
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto pb-1">
           {[
             { id: 'all', label: 'All', icon: <Home className="w-3 h-3" /> },
+            { id: 'folders', label: 'Folders', icon: <Folder className="w-3 h-3 text-yellow-400" /> },
             { id: 'images', label: 'Images', icon: <Image className="w-3 h-3" /> },
             { id: 'docs', label: 'Docs', icon: <FileText className="w-3 h-3" /> },
             { id: 'videos', label: 'Videos', icon: <Film className="w-3 h-3" /> },
