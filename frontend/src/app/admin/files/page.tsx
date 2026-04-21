@@ -407,7 +407,9 @@ export default function AdminFilesPage() {
           addToast('Trash bin emptied successfully');
           setTrashFiles([]);
           setSelectedTrash(new Set());
+          addToast('Trash emptied!');
           fetchStats();
+          loadFiles(currentFolder.id);
         } catch (e: any) {
           addToast(e.response?.data?.message || 'Error emptying trash', 'error');
         }
@@ -430,6 +432,7 @@ export default function AdminFilesPage() {
           setTrashFiles(prev => prev.filter(f => !ids.includes(f.id)));
           setSelectedTrash(new Set());
           fetchStats();
+          loadFiles(currentFolder.id);
         } catch (e: any) {
           addToast(e.response?.data?.message || 'Error deleting items', 'error');
         }
