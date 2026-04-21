@@ -1667,6 +1667,7 @@ export default function AdminFilesPage() {
         onMove={handleMove}
         currentFolderId={currentFolder.id}
         filesToMove={files.filter(f => movingIds.includes(f.id))}
+        actionLoading={actionLoading}
       />
 
       {/* Activity Logs Modal */}
@@ -2148,7 +2149,7 @@ export default function AdminFilesPage() {
   );
 }
 
-function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove }: any) {
+function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, actionLoading }: any) {
   const [folders, setFolders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPath, setCurrentPath] = useState<any[]>([{ id: ROOT_ID, name: 'Root' }]);
@@ -2213,11 +2214,12 @@ function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove }:
         </div>
 
         <div className="flex gap-2 justify-end">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors text-sm">Cancel</button>
+          <button onClick={onClose} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors text-sm disabled:opacity-50">Cancel</button>
           <button onClick={() => onMove(currentPath[currentPath.length - 1].id)}
-            disabled={currentPath[currentPath.length - 1].id === currentFolderId}
-            className="px-6 py-2 rounded-xl bg-[var(--color-primary)] text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm shadow-lg shadow-purple-500/20">
-            Move Here
+            disabled={actionLoading || currentPath[currentPath.length - 1].id === currentFolderId}
+            className="px-6 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm shadow-lg shadow-purple-600/20 flex items-center gap-2">
+            {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {actionLoading ? 'Moving...' : 'Move Here'}
           </button>
         </div>
       </motion.div>
