@@ -24,10 +24,10 @@ const isImage = (f: DriveFile) => f.mimeType.startsWith('image/');
 const isVideo = (f: DriveFile) => f.mimeType.startsWith('video/');
 const isConvertible = (f: DriveFile) => {
   const mime = f.mimeType;
-  return mime.startsWith('application/vnd.google-apps.') || 
-         mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-         mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-         mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  return mime.startsWith('application/vnd.google-apps.') ||
+    mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+    mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+    mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 };
 const isDoc = (f: DriveFile) => isConvertible(f) || f.mimeType.includes('pdf') || f.mimeType.includes('text');
 
@@ -73,7 +73,7 @@ export default function AdminFilesPage() {
     message: string,
     onConfirm: () => void,
     isDanger?: boolean
-  }>({ show: false, title: '', message: '', onConfirm: () => {}, isDanger: false });
+  }>({ show: false, title: '', message: '', onConfirm: () => { }, isDanger: false });
   const [movingIds, setMovingIds] = useState<string[]>([]);
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -141,15 +141,15 @@ export default function AdminFilesPage() {
 
     const handlePopState = (e: PopStateEvent) => {
       // If a modal is open, close it and stay on the page
-      if (previewFile)           { setPreviewFile(null);   return; }
-      if (renaming)              { setRenaming(null);       return; }
-      if (showLogs)              { setShowLogs(false);      return; }
-      if (showTrash)             { setShowTrash(false);     return; }
-      if (showUsers)             { setShowUsers(false);     return; }
-      if (showMoveModal)         { setShowMoveModal(false); return; }
-      if (showDownloadModal)     { setShowDownloadModal(false); return; }
-      if (showNewFolderModal)    { setShowNewFolderModal(false); return; }
-      if (confirmModal.show)     { setConfirmModal(c => ({ ...c, show: false })); return; }
+      if (previewFile) { setPreviewFile(null); return; }
+      if (renaming) { setRenaming(null); return; }
+      if (showLogs) { setShowLogs(false); return; }
+      if (showTrash) { setShowTrash(false); return; }
+      if (showUsers) { setShowUsers(false); return; }
+      if (showMoveModal) { setShowMoveModal(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showNewFolderModal) { setShowNewFolderModal(false); return; }
+      if (confirmModal.show) { setConfirmModal(c => ({ ...c, show: false })); return; }
 
       // Otherwise handle folder navigation
       if (e.state?.path) {
@@ -157,7 +157,7 @@ export default function AdminFilesPage() {
         loadFiles(e.state.path[e.state.path.length - 1].id);
         return;
       }
-      
+
       const params = new URLSearchParams(window.location.search);
       const folderId = params.get('folder') || ROOT_ID;
       const existing = path.find(p => p.id === folderId);
@@ -229,14 +229,14 @@ export default function AdminFilesPage() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
-      if (previewFile)          { setPreviewFile(null);        return; }
-      if (renaming)             { setRenaming(null);           return; }
-      if (showNewFolderModal)   { setShowNewFolderModal(false); return; }
-      if (showDownloadModal)    { setShowDownloadModal(false); return; }
-      if (showMoveModal)        { setShowMoveModal(false);     return; }
-      if (showLogs)             { setShowLogs(false);          return; }
-      if (showTrash)            { setShowTrash(false);         return; }
-      if (showUsers)            { setShowUsers(false);         return; }
+      if (previewFile) { setPreviewFile(null); return; }
+      if (renaming) { setRenaming(null); return; }
+      if (showNewFolderModal) { setShowNewFolderModal(false); return; }
+      if (showDownloadModal) { setShowDownloadModal(false); return; }
+      if (showMoveModal) { setShowMoveModal(false); return; }
+      if (showLogs) { setShowLogs(false); return; }
+      if (showTrash) { setShowTrash(false); return; }
+      if (showUsers) { setShowUsers(false); return; }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -286,8 +286,8 @@ export default function AdminFilesPage() {
           setTrashFiles([]);
           setSelectedTrash(new Set());
           fetchStats();
-        } catch (e: any) { 
-          addToast(e.response?.data?.message || 'Error emptying trash', 'error'); 
+        } catch (e: any) {
+          addToast(e.response?.data?.message || 'Error emptying trash', 'error');
         }
         setConfirmModal(prev => ({ ...prev, show: false }));
       }
@@ -308,8 +308,8 @@ export default function AdminFilesPage() {
           setTrashFiles(prev => prev.filter(f => !ids.includes(f.id)));
           setSelectedTrash(new Set());
           fetchStats();
-        } catch (e: any) { 
-          addToast(e.response?.data?.message || 'Error deleting items', 'error'); 
+        } catch (e: any) {
+          addToast(e.response?.data?.message || 'Error deleting items', 'error');
         }
         setConfirmModal(prev => ({ ...prev, show: false }));
       }
@@ -331,8 +331,8 @@ export default function AdminFilesPage() {
           setSelectedTrash(new Set());
           loadFiles(currentFolder.id);
           fetchStats();
-        } catch (e: any) { 
-          addToast(e.response?.data?.message || 'Restore all failed', 'error'); 
+        } catch (e: any) {
+          addToast(e.response?.data?.message || 'Restore all failed', 'error');
         }
         setConfirmModal(prev => ({ ...prev, show: false }));
       }
@@ -348,8 +348,8 @@ export default function AdminFilesPage() {
       setSelectedTrash(new Set());
       loadFiles(currentFolder.id);
       fetchStats();
-    } catch (e: any) { 
-      addToast(e.response?.data?.message || 'Bulk restore failed', 'error'); 
+    } catch (e: any) {
+      addToast(e.response?.data?.message || 'Bulk restore failed', 'error');
     }
   };
 
@@ -509,7 +509,7 @@ export default function AdminFilesPage() {
       await loadFiles(currentFolder.id);
       fetchStats();
       addToast('File uploaded successfully!');
-    } catch (e: any) { 
+    } catch (e: any) {
       console.error(e);
       addToast(`Upload failed: ${e.message || 'Unknown error'}`, 'error');
     }
@@ -579,7 +579,7 @@ export default function AdminFilesPage() {
       await loadFiles(currentFolder.id);
       fetchStats();
       addToast('Folder created!');
-    } catch (e) { 
+    } catch (e) {
       addToast('Error creating folder', 'error');
     }
   };
@@ -640,7 +640,7 @@ export default function AdminFilesPage() {
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
       try {
-        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, { 
+        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, {
           responseType: 'blob',
           onDownloadProgress: (progressEvent: any) => {
             if (progressEvent.total) {
@@ -687,12 +687,12 @@ export default function AdminFilesPage() {
     } finally {
       setDownloadProgress(null);
     }
-    
+
     setShowDownloadModal(false);
   };
 
   const navigate = (folder: DriveFile) => {
-    setSearchQuery(''); 
+    setSearchQuery('');
     const newPath = [...path, { id: folder.id, name: folder.name }];
     setPath(newPath);
     const url = new URL(window.location.href);
@@ -717,7 +717,7 @@ export default function AdminFilesPage() {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="space-y-4"
       onPanEnd={(_, info) => {
         // Swipe from left to right (offset x > 100) and path length > 1
@@ -731,7 +731,7 @@ export default function AdminFilesPage() {
         e.stopPropagation();
         const file = e.dataTransfer.files?.[0];
         if (!file) return;
-        
+
         setUploading(true);
         setUploadProgress(0);
         try {
@@ -747,7 +747,7 @@ export default function AdminFilesPage() {
         {/* Left: back button + title + breadcrumb */}
         <div className="flex items-start gap-3 min-w-0">
           {path.length > 1 && (
-            <button onClick={() => breadcrumbNav(path.length - 2)} 
+            <button onClick={() => breadcrumbNav(path.length - 2)}
               className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors shrink-0 mt-0.5" title="Go Back">
               <ChevronRight className="w-5 h-5 rotate-180" />
             </button>
@@ -755,35 +755,35 @@ export default function AdminFilesPage() {
           <div className="min-w-0">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               File Manager
-            {stats && (
-              <span className="text-[10px] font-normal bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-400">
-                {stats.totalFiles} Files • {stats.totalFolders} Folders
-              </span>
-            )}
-          </h2>
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[70vw] sm:max-w-sm">
-            {searchQuery ? (
-              <span className="text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
-                <Search className="w-4 h-4" /> Search results for "{searchQuery}"
-              </span>
-            ) : (
-              path.map((p, i) => (
-                <span key={i} className="flex items-center gap-1 shrink-0">
-                  {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
-                  <button
-                    onClick={() => breadcrumbNav(i)}
-                    className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
-                  >
-                    {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
-                  </button>
+              {stats && (
+                <span className="text-[10px] font-normal bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-400">
+                  {stats.totalFiles} Files • {stats.totalFolders} Folders
                 </span>
-              ))
-            )}
+              )}
+            </h2>
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[70vw] sm:max-w-sm">
+              {searchQuery ? (
+                <span className="text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
+                  <Search className="w-4 h-4" /> Search results for "{searchQuery}"
+                </span>
+              ) : (
+                path.map((p, i) => (
+                  <span key={i} className="flex items-center gap-1 shrink-0">
+                    {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
+                    <button
+                      onClick={() => breadcrumbNav(i)}
+                      className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
+                    >
+                      {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
+                    </button>
+                  </span>
+                ))
+              )}
+            </div>
           </div>
         </div>
-      </div>
-        
+
         {/* Right: storage bar */}
         {stats && (
           <div className="w-full sm:w-56 bg-white/5 p-3 rounded-2xl border border-white/10 shrink-0 self-start sm:self-auto">
@@ -792,10 +792,10 @@ export default function AdminFilesPage() {
               <span>{fmt(stats.used)} / {fmt(stats.limit)}</span>
             </div>
             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-              <motion.div 
-                initial={{ width: 0 }} 
+              <motion.div
+                initial={{ width: 0 }}
                 animate={{ width: `${Math.max(Number(stats.used) > 0 ? 1 : 0, (Number(stats.used) / (Number(stats.limit) || 10 * 1024 * 1024 * 1024)) * 100)}%` }}
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]" 
+                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]"
               />
             </div>
           </div>
@@ -809,8 +809,8 @@ export default function AdminFilesPage() {
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-purple-400 transition-colors">
             <Search className="w-4 h-4" />
           </div>
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search files..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -827,8 +827,8 @@ export default function AdminFilesPage() {
           ].map(cat => (
             <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all border
-                ${activeCategory === cat.id 
-                  ? 'bg-purple-500 text-white border-purple-400 shadow-lg shadow-purple-500/20' 
+                ${activeCategory === cat.id
+                  ? 'bg-purple-500 text-white border-purple-400 shadow-lg shadow-purple-500/20'
                   : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:border-white/10'}`}>
               {cat.icon} {cat.label}
             </button>
@@ -836,130 +836,130 @@ export default function AdminFilesPage() {
         </div>
       </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-2">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto pb-2">
-            {selected.size > 0 && (
-              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/10 shrink-0">
-                <span className="text-sm text-gray-400 px-3 font-medium whitespace-nowrap">{selected.size} selected</span>
-                <button onClick={() => { setMovingIds(Array.from(selected)); setShowMoveModal(true); }}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm whitespace-nowrap">
-                  <Move className="w-4 h-4" /> Move
-                </button>
-                <button onClick={async () => {
-                  const token = localStorage.getItem('token');
-                  const res = await api.post('/files/bulk-download', { fileIds: Array.from(selected) }, { responseType: 'blob' });
-                  const url = window.URL.createObjectURL(new Blob([res.data]));
-                  const link = document.createElement('a');
-                  link.href = url;
-                  link.setAttribute('download', 'bulk-download.zip');
-                  document.body.appendChild(link);
-                  link.click();
-                  link.remove();
-                }}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm whitespace-nowrap">
-                  <Download className="w-4 h-4" /> Download
-                </button>
-                <button onClick={() => handleDelete(Array.from(selected))}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors text-sm whitespace-nowrap">
-                  <Trash2 className="w-4 h-4" /> Delete
-                </button>
-                <button onClick={() => setSelected(new Set())}
-                  className="p-2 text-gray-400 hover:text-white transition-colors" title="Clear selection">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            {/* View Toggle */}
-            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
-              <button onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-                <MoreVertical className="w-4 h-4 rotate-90" />
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-2">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto pb-2">
+          {selected.size > 0 && (
+            <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/10 shrink-0">
+              <span className="text-sm text-gray-400 px-3 font-medium whitespace-nowrap">{selected.size} selected</span>
+              <button onClick={() => { setMovingIds(Array.from(selected)); setShowMoveModal(true); }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm whitespace-nowrap">
+                <Move className="w-4 h-4" /> Move
               </button>
-              <button onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-                <Square className="w-4 h-4" />
+              <button onClick={async () => {
+                const token = localStorage.getItem('token');
+                const res = await api.post('/files/bulk-download', { fileIds: Array.from(selected) }, { responseType: 'blob' });
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'bulk-download.zip');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+              }}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors text-sm whitespace-nowrap">
+                <Download className="w-4 h-4" /> Download
+              </button>
+              <button onClick={() => handleDelete(Array.from(selected))}
+                className="flex items-center gap-2 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors text-sm whitespace-nowrap">
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+              <button onClick={() => setSelected(new Set())}
+                className="p-2 text-gray-400 hover:text-white transition-colors" title="Clear selection">
+                <X className="w-4 h-4" />
               </button>
             </div>
+          )}
 
-            <button onClick={fetchLogs}
-              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
-              <MoreVertical className="w-4 h-4" /> Activity
+          {/* View Toggle */}
+          <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
+            <button onClick={() => setViewMode('list')}
+              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+              <MoreVertical className="w-4 h-4 rotate-90" />
             </button>
-
-            <button onClick={fetchTrash}
-              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
-              <Trash2 className="w-4 h-4" /> Trash
-            </button>
-
-            <button onClick={fetchUsers}
-              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
-              <Users className="w-4 h-4" /> Users
+            <button onClick={() => setViewMode('grid')}
+              className={`p-1.5 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
+              <Square className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {/* New */}
-            <div className="relative">
-              <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
-                className="flex items-center gap-1.5 px-4 py-2 glass border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors text-sm">
-                <FilePlus className="w-4 h-4" /> New
-              </button>
-              <AnimatePresence>
-                {showNewMenu && (
-                  <>
-                    <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowNewMenu(false)} />
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                      className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
-                      <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                        <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
-                      </button>
-                      <button onClick={() => { handleCreateDoc(); setShowNewMenu(false); }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                        <FileText className="w-4 h-4 text-blue-300" /> New Document
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+          <button onClick={fetchLogs}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
+            <MoreVertical className="w-4 h-4" /> Activity
+          </button>
 
-            {/* Upload */}
-            <div className="relative">
-              <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
-                className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl text-sm shadow-lg shadow-purple-500/20">
-                <Upload className="w-4 h-4" /> Upload
-              </button>
-              <AnimatePresence>
-                {showUploadMenu && (
-                  <>
-                    <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowUploadMenu(false)} />
-                    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                      className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
-                      <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                        <File className="w-4 h-4" /> Upload File
-                      </button>
-                      <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
-                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
-                        <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-              <input ref={fileInput} type="file" className="hidden" onChange={handleUpload} />
-              <input
-                ref={folderInput}
-                type="file"
-                className="hidden"
-                onChange={handleFolderUpload}
-                {...({ webkitdirectory: '', directory: '' } as any)}
-              />
-            </div>
+          <button onClick={fetchTrash}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
+            <Trash2 className="w-4 h-4" /> Trash
+          </button>
+
+          <button onClick={fetchUsers}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium shrink-0">
+            <Users className="w-4 h-4" /> Users
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* New */}
+          <div className="relative">
+            <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
+              className="flex items-center gap-1.5 px-4 py-2 glass border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors text-sm">
+              <FilePlus className="w-4 h-4" /> New
+            </button>
+            <AnimatePresence>
+              {showNewMenu && (
+                <>
+                  <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowNewMenu(false)} />
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                    className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
+                    <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                      <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
+                    </button>
+                    <button onClick={() => { handleCreateDoc(); setShowNewMenu(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                      <FileText className="w-4 h-4 text-blue-300" /> New Document
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Upload */}
+          <div className="relative">
+            <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl text-sm shadow-lg shadow-purple-500/20">
+              <Upload className="w-4 h-4" /> Upload
+            </button>
+            <AnimatePresence>
+              {showUploadMenu && (
+                <>
+                  <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowUploadMenu(false)} />
+                  <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
+                    className="absolute right-0 top-full mt-2 glass border border-white/10 rounded-xl p-1 z-10 min-w-[160px]">
+                    <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                      <File className="w-4 h-4" /> Upload File
+                    </button>
+                    <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-200 hover:bg-white/10 rounded-lg">
+                      <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+            <input ref={fileInput} type="file" className="hidden" onChange={handleUpload} />
+            <input
+              ref={folderInput}
+              type="file"
+              className="hidden"
+              onChange={handleFolderUpload}
+              {...({ webkitdirectory: '', directory: '' } as any)}
+            />
           </div>
         </div>
+      </div>
 
       {/* Upload progress */}
       <AnimatePresence>
@@ -1025,7 +1025,7 @@ export default function AdminFilesPage() {
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      <button 
+                      <button
                         onClick={() => handleItemClick(file)}
                         onTouchStart={() => handleItemTouchStart(file.id)}
                         onTouchEnd={handleItemTouchEnd}
@@ -1095,8 +1095,8 @@ export default function AdminFilesPage() {
                   }
                 }}
                 className={`relative p-4 rounded-3xl border transition-all cursor-pointer group flex flex-col items-center gap-3
-                  ${selected.has(file.id) 
-                    ? 'bg-purple-500/10 border-purple-500/40' 
+                  ${selected.has(file.id)
+                    ? 'bg-purple-500/10 border-purple-500/40'
                     : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'}`}
                 onClick={() => handleItemClick(file)}
                 onTouchStart={() => handleItemTouchStart(file.id)}
@@ -1109,8 +1109,8 @@ export default function AdminFilesPage() {
                   onClick={e => { e.stopPropagation(); toggleSelect(file.id); }}>
                   <div className={`p-1 rounded-md border transition-all
                     ${selected.has(file.id) ? 'bg-purple-500 border-purple-400' : 'bg-black/40 border-white/10 hover:border-white/30'}`}>
-                    {selected.has(file.id) 
-                      ? <Check className="w-2.5 h-2.5 text-white stroke-[4px]" /> 
+                    {selected.has(file.id)
+                      ? <Check className="w-2.5 h-2.5 text-white stroke-[4px]" />
                       : <div className="w-2.5 h-2.5" />
                     }
                   </div>
@@ -1178,13 +1178,13 @@ export default function AdminFilesPage() {
         {previewFile && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-xl p-0 sm:p-4"
             onClick={() => setPreviewFile(null)}>
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
               className="w-full h-full sm:max-w-5xl sm:max-h-[90vh] flex flex-col glass-card border-none sm:rounded-[32px] overflow-hidden shadow-[0_0_100px_rgba(0,0,0,0.5)]">
-              
+
               {/* Top Bar */}
               <div className="p-4 sm:p-6 flex items-center justify-between bg-white/5 border-b border-white/5">
                 <div className="flex items-center gap-4 min-w-0">
@@ -1201,7 +1201,7 @@ export default function AdminFilesPage() {
                     className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
                     <Download className="w-5 h-5" />
                   </button>
-                  <button onClick={() => setPreviewFile(null)} 
+                  <button onClick={() => setPreviewFile(null)}
                     className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-xl transition-all active:scale-90">
                     <X className="w-6 h-6" />
                   </button>
@@ -1213,20 +1213,20 @@ export default function AdminFilesPage() {
                 <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
                   <div className="w-64 h-64 bg-purple-500/30 rounded-full blur-[100px]" />
                 </div>
-                
+
                 {isImage(previewFile) ? (
-                  <img 
+                  <img
                     src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}`}
-                    alt={previewFile.name} 
+                    alt={previewFile.name}
                     className="max-h-full max-w-full object-contain shadow-2xl relative z-10" />
                 ) : isVideo(previewFile) ? (
-                  <video 
-                    controls 
-                    autoPlay 
-                    className="max-h-full w-full relative z-10 shadow-2xl" 
+                  <video
+                    controls
+                    autoPlay
+                    className="max-h-full w-full relative z-10 shadow-2xl"
                     src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}`} />
                 ) : previewFile.mimeType === 'application/pdf' ? (
-                  <iframe 
+                  <iframe
                     src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}#toolbar=0`}
                     className="w-full h-full border-none relative z-10" />
                 ) : (
@@ -1298,24 +1298,24 @@ export default function AdminFilesPage() {
                       )}
                       {/* Timeline Dot */}
                       <div className={`absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center z-10 transition-all
-                        ${log.action === 'upload' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' : 
-                          log.action === 'delete' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' : 
-                          log.action === 'download' ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]' : 
-                          'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]'}`}>
+                        ${log.action === 'upload' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' :
+                          log.action === 'delete' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' :
+                            log.action === 'download' ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]' :
+                              'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]'}`}>
                         {log.action === 'upload' ? <Upload className="w-3 h-3 text-white" /> :
-                         log.action === 'delete' ? <Trash2 className="w-3 h-3 text-white" /> :
-                         log.action === 'download' ? <Download className="w-3 h-3 text-white" /> :
-                         <Clock className="w-3 h-3 text-white" />}
+                          log.action === 'delete' ? <Trash2 className="w-3 h-3 text-white" /> :
+                            log.action === 'download' ? <Download className="w-3 h-3 text-white" /> :
+                              <Clock className="w-3 h-3 text-white" />}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <p className="text-white text-sm font-semibold">
-                            <span className="text-purple-400 font-bold">{log.user?.name || 'Someone'}</span> 
-                            {' '}{log.action === 'upload' ? 'uploaded' : 
-                                   log.action === 'delete' ? 'deleted' : 
-                                   log.action === 'download' ? 'downloaded' : 
-                                   log.action.replace('_', ' ')}
+                            <span className="text-purple-400 font-bold">{log.user?.name || 'Someone'}</span>
+                            {' '}{log.action === 'upload' ? 'uploaded' :
+                              log.action === 'delete' ? 'deleted' :
+                                log.action === 'download' ? 'downloaded' :
+                                  log.action.replace('_', ' ')}
                           </p>
                           <span className="text-[10px] text-gray-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
@@ -1334,49 +1334,67 @@ export default function AdminFilesPage() {
       {/* Trash Modal */}
       <AnimatePresence>
         {showTrash && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md sm:p-4"
             onClick={() => { setShowTrash(false); setSelectedTrash(new Set()); }}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+            <motion.div
+              initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card max-w-2xl w-full max-h-[80vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl">
-              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <Trash2 className="w-5 h-5 text-red-400" /> Trash Bin
-                </h3>
-                <div className="flex items-center gap-2">
-                  {trashFiles.length > 0 && (
-                    <>
-                      {selectedTrash.size > 0 ? (
-                        <>
-                          <button onClick={() => handleRestoreBulk(Array.from(selectedTrash))}
-                            className="px-4 py-2 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl hover:bg-purple-500/30 hover:scale-105 active:scale-95 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                            <Check className="w-3 h-3" /> Restore ({selectedTrash.size})
-                          </button>
-                          <button onClick={() => handleDeletePermanently(Array.from(selectedTrash))}
-                            className="px-4 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/30 hover:scale-105 active:scale-95 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                            <Trash2 className="w-3 h-3" /> Delete ({selectedTrash.size})
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button onClick={handleRestoreAll}
-                            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-xl hover:shadow-[0_0_20px_rgba(147,51,234,0.4)] hover:scale-105 active:scale-95 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                            Restore All
-                          </button>
-                          <button onClick={handleEmptyTrash}
-                            className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-xl hover:shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:scale-105 active:scale-95 transition-all text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
-                            Empty Trash
-                          </button>
-                        </>
-                      )}
-                    </>
-                  )}
-                  <button onClick={() => { setShowTrash(false); setSelectedTrash(new Set()); }} className="text-gray-400 hover:text-white p-2 hover:bg-white/5 rounded-full transition-all">
-                    <X className="w-6 h-6" />
+              className="glass-card w-full sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
+            >
+              {/* Header — two-row layout on mobile */}
+              <div className="px-4 pt-4 pb-3 border-b border-white/10 bg-white/5 space-y-3">
+                {/* Row 1: Title + Close */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Trash2 className="w-5 h-5 text-red-400 shrink-0" /> Trash Bin
+                    {trashFiles.length > 0 && (
+                      <span className="text-xs font-normal text-gray-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                        {trashFiles.length} items
+                      </span>
+                    )}
+                  </h3>
+                  <button onClick={() => { setShowTrash(false); setSelectedTrash(new Set()); }}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all shrink-0">
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
+
+                {/* Row 2: Action buttons */}
+                {trashFiles.length > 0 && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {selectedTrash.size > 0 ? (
+                      <>
+                        <button onClick={() => handleRestoreBulk(Array.from(selectedTrash))}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-xl hover:bg-purple-500/30 active:scale-95 transition-all text-xs font-semibold">
+                          <Check className="w-3.5 h-3.5" /> Restore ({selectedTrash.size})
+                        </button>
+                        <button onClick={() => handleDeletePermanently(Array.from(selectedTrash))}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl hover:bg-red-500/30 active:scale-95 transition-all text-xs font-semibold">
+                          <Trash2 className="w-3.5 h-3.5" /> Delete ({selectedTrash.size})
+                        </button>
+                        <button onClick={() => setSelectedTrash(new Set())}
+                          className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-all">
+                          <X className="w-4 h-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={handleRestoreAll}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 active:scale-95 transition-all text-xs font-semibold shadow-lg shadow-purple-600/20">
+                          <Check className="w-3.5 h-3.5" /> Restore All
+                        </button>
+                        <button onClick={handleEmptyTrash}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-xl hover:bg-red-500 active:scale-95 transition-all text-xs font-semibold shadow-lg shadow-red-600/20">
+                          <Trash2 className="w-3.5 h-3.5" /> Empty Trash
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
+
+              {/* File List */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
                 {loadingTrash ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />
@@ -1384,32 +1402,40 @@ export default function AdminFilesPage() {
                 ) : trashFiles.length === 0 ? (
                   <div className="py-20 text-center text-gray-500 italic">Trash is empty</div>
                 ) : (
-                  trashFiles.map((file, i) => (
-                    <div key={file.id} className={`p-4 bg-white/5 border rounded-2xl flex items-center justify-between gap-4 group hover:bg-white/10 transition-all cursor-pointer
-                      ${selectedTrash.has(file.id) ? 'border-purple-500/50 bg-purple-500/5' : 'border-white/5'}`}
+                  trashFiles.map((file) => (
+                    <div key={file.id}
+                      className={`p-3 border rounded-2xl flex items-center gap-3 cursor-pointer transition-all active:scale-[0.98]
+                        ${selectedTrash.has(file.id) ? 'border-purple-500/50 bg-purple-500/10' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
                       onClick={() => {
                         const next = new Set(selectedTrash);
                         if (next.has(file.id)) next.delete(file.id);
                         else next.add(file.id);
                         setSelectedTrash(next);
                       }}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${selectedTrash.has(file.id) ? 'bg-purple-500 border-purple-500' : 'border-white/20'}`}>
-                          {selectedTrash.has(file.id) && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                        <FileIcon file={{ mimeType: file.mimeType } as any} />
-                        <div className="min-w-0">
-                          <p className="text-white text-sm font-medium truncate max-w-[150px] sm:max-w-[200px]">{file.name}</p>
-                          <p className="text-[10px] text-gray-500">{new Date(file.modifiedTime).toLocaleString()}</p>
-                        </div>
+
+                      {/* Checkbox */}
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all
+                        ${selectedTrash.has(file.id) ? 'bg-purple-500 border-purple-500' : 'border-white/20'}`}>
+                        {selectedTrash.has(file.id) && <Check className="w-3 h-3 text-white" />}
                       </div>
-                      <div className="flex items-center gap-2">
+
+                      {/* Icon */}
+                      <FileIcon file={{ mimeType: file.mimeType } as any} />
+
+                      {/* Name + Date */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-[10px] text-gray-500">{new Date(file.modifiedTime).toLocaleDateString()}</p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 shrink-0">
                         <button onClick={(e) => { e.stopPropagation(); restoreFile(file.id); }}
-                          className="px-4 py-1.5 bg-gradient-to-r from-purple-600/20 to-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl hover:from-purple-600 hover:to-purple-500 hover:text-white transition-all text-[10px] font-bold uppercase tracking-widest active:scale-95">
+                          className="px-3 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-500/40 transition-all text-[10px] font-bold active:scale-90">
                           Restore
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); handleDeletePermanently([file.id]); }}
-                          className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90">
+                          className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all active:scale-90">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -1421,6 +1447,7 @@ export default function AdminFilesPage() {
           </div>
         )}
       </AnimatePresence>
+
 
       {/* Users Modal */}
       <AnimatePresence>
@@ -1460,9 +1487,9 @@ export default function AdminFilesPage() {
                         </div>
                         <div className="hidden sm:flex flex-col items-start">
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest
-                            ${u.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-                              u.status === 'rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 
-                              'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
+                            ${u.status === 'approved' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                              u.status === 'rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                'bg-amber-500/10 text-amber-400 border border-amber-500/20'}`}>
                             {u.status || 'pending'}
                           </span>
                         </div>
@@ -1517,7 +1544,7 @@ export default function AdminFilesPage() {
                 <Download className="w-5 h-5 text-purple-400" /> Download Options
               </h3>
               <p className="text-sm text-gray-400 mb-6">Choose format for <b>{downloadingFile.name}</b></p>
-              
+
               <div className="grid gap-3">
                 <button onClick={() => handleDownload(downloadingFile, 'pdf')}
                   className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-2xl hover:bg-purple-500/10 hover:border-purple-500/30 transition-all group text-left">
@@ -1574,8 +1601,8 @@ export default function AdminFilesPage() {
                 </button>
                 <button onClick={confirmModal.onConfirm}
                   className={`flex-1 py-3 rounded-2xl text-white font-bold transition-all shadow-lg
-                    ${confirmModal.isDanger 
-                      ? 'bg-gradient-to-r from-red-600 to-red-500 shadow-red-500/20 hover:scale-105 active:scale-95' 
+                    ${confirmModal.isDanger
+                      ? 'bg-gradient-to-r from-red-600 to-red-500 shadow-red-500/20 hover:scale-105 active:scale-95'
                       : 'bg-gradient-to-r from-purple-600 to-purple-500 shadow-purple-500/20 hover:scale-105 active:scale-95'}`}>
                   Confirm
                 </button>
@@ -1625,10 +1652,10 @@ export default function AdminFilesPage() {
               <p className="text-sm text-gray-400">
                 {downloadProgress === -1 ? 'Calculating size and zipping files. Please wait...' : 'Please wait while we prepare and download your files.'}
               </p>
-              
+
               <div className="mt-8 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div 
-                  initial={{ width: 0 }} 
+                <motion.div
+                  initial={{ width: 0 }}
                   animate={downloadProgress === -1 ? { x: ["-100%", "100%"] } : { width: `${downloadProgress}%` }}
                   transition={downloadProgress === -1 ? { duration: 1.5, repeat: Infinity, ease: "linear" } : { duration: 0.5 }}
                   className={`h-full bg-gradient-to-r from-purple-600 to-pink-600 ${downloadProgress === -1 ? 'w-1/2' : ''}`} />
