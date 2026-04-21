@@ -126,12 +126,32 @@ export default function AdminFilesPage() {
     }
   }, [searchQuery, currentFolder.id]);
 
+  // Push a sentinel history entry whenever a modal opens, so back gesture closes it
+  useEffect(() => {
+    const anyModalOpen = !!previewFile || !!renaming || showLogs || showTrash || showUsers || showMoveModal || showDownloadModal || showNewFolderModal;
+    if (anyModalOpen) {
+      window.history.pushState({ modal: true }, '');
+    }
+  }, [previewFile, renaming, showLogs, showTrash, showUsers, showMoveModal, showDownloadModal, showNewFolderModal]);
+
   useEffect(() => {
     if (!searchQuery) {
       loadFiles(currentFolder.id);
     }
 
     const handlePopState = (e: PopStateEvent) => {
+      // If a modal is open, close it and stay on the page
+      if (previewFile)           { setPreviewFile(null);   return; }
+      if (renaming)              { setRenaming(null);       return; }
+      if (showLogs)              { setShowLogs(false);      return; }
+      if (showTrash)             { setShowTrash(false);     return; }
+      if (showUsers)             { setShowUsers(false);     return; }
+      if (showMoveModal)         { setShowMoveModal(false); return; }
+      if (showDownloadModal)     { setShowDownloadModal(false); return; }
+      if (showNewFolderModal)    { setShowNewFolderModal(false); return; }
+      if (confirmModal.show)     { setConfirmModal(c => ({ ...c, show: false })); return; }
+
+      // Otherwise handle folder navigation
       if (e.state?.path) {
         setPath(e.state.path);
         loadFiles(e.state.path[e.state.path.length - 1].id);
@@ -145,7 +165,6 @@ export default function AdminFilesPage() {
         setPath(path.slice(0, path.indexOf(existing) + 1));
         loadFiles(folderId);
       } else {
-        // Fallback: Fetch metadata to get the name
         api.get(`/files/${folderId}/metadata`).then(res => {
           setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: res.data.name }]);
         }).catch(() => {
@@ -157,7 +176,8 @@ export default function AdminFilesPage() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentFolder.id]);
+  }, [currentFolder.id, previewFile, renaming, showLogs, showTrash, showUsers, showMoveModal, showDownloadModal, showNewFolderModal, confirmModal.show]);
+
 
   const filteredFiles = useMemo(() => {
     const matchesCategory = (f: DriveFile) => {
@@ -204,6 +224,23 @@ export default function AdminFilesPage() {
   useEffect(() => {
     fetchStats();
   }, [currentFolder.id]);
+
+  // Escape key closes the topmost modal (mirrors back gesture)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (previewFile)          { setPreviewFile(null);        return; }
+      if (renaming)             { setRenaming(null);           return; }
+      if (showNewFolderModal)   { setShowNewFolderModal(false); return; }
+      if (showDownloadModal)    { setShowDownloadModal(false); return; }
+      if (showMoveModal)        { setShowMoveModal(false);     return; }
+      if (showLogs)             { setShowLogs(false);          return; }
+      if (showTrash)            { setShowTrash(false);         return; }
+      if (showUsers)            { setShowUsers(false);         return; }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [previewFile, renaming, showNewFolderModal, showDownloadModal, showMoveModal, showLogs, showTrash, showUsers]);
 
   const fetchLogs = async () => {
     setLoadingLogs(true);
