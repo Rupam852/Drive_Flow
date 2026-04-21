@@ -999,8 +999,8 @@ export default function AdminFilesPage() {
             <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all border
                 ${activeCategory === cat.id
-                  ? 'bg-purple-500 text-white border-purple-400 shadow-lg shadow-purple-500/20'
-                  : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:border-white/10'}`}>
+                  ? 'bg-purple-600 text-white border-purple-500'
+                  : 'bg-white/5 text-gray-400 border-white/10 hover:bg-white/10 hover:border-white/20'}`}>
               {cat.icon} {cat.label}
             </button>
           ))}
@@ -1073,7 +1073,7 @@ export default function AdminFilesPage() {
           {/* New */}
           <div className="relative">
             <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
-              className="flex items-center gap-1.5 px-4 py-2 glass border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors text-sm">
+              className="flex items-center gap-1.5 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-colors text-sm font-medium">
               <FilePlus className="w-4 h-4" /> New
             </button>
             <AnimatePresence>
@@ -1099,7 +1099,7 @@ export default function AdminFilesPage() {
           {/* Upload */}
           <div className="relative">
             <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl text-sm shadow-lg shadow-purple-500/20">
+              className="flex items-center gap-1.5 px-4 py-2 bg-purple-600 text-white rounded-xl text-sm font-medium hover:bg-purple-500 transition-all active:scale-95">
               <Upload className="w-4 h-4" /> Upload
             </button>
             <AnimatePresence>
