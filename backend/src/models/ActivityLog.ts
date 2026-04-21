@@ -11,7 +11,7 @@ const activityLogSchema: Schema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   action: { type: String, required: true },
   details: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now },
+  timestamp: { type: Date, default: Date.now, expires: 3600 },
 });
 
 export const ActivityLog = mongoose.model<IActivityLog>('ActivityLog', activityLogSchema);

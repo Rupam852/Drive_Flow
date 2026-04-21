@@ -20,6 +20,7 @@ const isImage = (f: DriveFile) => f.mimeType.startsWith('image/');
 const isVideo = (f: DriveFile) => f.mimeType.startsWith('video/');
 const isConvertible = (f: DriveFile) => {
   const mime = f.mimeType;
+  if (mime === 'application/vnd.google-apps.folder') return false;
   return mime.startsWith('application/vnd.google-apps.') || 
          mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
          mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
@@ -166,9 +167,9 @@ export default function UserFilesPage() {
     const matchesCategory = (f: DriveFile) => {
       if (activeCategory === 'all') return true;
       if (activeCategory === 'folders') return isFolder(f);
-      if (activeCategory === 'images') return f.mimeType.startsWith('image/');
-      if (activeCategory === 'docs') return (f.mimeType.includes('document') || f.mimeType.includes('pdf') || f.mimeType.includes('text'));
-      if (activeCategory === 'videos') return f.mimeType.startsWith('video/');
+      if (activeCategory === 'images') return isImage(f);
+      if (activeCategory === 'docs') return isDoc(f);
+      if (activeCategory === 'videos') return isVideo(f);
       return true;
     };
 
@@ -177,7 +178,7 @@ export default function UserFilesPage() {
       const bFolder = isFolder(b);
       if (aFolder && !bFolder) return -1;
       if (!aFolder && bFolder) return 1;
-      return a.name.localeCompare(b.name);
+      return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
     });
     return sorted;
   }, [files, activeCategory]);
