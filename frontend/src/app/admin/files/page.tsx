@@ -1170,7 +1170,45 @@ export default function AdminFilesPage() {
         </div>
       </div>
 
-      {/* Batch Upload Queue Modal */}
+  // Grouped Queue for UI
+  const groupedQueue = useMemo(() => {
+    const groups: Record<string, any[]> = {};
+    const singleFiles: any[] = [];
+
+    uploadQueue.forEach(item => {
+      if (item.name.includes('/')) {
+        const root = item.name.split('/')[0];
+        if (!groups[root]) groups[root] = [];
+        groups[root].push(item);
+      } else {
+        singleFiles.push({ ...item, isGroup: false });
+      }
+    });
+
+    const result = Object.entries(groups).map(([name, items]) => {
+      const done = items.filter(i => i.status === 'done').length;
+      const total = items.length;
+      const totalProgress = items.reduce((acc, i) => acc + (i.progress || 0), 0);
+      const progress = Math.round(totalProgress / total);
+      const status = items.every(i => i.status === 'done') ? 'done' :
+        items.some(i => i.status === 'error') ? 'error' :
+          items.some(i => i.status === 'uploading') ? 'uploading' : 'pending';
+
+      return {
+        name,
+        isGroup: true,
+        count: total,
+        doneCount: done,
+        progress,
+        status,
+        size: items.reduce((acc, i) => acc + i.size, 0)
+      };
+    });
+
+    return [...result, ...singleFiles];
+  }, [uploadQueue]);
+
+  {/* Batch Upload Queue Modal */}
       <AnimatePresence>
         {showUploadModal && (
           <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
@@ -1219,12 +1257,12 @@ export default function AdminFilesPage() {
 
               {/* File list */}
               <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
-                {uploadQueue.map((item, i) => (
+                {groupedQueue.map((item, i) => (
                   <div key={i} className={`p-3 rounded-2xl border transition-all
                     ${item.status === 'done' ? 'bg-emerald-500/5 border-emerald-500/20'
                       : item.status === 'error' ? 'bg-red-500/5 border-red-500/20'
-                      : item.status === 'uploading' ? 'bg-purple-500/10 border-purple-500/30'
-                      : 'bg-white/3 border-white/5'}`}>
+                        : item.status === 'uploading' ? 'bg-purple-500/10 border-purple-500/30'
+                          : 'bg-white/3 border-white/5'}`}>
                     <div className="flex items-center gap-2.5">
                       {/* Status icon */}
                       <div className="shrink-0">
@@ -1237,32 +1275,42 @@ export default function AdminFilesPage() {
                           <div className="w-4 h-4 rounded-full border border-white/20" />
                         )}
                       </div>
-                      {/* Name + size */}
+                      {/* Name + info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-medium text-white truncate">{item.name.split('/').pop()}</p>
-                        {item.name.includes('/') && (
-                          <p className="text-[10px] text-gray-500 truncate">{item.name.split('/').slice(0, -1).join('/')}</p>
+                        <div className="flex items-center gap-2">
+                          {item.isGroup ? <Folder className="w-3.5 h-3.5 text-yellow-500" /> : <FileIcon file={{ mimeType: 'file', name: item.name } as any} />}
+                          <p className="text-xs font-medium text-white truncate">{item.name}</p>
+                        </div>
+                        {item.isGroup ? (
+                          <p className="text-[10px] text-gray-500 truncate">Folder · {item.doneCount} / {item.count} files</p>
+                        ) : (
+                          <p className="text-[10px] text-gray-500 truncate">{fmt(String(item.size))}</p>
                         )}
                         {item.status === 'error' && (
-                          <p className="text-[10px] text-red-400">{item.error}</p>
+                          <p className="text-[10px] text-red-400">{(item as any).error}</p>
                         )}
                       </div>
-                      {/* Progress / size */}
-                      <span className={`text-[10px] font-mono shrink-0
-                        ${item.status === 'done' ? 'text-emerald-400' : item.status === 'error' ? 'text-red-400' : 'text-gray-400'}`}>
-                        {item.status === 'uploading' ? `${item.progress}%`
-                          : item.status === 'done' ? '✓'
-                          : item.status === 'error' ? 'ERR'
-                          : fmt(String(item.size))}
-                      </span>
+                      {/* Progress */}
+                      <div className="shrink-0 text-right">
+                        {item.status === 'uploading' || item.status === 'done' ? (
+                          <span className={`text-[10px] font-bold ${item.status === 'done' ? 'text-emerald-400' : 'text-purple-400'}`}>
+                            {item.progress}%
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-gray-600">
+                            {item.isGroup ? fmt(String(item.size)) : ''}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {/* Per-file progress bar */}
-                    {item.status === 'uploading' && (
-                      <div className="mt-2 h-0.5 bg-white/5 rounded-full overflow-hidden">
+                    {/* Progress bar */}
+                    {(item.status === 'uploading' || (item.isGroup && item.progress > 0 && item.progress < 100)) && (
+                      <div className="mt-2 h-1 w-full bg-white/5 rounded-full overflow-hidden">
                         <motion.div
                           className="h-full bg-purple-500"
+                          initial={{ width: 0 }}
                           animate={{ width: `${item.progress}%` }}
-                          transition={{ duration: 0.2 }}
+                          transition={{ duration: 0.3 }}
                         />
                       </div>
                     )}
