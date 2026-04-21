@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Folder, File, Upload, FolderPlus, FilePlus, Download, Pencil,
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
-  MoreVertical, Check, Users, Clock, Square, CheckSquare
+  MoreVertical, Check, Users, Clock, Square, CheckSquare, Search
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -96,6 +96,7 @@ export default function AdminFilesPage() {
 
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
+  const uploadXhrRef = useRef<XMLHttpRequest | null>(null);
 
   const currentFolder = path[path.length - 1]!;
 
@@ -179,6 +180,15 @@ export default function AdminFilesPage() {
       const res = await api.get(`/files/admin-stats?parentId=${currentFolder.id}`);
       setStats(res.data);
     } catch (e) { console.error(e); }
+  };
+
+  const cancelUpload = () => {
+    if (uploadXhrRef.current) {
+      uploadXhrRef.current.abort();
+      setUploading(false);
+      setUploadProgress(0);
+      addToast('Upload cancelled', 'error');
+    }
   };
 
   useEffect(() => {
@@ -404,6 +414,7 @@ export default function AdminFilesPage() {
     const { uploadUrl } = sessionRes.data;
 
     const uploadReq = new XMLHttpRequest();
+    uploadXhrRef.current = uploadReq;
     uploadReq.open('PUT', uploadUrl, true);
     uploadReq.upload.onprogress = (e) => {
       if (e.lengthComputable) {
@@ -413,13 +424,21 @@ export default function AdminFilesPage() {
 
     const driveResponse: any = await new Promise((resolve, reject) => {
       uploadReq.onload = () => {
+        uploadXhrRef.current = null;
         if (uploadReq.status >= 200 && uploadReq.status < 300) {
           resolve(JSON.parse(uploadReq.responseText));
         } else {
           reject(new Error('Upload failed'));
         }
       };
-      uploadReq.onerror = () => reject(new Error('Network error'));
+      uploadReq.onerror = () => {
+        uploadXhrRef.current = null;
+        reject(new Error('Network error'));
+      };
+      uploadReq.onabort = () => {
+        uploadXhrRef.current = null;
+        reject(new Error('Upload cancelled'));
+      };
       uploadReq.send(file);
     });
 
@@ -578,6 +597,8 @@ export default function AdminFilesPage() {
           onDownloadProgress: (progressEvent: any) => {
             if (progressEvent.total) {
               setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
+            } else {
+              setDownloadProgress(-1);
             }
           }
         });
@@ -690,18 +711,24 @@ export default function AdminFilesPage() {
             )}
           </h2>
           {/* Breadcrumb */}
-          <div className="flex items-center gap-1 mt-1 flex-wrap">
-            {path.map((p, i) => (
-              <span key={i} className="flex items-center gap-1">
-                {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500" />}
-                <button
-                  onClick={() => breadcrumbNav(i)}
-                  className={`text-sm transition-colors ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
-                >
-                  {i === 0 ? <Home className="w-4 h-4" /> : p.name}
-                </button>
+          <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[80vw]">
+            {searchQuery ? (
+              <span className="text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
+                <Search className="w-4 h-4" /> Search results for "{searchQuery}"
               </span>
-            ))}
+            ) : (
+              path.map((p, i) => (
+                <span key={i} className="flex items-center gap-1 shrink-0">
+                  {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
+                  <button
+                    onClick={() => breadcrumbNav(i)}
+                    className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
+                  </button>
+                </span>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -727,7 +754,7 @@ export default function AdminFilesPage() {
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-2">
         <div className="relative w-full md:max-w-md group">
           <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-gray-500 group-focus-within:text-purple-400 transition-colors">
-            <X className="w-4 h-4 rotate-45" />
+            <Search className="w-4 h-4" />
           </div>
           <input 
             type="text" 
@@ -755,7 +782,7 @@ export default function AdminFilesPage() {
         </div>
       </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full pb-2">
           {selected.size > 0 && (
             <div className="flex items-center gap-2 bg-white/5 p-1 rounded-2xl border border-white/10">
               <span className="text-sm text-gray-400 px-3 font-medium">{selected.size} selected</span>
@@ -880,13 +907,21 @@ export default function AdminFilesPage() {
       <AnimatePresence>
         {uploading && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            className="glass-card p-4 rounded-xl">
+            className="glass-card p-4 rounded-xl border border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-white">Uploading...</span>
-              <span className="text-sm text-gray-400">{uploadProgress}%</span>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                <span className="text-sm text-white font-medium">Uploading...</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-400 font-mono">{uploadProgress}%</span>
+                <button onClick={cancelUpload} className="text-[10px] uppercase tracking-wider text-red-400 hover:text-red-300 font-bold px-2 py-1 bg-red-500/10 rounded-lg transition-colors">
+                  Cancel
+                </button>
+              </div>
             </div>
-            <div className="w-full bg-white/10 rounded-full h-2">
-              <motion.div animate={{ width: `${uploadProgress}%` }} className="h-full rounded-full bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)]" />
+            <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+              <motion.div animate={{ width: `${uploadProgress}%` }} className="h-full bg-gradient-to-r from-purple-500 to-pink-500" />
             </div>
           </motion.div>
         )}
@@ -1518,20 +1553,27 @@ export default function AdminFilesPage() {
                   <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-white/5" />
                   <motion.circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent"
                     strokeDasharray={251}
-                    animate={{ strokeDashoffset: 251 - (251 * downloadProgress) / 100 }}
-                    transition={{ duration: 0.5 }}
+                    animate={{ strokeDashoffset: downloadProgress === -1 ? 125 : 251 - (251 * downloadProgress) / 100 }}
+                    transition={downloadProgress === -1 ? { duration: 1.5, repeat: Infinity, ease: "linear" } : { duration: 0.5 }}
                     className="text-purple-500" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center text-xl font-bold text-white">
-                  {downloadProgress}%
+                  {downloadProgress === -1 ? '...' : `${downloadProgress}%`}
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">Downloading...</h3>
-              <p className="text-sm text-gray-400">Please wait while we prepare and download your files.</p>
+              <h3 className="text-xl font-bold text-white mb-2">
+                {downloadProgress === -1 ? 'Preparing Download...' : 'Downloading...'}
+              </h3>
+              <p className="text-sm text-gray-400">
+                {downloadProgress === -1 ? 'Calculating size and zipping files. Please wait...' : 'Please wait while we prepare and download your files.'}
+              </p>
               
               <div className="mt-8 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${downloadProgress}%` }}
-                  className="h-full bg-gradient-to-r from-purple-600 to-pink-600" />
+                <motion.div 
+                  initial={{ width: 0 }} 
+                  animate={downloadProgress === -1 ? { x: ["-100%", "100%"] } : { width: `${downloadProgress}%` }}
+                  transition={downloadProgress === -1 ? { duration: 1.5, repeat: Infinity, ease: "linear" } : { duration: 0.5 }}
+                  className={`h-full bg-gradient-to-r from-purple-600 to-pink-600 ${downloadProgress === -1 ? 'w-1/2' : ''}`} />
               </div>
             </motion.div>
           </div>

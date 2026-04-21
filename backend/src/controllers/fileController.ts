@@ -642,9 +642,9 @@ export const searchFiles = async (req: Request, res: Response) => {
       return;
     }
 
-    // Convert query to fuzzy regex (characters in order)
-    const regexStr = q.split('').map(c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('.*');
-    const regex = new RegExp(regexStr, 'i');
+    // Case-insensitive substring match is usually better for files
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'i');
 
     const files = await FileMetadata.find({
       rootId: DRIVE_FOLDER_ID,
