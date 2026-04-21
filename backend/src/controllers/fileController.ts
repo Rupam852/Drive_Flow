@@ -901,6 +901,7 @@ export const getUploadSession = async (req: AuthRequest, res: Response) => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'X-Upload-Content-Type': mimeType,
+        'Origin': req.headers.origin || 'http://localhost:3000', // Crucial for CORS in browser-direct uploads
         ...(size ? { 'X-Upload-Content-Length': size.toString() } : {})
       },
       body: JSON.stringify({
