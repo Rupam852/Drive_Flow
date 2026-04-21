@@ -472,9 +472,9 @@ export default function AdminFilesPage() {
       await loadFiles(currentFolder.id);
       fetchStats();
       addToast('File uploaded successfully!');
-    } catch (e) { 
+    } catch (e: any) { 
       console.error(e);
-      addToast('Upload failed', 'error');
+      addToast(`Upload failed: ${e.message || 'Unknown error'}`, 'error');
     }
     finally { setUploading(false); setShowUploadMenu(false); }
   };

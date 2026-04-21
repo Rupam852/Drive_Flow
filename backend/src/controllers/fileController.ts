@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import axios from 'axios';
 import { Readable } from 'stream';
 import multer from 'multer';
 const zipLib = require('archiver') as any;
@@ -895,27 +896,24 @@ export const getUploadSession = async (req: AuthRequest, res: Response) => {
     const { token } = await oauth2Client.getAccessToken();
 
     // Make a POST request to Google Drive to start a resumable session
-    const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
-      method: 'POST',
+    const response = await axios.post('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', {
+      name,
+      mimeType,
+      parents: [targetParentId]
+    }, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
         'X-Upload-Content-Type': mimeType,
-        'Origin': req.headers.origin || 'http://localhost:3000', // Crucial for CORS in browser-direct uploads
+        'Origin': req.headers.origin || 'http://localhost:3000',
         ...(size ? { 'X-Upload-Content-Length': size.toString() } : {})
-      },
-      body: JSON.stringify({
-        name,
-        mimeType,
-        parents: [targetParentId]
-      })
+      }
     });
 
-    if (!response.ok) {
-      throw new Error(`Google Drive API error: ${response.statusText}`);
+    const uploadUrl = response.headers.location;
+    if (!uploadUrl) {
+      throw new Error('Google Drive did not return an upload URL');
     }
-
-    const uploadUrl = response.headers.get('Location');
     
     res.json({ uploadUrl });
   } catch (error) {
