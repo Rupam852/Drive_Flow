@@ -527,12 +527,10 @@ export default function AdminFilesPage() {
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const filesList = e.target.files;
+    const targetInput = e.target as HTMLInputElement;
+    const filesList = targetInput.files;
     if (!filesList || filesList.length === 0) return;
     const files = Array.from(filesList);
-
-    // reset input asynchronously so the browser doesn't clear the FileList reference before we use it
-    setTimeout(() => { e.target.value = ''; }, 100);
 
     // Build initial queue
     const queue = files.map(f => ({
@@ -601,7 +599,7 @@ export default function AdminFilesPage() {
         });
         const { uploadUrl } = sessionRes.data;
 
-        await new Promise<void>((resolve, reject) => {
+        const fileId = await new Promise<string>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
           uploadXhrRef.current = xhr;
           xhr.open('PUT', uploadUrl, true);
@@ -615,8 +613,14 @@ export default function AdminFilesPage() {
           };
           xhr.onload = () => {
             uploadXhrRef.current = null;
-            if (xhr.status >= 200 && xhr.status < 300) resolve();
-            else reject(new Error(`HTTP ${xhr.status}`));
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try {
+                const res = JSON.parse(xhr.responseText);
+                resolve(res.id || '');
+              } catch (e) {
+                resolve('');
+              }
+            } else reject(new Error(`HTTP ${xhr.status}`));
           };
           xhr.onerror = () => { uploadXhrRef.current = null; reject(new Error('Network error')); };
           xhr.onabort = () => { uploadXhrRef.current = null; reject(new Error('Cancelled')); };
@@ -624,7 +628,7 @@ export default function AdminFilesPage() {
         });
 
         await api.post('/files/upload-complete', {
-          fileId: '',
+          fileId,
           name: file.name,
           mimeType: file.type || 'application/octet-stream',
           size: file.size,
@@ -646,6 +650,7 @@ export default function AdminFilesPage() {
     await loadFiles(currentFolder.id);
     fetchStats();
     setUploading(false);
+    targetInput.value = ''; // Reset input at the very end
   };
 
 
