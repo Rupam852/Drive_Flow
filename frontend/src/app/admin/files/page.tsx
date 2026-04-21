@@ -6,7 +6,7 @@ import {
   Folder, File, Files, Upload, FolderPlus, FilePlus, Download, Pencil,
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
   MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink,
-  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone
+  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -175,6 +175,7 @@ export default function AdminFilesPage() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([]);
+  const [isUploadMinimized, setIsUploadMinimized] = useState(false);
 
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -1210,11 +1211,11 @@ export default function AdminFilesPage() {
 
       {/* Batch Upload Queue Modal */}
       <AnimatePresence>
-        {showUploadModal && (
-          <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
+        {showUploadModal && !isUploadMinimized && (
+          <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm sm:p-4"
             onClick={() => { if (!uploading) { setShowUploadModal(false); setUploadQueue([]); } }}>
             <motion.div
-              initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
+              initial={{ y: 60, opacity: 0, scale: 0.95 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0, scale: 0.95 }}
               onClick={e => e.stopPropagation()}
               className="glass-card w-full sm:max-w-lg max-h-[85vh] flex flex-col rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl"
             >
@@ -1232,10 +1233,16 @@ export default function AdminFilesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {uploading && (
-                    <button onClick={cancelUpload}
-                      className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-all">
-                      Cancel
-                    </button>
+                    <>
+                      <button onClick={() => setIsUploadMinimized(true)}
+                        className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all" title="Minimize">
+                        <Minus className="w-5 h-5" />
+                      </button>
+                      <button onClick={cancelUpload}
+                        className="text-xs font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-all">
+                        Cancel
+                      </button>
+                    </>
                   )}
                   {!uploading && (
                     <button onClick={() => { setShowUploadModal(false); setUploadQueue([]); }}
@@ -1319,6 +1326,46 @@ export default function AdminFilesPage() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Upload Indicator (Minimized) */}
+      <AnimatePresence>
+        {showUploadModal && isUploadMinimized && (
+          <motion.div
+            initial={{ y: 100, opacity: 0, scale: 0.9 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 100, opacity: 0, scale: 0.9 }}
+            whileHover={{ scale: 1.02 }}
+            className="fixed bottom-6 right-6 z-[130] glass-card p-4 rounded-3xl flex items-center gap-4 shadow-2xl border border-purple-500/30 min-w-[280px] max-w-[320px]"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center shrink-0 border border-purple-500/20">
+              <Upload className="w-6 h-6 text-purple-400 animate-bounce" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-bold text-white">Uploading...</p>
+                <span className="text-xs font-black text-purple-400">{uploadProgress}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                  animate={{ width: `${uploadProgress}%` }}
+                  transition={{ duration: 0.5 }}
+                />
+              </div>
+              <p className="text-[10px] text-gray-500 mt-2 truncate">
+                {uploadQueue.filter(q => q.status === 'done').length} / {uploadQueue.length} files done
+              </p>
+            </div>
+            <button
+              onClick={() => setIsUploadMinimized(false)}
+              className="p-3 bg-purple-600/20 hover:bg-purple-600/40 text-purple-400 rounded-2xl transition-all active:scale-90"
+              title="Maximize"
+            >
+              <Maximize2 className="w-5 h-5" />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 
