@@ -5,15 +5,7 @@ import { motion } from 'framer-motion';
 import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
-
-interface Stats {
-  used: string;
-  limit: string;
-  totalFiles: number;
-  totalFolders: number;
-}
-
-interface UserCount { count: number; }
+import { useRouter } from 'next/navigation';
 
 const StatCard = ({ icon: Icon, label, value, color, href }: any) => (
   <Link href={href || '#'}>
@@ -36,8 +28,9 @@ const StatCard = ({ icon: Icon, label, value, color, href }: any) => (
 );
 
 const formatBytes = (bytes?: string) => {
-  if (!bytes || bytes === '0') return '0 B';
+  if (!bytes || bytes === '0' || isNaN(parseInt(bytes))) return '0 B';
   const b = parseInt(bytes);
+  if (b <= 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(b) / Math.log(k));
@@ -51,6 +44,8 @@ export default function AdminDashboard() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   const load = async (cleanup = false) => {
     if (cleanup) setRefreshing(true);
@@ -73,8 +68,20 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    load();
-  }, []);
+    try {
+      const role = localStorage.getItem('role');
+      if (role !== 'admin') {
+        router.replace('/login');
+      } else {
+        setMounted(true);
+        load();
+      }
+    } catch (e) {
+      router.replace('/login');
+    }
+  }, [router]);
+
+  if (!mounted) return null;
 
   const rawPct = stats && parseInt(stats.limit) > 0
     ? (parseInt(stats.used) / parseInt(stats.limit)) * 100
@@ -134,7 +141,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c, i) => (
           <motion.div key={c.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}>
@@ -144,7 +150,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Storage Analytics */}
         <div className="lg:col-span-2 space-y-6">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card p-6 rounded-2xl">
             <div className="flex items-center justify-between mb-6">
@@ -156,7 +161,6 @@ export default function AdminDashboard() {
             </div>
             
             <div className="flex flex-col sm:flex-row items-center gap-8">
-              {/* Circular Chart */}
               <div className="relative w-40 h-40 shrink-0">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-white/5" />
@@ -173,7 +177,6 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* Type Breakdown */}
               <div className="flex-1 w-full space-y-4">
                 {(() => {
                   if (!stats?.types) return null;
@@ -188,10 +191,9 @@ export default function AdminDashboard() {
                     if (m.includes('image')) return 'IMAGE';
                     if (m.includes('video')) return 'VIDEO';
                     if (m.includes('zip') || m.includes('rar') || m.includes('tar') || m.includes('compressed')) return 'ARCHIVE';
-                    return null; // Ignore everything else (like APP/EXE or OTHER)
+                    return null;
                   };
 
-                  // Group counts by formatted label
                   const grouped: Record<string, number> = {};
                   stats.types.forEach((t: any) => {
                     const label = formatMimeType(t._id);
@@ -200,14 +202,12 @@ export default function AdminDashboard() {
                     }
                   });
 
-                  // Convert to array and sort
                   const sortedTypes = Object.entries(grouped)
                     .map(([label, count]) => ({ label, count }))
                     .sort((a, b) => b.count - a.count)
                     .slice(0, 4);
 
                   const totalDisplayed = sortedTypes.reduce((sum, t) => sum + t.count, 0);
-
                   const colors = ['bg-blue-400', 'bg-emerald-400', 'bg-pink-400', 'bg-amber-400'];
 
                   return sortedTypes.map((t, i) => {
@@ -231,7 +231,6 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
-        {/* Recent Activity */}
         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}
           className="glass-card p-6 rounded-2xl flex flex-col h-full border border-white/5">
           <div className="flex items-center justify-between mb-6">

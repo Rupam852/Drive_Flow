@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { HardDrive, File, Folder } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const StatCard = ({ icon: Icon, label, value, color, href }: any) => {
   const content = (
@@ -24,8 +25,9 @@ const StatCard = ({ icon: Icon, label, value, color, href }: any) => {
 };
 
 const fmt = (bytes?: string) => {
-  if (!bytes || bytes === '0') return '0 B';
+  if (!bytes || bytes === '0' || isNaN(parseInt(bytes))) return '0 B';
   const b = parseInt(bytes);
+  if (b <= 0) return '0 B';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(b) / Math.log(k));
@@ -37,21 +39,35 @@ export default function UserDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const load = async () => {
       try {
+        const role = localStorage.getItem('role');
+        if (role !== 'user') {
+          router.replace('/login');
+          return;
+        }
+        setMounted(true);
+        
         const [statsRes, logsRes] = await Promise.all([
           api.get('/files/stats'),
           api.get('/files/user-logs'),
         ]);
         setStats(statsRes.data);
         setLogs(logsRes.data.slice(0, 5));
-      } catch (e) { console.error(e); }
+      } catch (e) { 
+        console.error(e); 
+        router.replace('/login');
+      }
       finally { setLoading(false); }
     };
     load();
-  }, []);
+  }, [router]);
+
+  if (!mounted) return null;
 
   let rawPct = 0;
   if (stats?.used && stats?.limit) {
@@ -82,7 +98,6 @@ export default function UserDashboard() {
           <h2 className="text-2xl font-bold text-white mb-1">My Dashboard</h2>
           <p className="text-gray-400 text-sm">Welcome back to DriveFlow</p>
         </div>
-
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -143,7 +158,7 @@ export default function UserDashboard() {
                 <div key={log._id} className="flex gap-3 items-start group">
                   <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 group-hover:scale-150 transition-transform" />
                   <div className="min-w-0">
-                    <p className="text-gray-300 text-xs leading-tight mb-0.5 capitalize">{log.action}: {log.details.split(' ').slice(0, 3).join(' ')}...</p>
+                    <p className="text-gray-300 text-xs leading-tight mb-0.5 capitalize">{log.action}: {log.details?.split(' ').slice(0, 3).join(' ') || 'Action'}...</p>
                     <p className="text-[10px] text-gray-500">{new Date(log.timestamp).toLocaleDateString()}</p>
                   </div>
                 </div>

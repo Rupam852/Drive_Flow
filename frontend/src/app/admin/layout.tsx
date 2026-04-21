@@ -22,9 +22,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
 
   useEffect(() => {
-    setMounted(true);
-    const role = localStorage.getItem('role');
-    if (role !== 'admin') {
+    try {
+      const role = localStorage.getItem('role');
+      if (role !== 'admin') {
+        router.replace('/login');
+      } else {
+        setMounted(true);
+      }
+    } catch (e) {
       router.replace('/login');
     }
   }, [router]);
