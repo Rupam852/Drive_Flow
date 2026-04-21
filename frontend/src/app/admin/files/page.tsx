@@ -1857,21 +1857,21 @@ export default function AdminFilesPage() {
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               className="glass-card max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 text-center">
-              <div className={`w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center ${confirmModal.isDanger ? 'bg-red-500/20 text-red-400' : 'bg-purple-500/20 text-purple-400'}`}>
-                {confirmModal.isDanger ? <Trash2 className="w-8 h-8" /> : <Check className="w-8 h-8" />}
+              <div className={`w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center ${confirmModal.isDanger ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}`}>
+                {confirmModal.isDanger ? <Trash2 className="w-7 h-7" /> : <Check className="w-7 h-7" />}
               </div>
-              <h3 className="text-xl font-bold text-white mb-2">{confirmModal.title}</h3>
-              <p className="text-sm text-gray-400 mb-8 leading-relaxed">{confirmModal.message}</p>
+              <h3 className="text-xl font-bold text-white mb-2 tracking-tight">{confirmModal.title}</h3>
+              <p className="text-sm text-gray-400 mb-8 leading-relaxed px-2">{confirmModal.message}</p>
               <div className="flex gap-3">
                 <button onClick={() => setConfirmModal(prev => ({ ...prev, show: false }))}
-                  className="flex-1 py-3 rounded-2xl bg-white/5 text-white hover:bg-white/10 transition-colors font-medium border border-white/5">
+                  className="flex-1 py-3 rounded-xl bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white transition-all font-medium border border-white/5">
                   Cancel
                 </button>
                 <button onClick={confirmModal.onConfirm}
-                  className={`flex-1 py-3 rounded-2xl text-white font-bold transition-all shadow-lg
+                  className={`flex-1 py-3 rounded-xl text-white font-bold transition-all active:scale-95
                     ${confirmModal.isDanger
-                      ? 'bg-gradient-to-r from-red-600 to-red-500 shadow-red-500/20 hover:scale-105 active:scale-95'
-                      : 'bg-gradient-to-r from-purple-600 to-purple-500 shadow-purple-500/20 hover:scale-105 active:scale-95'}`}>
+                      ? 'bg-red-600 hover:bg-red-500 shadow-lg shadow-red-600/20'
+                      : 'bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-600/20'}`}>
                   Confirm
                 </button>
               </div>
