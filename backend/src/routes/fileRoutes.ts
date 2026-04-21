@@ -29,6 +29,7 @@ import {
   searchFiles,
   getFileMetadata,
   findDuplicates,
+  uploadProxy,
 } from '../controllers/fileController';
 import { protect, admin, approved } from '../middleware/authMiddleware';
 
@@ -64,6 +65,7 @@ router.delete('/', protect, approved, trashFiles);
 router.get('/:id/download', protect, approved, downloadFile);
 router.get('/:id/direct-download', protect, approved, getDownloadLink);
 router.post('/upload-session', protect, approved, getUploadSession);
+router.put('/upload-proxy', protect, approved, express.raw({ type: '*/*', limit: '10mb' }), uploadProxy);
 router.post('/upload-complete', protect, approved, finalizeUpload);
 router.get('/:id/metadata', protect, getFileMetadata);
 

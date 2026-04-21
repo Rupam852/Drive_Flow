@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getFileMetadata = exports.clearActivityLogs = exports.getDownloadLink = exports.finalizeUpload = exports.getUploadSession = exports.deleteUser = exports.updateUserStatus = exports.getAllUsers = exports.emptyTrash = exports.deletePermanently = exports.restoreAll = exports.restoreBulk = exports.restoreFile = exports.getTrashedFiles = exports.getUserActivityLogs = exports.getActivityLogs = exports.searchFiles = exports.bulkDownload = exports.getDriveStats = exports.downloadFile = exports.trashFiles = exports.moveFiles = exports.renameFile = exports.createDoc = exports.createFolder = exports.uploadFile = exports.listFiles = exports.upload = void 0;
+exports.findDuplicates = exports.getFileMetadata = exports.clearActivityLogs = exports.getDownloadLink = exports.finalizeUpload = exports.uploadProxy = exports.getUploadSession = exports.deleteUser = exports.updateUserStatus = exports.getAllUsers = exports.emptyTrash = exports.deletePermanently = exports.restoreAll = exports.restoreBulk = exports.restoreFile = exports.getTrashedFiles = exports.getUserActivityLogs = exports.getActivityLogs = exports.searchFiles = exports.bulkDownload = exports.getDriveStats = exports.downloadFile = exports.trashFiles = exports.moveFiles = exports.renameFile = exports.createDoc = exports.createFolder = exports.uploadFile = exports.listFiles = exports.upload = void 0;
 const axios_1 = __importDefault(require("axios"));
 const stream_1 = require("stream");
 const multer_1 = __importDefault(require("multer"));
@@ -309,24 +309,29 @@ const downloadFile = async (req, res) => {
             res.setHeader('Content-Type', 'application/zip');
             archive.pipe(res);
             const addFolderToZip = async (fId, zip, folderPath) => {
-                const listRes = await googleDrive_1.default.files.list({
-                    q: `'${fId}' in parents and trashed = false`,
-                    fields: 'files(id, name, mimeType)',
-                });
-                const items = listRes.data.files || [];
+                // Use our database to find all children for speed and reliability
+                const items = await FileMetadata_1.FileMetadata.find({ parentId: fId, status: 'active' });
                 for (const item of items) {
                     const itemPath = folderPath + item.name;
-                    if (item.mimeType === 'application/vnd.google-apps.folder') {
-                        await addFolderToZip(item.id, zip, itemPath + '/');
-                    }
-                    else if (item.mimeType?.startsWith('application/vnd.google-apps.')) {
-                        // Google Docs to PDF in ZIP
-                        const exportRes = await googleDrive_1.default.files.export({ fileId: item.id, mimeType: 'application/pdf' }, { responseType: 'stream' });
-                        zip.append(exportRes.data, { name: itemPath + '.pdf' });
+                    const isFolder = item.type === 'application/vnd.google-apps.folder' || item.type === 'folder';
+                    if (isFolder) {
+                        await addFolderToZip(item.fileId, zip, itemPath + '/');
                     }
                     else {
-                        const downRes = await googleDrive_1.default.files.get({ fileId: item.id, alt: 'media' }, { responseType: 'stream' });
-                        zip.append(downRes.data, { name: itemPath });
+                        try {
+                            const isGoogleDoc = item.type?.startsWith('application/vnd.google-apps.');
+                            if (isGoogleDoc) {
+                                const exportRes = await googleDrive_1.default.files.export({ fileId: item.fileId, mimeType: 'application/pdf' }, { responseType: 'stream' });
+                                zip.append(exportRes.data, { name: itemPath + '.pdf' });
+                            }
+                            else {
+                                const downRes = await googleDrive_1.default.files.get({ fileId: item.fileId, alt: 'media' }, { responseType: 'stream' });
+                                zip.append(downRes.data, { name: itemPath });
+                            }
+                        }
+                        catch (err) {
+                            console.error(`Error adding file ${item.fileId} to ZIP:`, err);
+                        }
                     }
                 }
             };
@@ -458,6 +463,11 @@ exports.downloadFile = downloadFile;
 const getDriveStats = async (req, res) => {
     try {
         const userId = req.user?._id;
+        // ONE-TIME CLEANUP: If user is seeing ghost files, we purge active records and re-sync
+        if (req.query.cleanup === 'true') {
+            console.log('[getDriveStats] Performing Deep Clean...');
+            await FileMetadata_1.FileMetadata.deleteMany({ rootId: DRIVE_FOLDER_ID });
+        }
         // Helper to sync Drive files to DB recursively and CLEAN UP missing files
         const syncDriveData = async (parentId, userId, rootId) => {
             try {
@@ -498,10 +508,14 @@ const getDriveStats = async (req, res) => {
         };
         // Trigger sync in background
         syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
-        // Get REAL-TIME storage usage from Google Drive directly
-        const driveAbout = await googleDrive_1.default.about.get({ fields: 'storageQuota' });
-        const usedBytes = parseInt(driveAbout.data.storageQuota?.usage || '0');
-        const limitBytes = parseInt(driveAbout.data.storageQuota?.limit || (15 * 1024 * 1024 * 1024).toString());
+        // Calculate usedBytes from our LOCAL DB (Sum of all managed active files)
+        const statsResult = await FileMetadata_1.FileMetadata.aggregate([
+            { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
+            { $group: { _id: null, totalSize: { $sum: '$size' } } }
+        ]);
+        const usedBytes = statsResult.length > 0 ? statsResult[0].totalSize : 0;
+        // Set a VIRTUAL storage limit of exactly 10GB for our app
+        const limitBytes = 10737418240; // 10 GB in bytes (10 * 1024 * 1024 * 1024)
         // Count ALL Active Files recursively (Strictly excluding folders)
         const totalFiles = await FileMetadata_1.FileMetadata.countDocuments({
             rootId: DRIVE_FOLDER_ID,
@@ -875,8 +889,7 @@ const getUploadSession = async (req, res) => {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
                 'X-Upload-Content-Type': mimeType,
-                'Origin': req.headers.origin || 'http://localhost:3000',
-                ...(size ? { 'X-Upload-Content-Length': size.toString() } : {})
+                'X-Upload-Content-Length': size ? size.toString() : '0'
             }
         });
         const uploadUrl = response.headers.location;
@@ -891,6 +904,37 @@ const getUploadSession = async (req, res) => {
     }
 };
 exports.getUploadSession = getUploadSession;
+// @desc  Proxy upload to Google Drive to bypass CORS
+// @route PUT /api/files/upload-proxy
+const uploadProxy = async (req, res) => {
+    const { url } = req.query;
+    if (!url) {
+        res.status(400).json({ message: 'Target URL is required' });
+        return;
+    }
+    try {
+        const response = await (0, axios_1.default)({
+            method: 'PUT',
+            url: url,
+            data: req.body, // This is now a Buffer thanks to express.raw()
+            headers: {
+                'Content-Type': req.headers['content-type'] || 'application/octet-stream',
+                'Content-Range': req.headers['content-range'],
+                'Content-Length': req.headers['content-length']
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            validateStatus: () => true // Accept 308 Resume Incomplete without throwing
+        });
+        // Pass the Google Drive status and data back to the frontend
+        res.status(response.status).send(response.data);
+    }
+    catch (error) {
+        console.error('Upload proxy error:', error.message);
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.uploadProxy = uploadProxy;
 // @desc  Finalize direct client upload and save metadata
 // @route POST /api/files/upload-complete
 const finalizeUpload = async (req, res) => {
@@ -983,4 +1027,42 @@ const getFileMetadata = async (req, res) => {
     }
 };
 exports.getFileMetadata = getFileMetadata;
+// @desc  Find duplicate files (Admin only)
+// @route GET /api/files/admin-duplicates
+const findDuplicates = async (req, res) => {
+    try {
+        // Get all active files that are NOT folders
+        const allFiles = await FileMetadata_1.FileMetadata.find({
+            status: 'active',
+            type: { $ne: 'application/vnd.google-apps.folder' }
+        });
+        const groups = {};
+        allFiles.forEach(f => {
+            // Grouping by Name + Size as a reliable duplicate indicator
+            const key = `${f.name}::${f.size}`;
+            if (!groups[key])
+                groups[key] = [];
+            groups[key].push(f);
+        });
+        const duplicates = Object.entries(groups)
+            .filter(([_, items]) => items.length > 1)
+            .map(([key, items]) => ({
+            key,
+            name: items[0].name,
+            size: items[0].size,
+            type: items[0].type,
+            count: items.length,
+            items: items.map(i => ({
+                fileId: i.fileId,
+                parentId: i.parentId,
+                createdAt: i.createdAt
+            }))
+        }));
+        res.json(duplicates);
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.findDuplicates = findDuplicates;
 //# sourceMappingURL=fileController.js.map

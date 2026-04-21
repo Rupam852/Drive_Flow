@@ -6,7 +6,8 @@ import {
   Folder, File, Files, Upload, FolderPlus, FilePlus, Download, Pencil,
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
   MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink,
-  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2, Loader2, Plus, RefreshCw
+  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2, Loader2, Plus, RefreshCw,
+  CheckCircle, AlertCircle, AlertTriangle, Info
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
@@ -21,6 +22,17 @@ interface DriveFile {
 }
 
 const ROOT_ID = 'ROOT';
+
+interface UploadItem {
+  id?: string;
+  name: string;
+  size: number;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+  progress: number;
+  error?: string;
+  isFolder?: boolean;
+  uploadedBytes?: number;
+}
 
 const isFolder = (f: DriveFile) => f.mimeType === 'application/vnd.google-apps.folder';
 const isImage = (f: DriveFile) => f.mimeType.startsWith('image/');
@@ -97,13 +109,12 @@ function AdminFilesContent() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showUploadMenu, setShowUploadMenu] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadQueue, setUploadQueue] = useState<{
-    name: string;
-    size: number;
-    status: 'pending' | 'uploading' | 'done' | 'error';
-    progress: number;
-    error?: string;
-  }[]>([]);
+  const [uploadQueue, setUploadQueue] = useState<UploadItem[]>([]);
+
+  const updateQueue = (newQueue: UploadItem[]) => {
+    uploadQueueRef.current = newQueue;
+    setUploadQueue(newQueue);
+  };
   const [showNewMenu, setShowNewMenu] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
@@ -177,7 +188,7 @@ function AdminFilesContent() {
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [stats, setStats] = useState<any>(null);
-  const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' }[]>([]);
+  const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' | 'info' | 'warning' }[]>([]);
   const [isUploadMinimized, setIsUploadMinimized] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [showDuplicates, setShowDuplicates] = useState(false);
@@ -186,6 +197,8 @@ function AdminFilesContent() {
   const [showZipModal, setShowZipModal] = useState(false);
   const [zipFileName, setZipFileName] = useState('DriveFlow_Export');
   const isCancelledBatch = useRef(false);
+  const downloadAbortController = useRef<AbortController | null>(null);
+  const uploadQueueRef = useRef<UploadItem[]>([]);
 
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
@@ -326,10 +339,10 @@ function AdminFilesContent() {
 
   const [refreshingStats, setRefreshingStats] = useState(false);
 
-  const addToast = (msg: string, type: 'success' | 'error' = 'success') => {
+  const addToast = (msg: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, msg, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
   };
 
   const fetchStats = async (cleanup = false) => {
@@ -356,18 +369,25 @@ function AdminFilesContent() {
   };
 
   const cancelSingleUpload = (index: number) => {
-    setUploadQueue(prev => {
-      const n = [...prev];
-      if (n[index] && n[index].status !== 'done') {
-        n[index] = { ...n[index], status: 'error', error: 'Cancelled by user' };
-      }
-      return n;
-    });
+    const next = [...uploadQueueRef.current];
+    if (next[index] && next[index].status !== 'done') {
+      next[index] = { ...next[index], status: 'error', error: 'Cancelled' };
+      updateQueue(next);
+    }
     // If it's the currently uploading file, abort it
-    const currentlyUploadingIdx = uploadQueue.findIndex(q => q.status === 'uploading');
-    if (currentlyUploadingIdx === index && uploadXhrRef.current) {
+    const current = uploadQueueRef.current.find(q => q.status === 'uploading');
+    if (current && uploadQueueRef.current.indexOf(current) === index && uploadXhrRef.current) {
       uploadXhrRef.current.abort();
     }
+  };
+
+  const cancelActiveDownload = () => {
+    if (downloadAbortController.current) {
+      downloadAbortController.current.abort();
+      downloadAbortController.current = null;
+    }
+    setDownloadProgress(null);
+    addToast('Download cancelled', 'error');
   };
 
   useEffect(() => {
@@ -379,6 +399,8 @@ function AdminFilesContent() {
       toggleSelect(file.id);
     } else if (isFolder(file)) {
       navigateToFolder({ id: file.id, name: file.name });
+    } else if (file.mimeType.startsWith('application/vnd.google-apps.') && file.webViewLink) {
+      window.open(file.webViewLink, '_blank');
     } else {
       setPreviewFile(file);
       window.history.pushState({ modal: 'preview' }, '');
@@ -428,7 +450,6 @@ function AdminFilesContent() {
           addToast('Trash bin emptied successfully');
           setTrashFiles([]);
           setSelectedTrash(new Set());
-          addToast('Trash emptied!');
           fetchStats();
           loadFiles(currentFolder.id);
         } catch (e: any) {
@@ -664,13 +685,44 @@ function AdminFilesContent() {
     if (!filesList || filesList.length === 0) return;
     const files = Array.from(filesList);
 
-    const queue = files.map(f => ({
-      name: f.webkitRelativePath || f.name,
-      size: f.size,
+    // Group files by top-level folder or individual file name
+    const groups: Record<string, { 
+      name: string; 
+      totalSize: number; 
+      fileIndices: number[];
+      isFolder: boolean;
+      uploadedBytes: number[];
+    }> = {};
+
+    files.forEach((f, idx) => {
+      const rel = (f as any).webkitRelativePath || '';
+      const topName = rel ? rel.split('/')[0] : f.name;
+      const isF = !!rel;
+      
+      if (!groups[topName]) {
+        groups[topName] = { 
+          name: topName, 
+          totalSize: 0, 
+          fileIndices: [], 
+          isFolder: isF, 
+          uploadedBytes: new Array(files.length).fill(0) 
+        };
+      }
+      groups[topName].totalSize += f.size;
+      groups[topName].fileIndices.push(idx);
+    });
+
+    const displayQueue: UploadItem[] = Object.keys(groups).map(key => ({
+      id: key,
+      name: groups[key].name,
+      size: groups[key].totalSize,
       status: 'pending' as const,
       progress: 0,
+      isFolder: groups[key].isFolder,
+      uploadedBytes: 0
     }));
-    setUploadQueue(queue);
+
+    updateQueue(displayQueue);
     setShowUploadModal(true);
     setUploading(true);
     setShowUploadMenu(false);
@@ -680,35 +732,42 @@ function AdminFilesContent() {
     const getOrCreateFolder = async (name: string, parentId: string): Promise<string> => {
       const cacheKey = `${parentId}::${name}`;
       if (folderCache[cacheKey]) return folderCache[cacheKey];
-
       try {
-        const res = await api.get(`/files?parentId=${parentId}`);
-        const existing = (res.data as any[]).find(
-          (f: any) => f.mimeType === 'application/vnd.google-apps.folder' && f.name === name
-        );
-        if (existing) {
-          folderCache[cacheKey] = existing.id;
-          return existing.id;
-        }
-      } catch { }
-
-      const created = await api.post('/files/folder', { name, parentId });
-      folderCache[cacheKey] = created.data.id;
-      return created.data.id;
+        const created = await api.post('/files/folder', { name, parentId });
+        folderCache[cacheKey] = created.data.id;
+        return created.data.id;
+      } catch (err: any) {
+        try {
+          const res = await api.get(`/files?parentId=${parentId}`);
+          const existing = (res.data as any[]).find(f => f.mimeType === 'application/vnd.google-apps.folder' && f.name === name);
+          if (existing) {
+            folderCache[cacheKey] = existing.id;
+            return existing.id;
+          }
+        } catch {}
+        throw new Error(`Folder Error: ${err.response?.data?.message || err.message}`);
+      }
     };
+
+    const fileProgressMap = new Array(files.length).fill(0);
 
     for (let i = 0; i < files.length; i++) {
       if (isCancelledBatch.current) break;
       
       const file = files[i];
-      // Check if this specific item was already cancelled via UI
-      const currentStatus = (uploadQueue[i] || {}).status;
-      if (currentStatus === 'error') continue; // Already marked as cancelled
+      const rel = (file as any).webkitRelativePath || '';
+      const topName = rel ? rel.split('/')[0] : file.name;
+      const groupIdx = Object.keys(groups).indexOf(topName);
+      
+      // Check if this group was cancelled
+      if (uploadQueueRef.current[groupIdx]?.status === 'error') {
+        fileProgressMap[i] = file.size; // Mark as "processed"
+        continue;
+      }
 
-      const relativePath = (file as any).webkitRelativePath || '';
-      const pathParts = relativePath ? relativePath.split('/').slice(0, -1) : [];
+      updateQueue(uploadQueueRef.current.map((q, idx) => idx === groupIdx ? { ...q, status: 'uploading' } : q));
 
-      setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'uploading' } : q));
+      const pathParts = rel ? rel.split('/').slice(0, -1) : [];
 
       try {
         let parentId = currentFolder.id;
@@ -716,8 +775,6 @@ function AdminFilesContent() {
           if (isCancelledBatch.current) throw new Error('Cancelled');
           parentId = await getOrCreateFolder(part, parentId);
         }
-
-        if (isCancelledBatch.current) throw new Error('Cancelled');
 
         const sessionRes = await api.post('/files/upload-session', {
           name: file.name,
@@ -727,34 +784,93 @@ function AdminFilesContent() {
         });
         const { uploadUrl } = sessionRes.data;
 
-        const fileId = await new Promise<string>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          uploadXhrRef.current = xhr;
-          xhr.open('PUT', uploadUrl, true);
-          xhr.upload.onprogress = (ev) => {
-            if (ev.lengthComputable) {
-              const pct = Math.round((ev.loaded * 100) / ev.total);
-              setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, progress: pct } : q));
+        const fileId = await new Promise<string>(async (resolve, reject) => {
+          const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB to stay safely under Vercel's 4.5MB limit
+          const totalSize = file.size;
+          let start = 0;
+          let lastId = '';
+
+          const uploadChunk = async (): Promise<void> => {
+            if (isCancelledBatch.current) throw new Error('Cancelled');
+            
+            const end = Math.min(start + CHUNK_SIZE, totalSize);
+            const chunk = file.slice(start, end);
+
+            // TRY DIRECT FIRST
+            try {
+              await new Promise<void>((resChunk, rejChunk) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('PUT', uploadUrl, true);
+                xhr.withCredentials = false;
+                xhr.timeout = 5000; // 5s timeout for direct, then switch to proxy
+                xhr.setRequestHeader('Content-Range', `bytes ${start}-${end - 1}/${totalSize}`);
+                xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+                
+                xhr.onload = () => {
+                  if (xhr.status === 308 || xhr.status === 200 || xhr.status === 201) {
+                    try {
+                      const resp = JSON.parse(xhr.responseText);
+                      if (resp.id) lastId = resp.id;
+                    } catch {}
+                    resChunk();
+                  } else {
+                    rejChunk(new Error(`HTTP ${xhr.status}`));
+                  }
+                };
+                xhr.onerror = () => rejChunk(new Error('Direct Blocked'));
+                xhr.ontimeout = () => rejChunk(new Error('Direct Timeout'));
+                xhr.send(chunk);
+              });
+            } catch (directErr) {
+              console.warn('Direct chunk upload failed, falling back to proxy...', directErr);
+              
+              // FALLBACK TO PROXY
+              await api.put(`/files/upload-proxy?url=${encodeURIComponent(uploadUrl)}`, chunk, {
+                headers: {
+                  'Content-Range': `bytes ${start}-${end - 1}/${totalSize}`,
+                  'Content-Type': file.type || 'application/octet-stream'
+                }
+              }).then(res => {
+                try {
+                  if (res.data?.id) lastId = res.data.id;
+                } catch {}
+              }).catch(proxyErr => {
+                throw new Error('Both direct and proxy upload failed. Please check your firewall.');
+              });
             }
           };
-          xhr.onload = () => {
-            uploadXhrRef.current = null;
-            if (xhr.status >= 200 && xhr.status < 300) {
-              try { 
-                const res = JSON.parse(xhr.responseText); 
-                if (res.id) resolve(res.id);
-                else reject(new Error('Google did not return a File ID'));
-              } catch (e) { 
-                reject(new Error('Invalid response from Google'));
-              }
-            } else reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
-          };
-          xhr.onerror = () => { uploadXhrRef.current = null; reject(new Error('Network error')); };
-          xhr.onabort = () => { uploadXhrRef.current = null; reject(new Error('Cancelled')); };
-          xhr.send(file);
-        });
 
-        if (isCancelledBatch.current) throw new Error('Cancelled');
+          try {
+            while (start < totalSize) {
+              let attempts = 0;
+              const maxRetries = 3;
+              let success = false;
+
+              while (attempts < maxRetries && !success) {
+                try {
+                  await uploadChunk();
+                  success = true;
+                } catch (e) {
+                  attempts++;
+                  if (attempts >= maxRetries) throw e;
+                  await new Promise(r => setTimeout(r, 1000 * attempts)); // Backoff
+                }
+              }
+
+              start = Math.min(start + CHUNK_SIZE, totalSize);
+              // Update Progress
+              fileProgressMap[i] = start;
+              const group = groups[topName];
+              const groupUploaded = group.fileIndices.reduce((acc, idx) => acc + (fileProgressMap[idx] || 0), 0);
+              const pct = Math.round((groupUploaded * 100) / group.totalSize);
+              updateQueue(uploadQueueRef.current.map((q, idx) => idx === groupIdx ? { ...q, progress: pct, status: 'uploading' } : q));
+            }
+            resolve(lastId || 'UPLOADED_' + Date.now());
+          } catch (err: any) {
+            console.error('Chunked Upload Failed:', err);
+            reject(new Error(err.message || 'Upload failed after retries.'));
+          }
+        });
 
         await api.post('/files/upload-complete', {
           fileId,
@@ -764,12 +880,23 @@ function AdminFilesContent() {
           parentId
         });
 
-        setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'done', progress: 100 } : q));
+        fileProgressMap[i] = file.size;
+        const group = groups[topName];
+        const groupUploaded = group.fileIndices.reduce((acc, idx) => acc + (fileProgressMap[idx] || 0), 0);
+        const isDone = group.fileIndices.every(idx => fileProgressMap[idx] >= files[idx].size);
+        
+        updateQueue(uploadQueueRef.current.map((q, idx) => idx === groupIdx ? { 
+          ...q, 
+          progress: Math.round((groupUploaded * 100) / group.totalSize),
+          status: isDone ? 'done' : 'uploading'
+        } : q));
+
       } catch (err: any) {
         if (err.message === 'Cancelled' || isCancelledBatch.current) {
-          setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'error', error: 'Cancelled' } : q));
+          updateQueue(uploadQueueRef.current.map((q, idx) => idx === groupIdx ? { ...q, status: 'error', error: 'Cancelled' } : q));
+          break; // Stop other files in batch if it's a batch cancel
         } else {
-          setUploadQueue(prev => prev.map((q, idx) => idx === i ? { ...q, status: 'error', error: err.message } : q));
+          updateQueue(uploadQueueRef.current.map((q, idx) => idx === groupIdx ? { ...q, status: 'error', error: err.message } : q));
         }
       }
     }
@@ -777,8 +904,11 @@ function AdminFilesContent() {
     await loadFiles(currentFolder.id);
     fetchStats();
     setUploading(false);
-    targetInput.value = ''; 
-    setTimeout(() => { setShowUploadModal(false); setUploadQueue([]); }, 2000);
+    try { targetInput.value = ''; } catch (e) {}
+    setTimeout(() => { 
+      setShowUploadModal(false); 
+      updateQueue([]); 
+    }, 2000);
   };
 
   const createNewFolder = async () => {
@@ -863,11 +993,16 @@ function AdminFilesContent() {
     setShowZipModal(false);
     addToast('Preparing multi-item ZIP...');
     setDownloadProgress(-1);
+
+    const controller = new AbortController();
+    downloadAbortController.current = controller;
+
     try {
       const res = await api.post('/files/bulk-download', { 
         fileIds: Array.from(selected) 
       }, {
         responseType: 'blob',
+        signal: controller.signal,
         onDownloadProgress: (progressEvent: any) => {
           if (progressEvent.total) {
             setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
@@ -883,7 +1018,8 @@ function AdminFilesContent() {
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
       setSelected(new Set());
-    } catch (e) {
+    } catch (e: any) {
+      if (e.name === 'CanceledError' || e.message === 'canceled') return;
       addToast('Bulk download failed', 'error');
     } finally {
       setDownloadProgress(null);
@@ -912,9 +1048,14 @@ function AdminFilesContent() {
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
       setDownloadProgress(-1); 
+      
+      const controller = new AbortController();
+      downloadAbortController.current = controller;
+
       try {
         const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, {
           responseType: 'blob',
+          signal: controller.signal,
           onDownloadProgress: (progressEvent: any) => {
             if (progressEvent.total && progressEvent.total > 0) {
               setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
@@ -931,7 +1072,8 @@ function AdminFilesContent() {
         link.click();
         link.parentNode?.removeChild(link);
         window.URL.revokeObjectURL(url);
-      } catch (e) {
+      } catch (e: any) {
+        if (e.name === 'CanceledError' || e.message === 'canceled') return;
         console.error(e);
         addToast('Folder download failed', 'error');
       } finally {
@@ -1072,7 +1214,7 @@ function AdminFilesContent() {
           {selected.size > 0 ? (
             <div className="flex items-center gap-2 bg-purple-500/10 p-1 rounded-2xl border border-purple-500/20 shrink-0">
               <span className="text-xs text-purple-400 px-3 font-bold whitespace-nowrap">{selected.size} selected</span>
-              <button onClick={handleBulkDownload}
+              <button onClick={() => handleBulkDownload()}
                 className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap shadow-lg shadow-blue-600/20">
                 <Download className="w-3.5 h-3.5" /> Download
               </button>
@@ -1972,39 +2114,49 @@ function AdminFilesContent() {
               {/* Scrollable File List */}
               {!isUploadMinimized && (
                 <div className="flex-1 overflow-y-auto p-2 space-y-1 bg-black/40 no-scrollbar">
-                  {uploadQueue.map((item, idx) => (
-                    <div key={idx} className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center gap-3 group hover:bg-white/10 transition-all">
-                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
-                        <FileIcon file={{ mimeType: '' } as any} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="text-[11px] text-white font-medium truncate">{item.name}</p>
-                          <span className={`text-[9px] font-bold uppercase ${
-                            item.status === 'done' ? 'text-emerald-400' :
-                            item.status === 'error' ? 'text-red-400' :
-                            'text-purple-400'
-                          }`}>
-                            {item.status === 'done' ? 'Success' : 
-                             item.status === 'error' ? (item.error === 'Cancelled' ? 'Cancelled' : 'Failed') : 
-                             `${item.progress}%`}
-                          </span>
+                  {(uploadQueue || []).map((item, idx) => {
+                    if (!item) return null;
+                    return (
+                      <div key={idx} className="p-3 bg-white/5 border border-white/5 rounded-xl flex items-center gap-3 group hover:bg-white/10 transition-all">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
+                          {item.isFolder ? <Folder className="w-4 h-4 text-yellow-400" /> : <File className="w-4 h-4 text-purple-400/60" />}
                         </div>
-                        <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                          <motion.div 
-                            className={`h-full ${item.status === 'error' ? 'bg-red-500' : 'bg-purple-500'}`}
-                            animate={{ width: `${item.progress}%` }}
-                          />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-[11px] text-white font-medium truncate">
+                              {item.name || 'Unknown Item'}
+                            </p>
+                            <span className={`text-[9px] font-bold uppercase ${
+                              item.status === 'done' ? 'text-emerald-400' :
+                              item.status === 'error' ? 'text-rose-400' :
+                              'text-purple-400'
+                            }`}>
+                              {item.status === 'done' ? 'Success' : 
+                               item.status === 'error' ? (item.error === 'Cancelled' ? 'Cancelled' : (item.error || 'Failed')) : 
+                               `${Math.round(item.progress || 0)}%`}
+                            </span>
+                          </div>
+                          <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden mb-1">
+                            <motion.div 
+                              className={`h-full ${item.status === 'error' ? 'bg-red-500' : 'bg-purple-500'}`}
+                              animate={{ width: `${Math.min(100, item.progress || 0)}%` }}
+                            />
+                          </div>
+                          {item.status === 'error' && item.error !== 'Cancelled' && (
+                            <p className="text-[8px] text-rose-400/80 truncate font-medium">
+                              {item.error}
+                            </p>
+                          )}
                         </div>
+                        {(item.status === 'uploading' || item.status === 'pending') && (
+                          <button onClick={() => cancelSingleUpload(idx)}
+                            className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
-                      {(item.status === 'uploading' || item.status === 'pending') && (
-                        <button onClick={() => cancelSingleUpload(idx)}
-                          className="p-2 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all">
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -2064,14 +2216,50 @@ function AdminFilesContent() {
 
 
       {/* Toasts */}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3">
+      <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none">
         <AnimatePresence>
           {toasts.map(t => (
-            <motion.div key={t.id} initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 100, opacity: 0 }}
-              className={`px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md border flex items-center gap-3 min-w-[200px]
-                ${t.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
-              <div className={`w-2 h-2 rounded-full ${t.type === 'success' ? 'bg-green-400 animate-pulse' : 'bg-red-400 animate-pulse'}`} />
-              <span className="text-sm font-medium">{t.msg}</span>
+            <motion.div key={t.id} 
+              initial={{ x: 100, opacity: 0, scale: 0.9 }} 
+              animate={{ x: 0, opacity: 1, scale: 1 }} 
+              exit={{ x: 100, opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className={`pointer-events-auto px-5 py-3.5 rounded-[20px] shadow-2xl backdrop-blur-xl border flex items-center gap-4 min-w-[280px] max-w-sm relative overflow-hidden group
+                ${t.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-emerald-500/10' : 
+                  t.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-rose-500/10' : 
+                  t.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 shadow-amber-500/10' :
+                  'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-indigo-500/10'}`}>
+              
+              {/* Animated Background Glow */}
+              <div className={`absolute -right-4 -top-4 w-16 h-16 blur-2xl opacity-20 transition-opacity group-hover:opacity-40
+                ${t.type === 'success' ? 'bg-emerald-400' : 
+                  t.type === 'error' ? 'bg-rose-400' : 
+                  t.type === 'warning' ? 'bg-amber-400' :
+                  'bg-indigo-400'}`} 
+              />
+
+              <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border shadow-inner
+                ${t.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30' : 
+                  t.type === 'error' ? 'bg-rose-500/20 border-rose-500/30' : 
+                  t.type === 'warning' ? 'bg-amber-500/20 border-amber-500/30' :
+                  'bg-indigo-500/20 border-indigo-500/30'}`}>
+                {t.type === 'success' && <CheckCircle className="w-5 h-5" />}
+                {t.type === 'error' && <AlertCircle className="w-5 h-5" />}
+                {t.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
+                {t.type === 'info' && <Info className="w-5 h-5" />}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-bold tracking-tight leading-tight mb-0.5 uppercase opacity-50">
+                  {t.type}
+                </p>
+                <p className="text-sm font-medium text-white/90 truncate">{t.msg}</p>
+              </div>
+
+              <button onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
+                className="p-1 hover:bg-white/5 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                <X className="w-3.5 h-3.5 text-gray-500" />
+              </button>
             </motion.div>
           ))}
         </AnimatePresence>
@@ -2082,7 +2270,13 @@ function AdminFilesContent() {
         {downloadProgress !== null && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }}
-              className="glass-card p-8 rounded-3xl max-w-xs w-full text-center border border-white/20 shadow-2xl">
+              className="glass-card p-8 rounded-3xl max-w-xs w-full text-center border border-white/20 shadow-2xl relative overflow-hidden">
+              
+              <button onClick={cancelActiveDownload}
+                className="absolute top-4 right-4 p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all active:scale-90 z-10"
+                title="Cancel Preparation">
+                <X className="w-5 h-5" />
+              </button>
 
               {/* Circular Progress */}
               <div className="relative w-24 h-24 mx-auto mb-6">

@@ -883,15 +883,20 @@ export const deletePermanently = async (req: Request, res: Response) => {
 // @desc  Empty trash bin
 export const emptyTrash = async (req: Request, res: Response) => {
   try {
-    try {
-      await drive.files.emptyTrash();
-    } catch (e) {
-      console.warn('Drive emptyTrash failed (likely scope issue):', (e as Error).message);
-      // We continue and delete from MongoDB anyway to act as a soft delete
+    const trashedFiles = await FileMetadata.find({ rootId: DRIVE_FOLDER_ID, status: 'trashed' });
+    
+    let deletedCount = 0;
+    for (const file of trashedFiles) {
+      try {
+        await drive.files.delete({ fileId: file.fileId });
+        deletedCount++;
+      } catch (e) {
+        console.warn(`Drive delete failed for ${file.fileId}:`, (e as Error).message);
+      }
     }
     
     await FileMetadata.deleteMany({ rootId: DRIVE_FOLDER_ID, status: 'trashed' });
-    await logActivity((req as any).user?._id, 'empty_trash', 'Emptied trash bin');
+    await logActivity((req as any).user?._id, 'empty_trash', `Permanently deleted ${deletedCount} items from trash bin`);
     res.json({ message: 'Trash emptied' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
@@ -984,6 +989,38 @@ export const getUploadSession = async (req: AuthRequest, res: Response) => {
   } catch (error) {
     console.error('Upload session error:', error);
     res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc  Proxy upload to Google Drive to bypass CORS
+// @route PUT /api/files/upload-proxy
+export const uploadProxy = async (req: AuthRequest, res: Response) => {
+  const { url } = req.query;
+  if (!url) {
+    res.status(400).json({ message: 'Target URL is required' });
+    return;
+  }
+
+  try {
+    const response = await axios({
+      method: 'PUT',
+      url: url as string,
+      data: req.body, // This is now a Buffer thanks to express.raw()
+      headers: {
+        'Content-Type': req.headers['content-type'] || 'application/octet-stream',
+        'Content-Range': req.headers['content-range'],
+        'Content-Length': req.headers['content-length']
+      },
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      validateStatus: () => true // Accept 308 Resume Incomplete without throwing
+    });
+    
+    // Pass the Google Drive status and data back to the frontend
+    res.status(response.status).send(response.data);
+  } catch (error: any) {
+    console.error('Upload proxy error:', error.message);
+    res.status(500).json({ message: error.message });
   }
 };
 
