@@ -1455,6 +1455,12 @@ export default function AdminFilesPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {isConvertible(previewFile) && (
+                    <button onClick={() => handleDownload(previewFile, 'pdf')}
+                      className="hidden sm:flex items-center gap-2 px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all text-[10px] font-bold uppercase tracking-wider border border-red-500/20" title="Download as PDF">
+                      <FileText className="w-4 h-4" /> PDF
+                    </button>
+                  )}
                   <button onClick={() => handleDownload(previewFile)}
                     className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
                     <Download className="w-5 h-5" />
