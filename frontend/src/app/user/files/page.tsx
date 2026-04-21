@@ -464,7 +464,7 @@ export default function UserFilesPage() {
             <button key={cat.id} onClick={() => setActiveCategory(cat.id)}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium transition-all border
                 ${activeCategory === cat.id 
-                  ? 'bg-purple-500 text-white border-purple-400 shadow-lg shadow-purple-500/20' 
+                  ? 'bg-purple-500 text-white border-purple-400' 
                   : 'bg-white/5 text-gray-400 border-white/5 hover:bg-white/10 hover:border-white/10'}`}>
               {cat.icon} {cat.label}
             </button>
@@ -657,7 +657,7 @@ export default function UserFilesPage() {
                       <p className="text-white font-medium">No Live Preview</p>
                       <p className="text-xs text-gray-500 mt-1">Download to view this file type</p>
                       <button onClick={() => handleDownload(previewFile)}
-                        className="mt-6 px-6 py-2.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-purple-500 transition-all shadow-lg shadow-purple-600/20">
+                        className="mt-6 px-6 py-2.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-purple-500 transition-all">
                         Download Now
                       </button>
                     </div>
@@ -872,7 +872,7 @@ export default function UserFilesPage() {
                 </button>
                 <button
                   onClick={confirmBulkDownload}
-                  className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-bold transition-all active:scale-95 shadow-lg shadow-purple-600/20"
+                  className="flex-1 px-4 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl font-bold transition-all active:scale-95"
                 >
                   Download
                 </button>

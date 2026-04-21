@@ -80,7 +80,7 @@ function ResetPasswordForm() {
                 </div>
               ))}
               <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} type="submit" disabled={status === 'loading'}
-                className="w-full py-3.5 mt-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-medium shadow-lg shadow-purple-500/25 flex items-center justify-center">
+                className="w-full py-3.5 mt-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-medium flex items-center justify-center">
                 {status === 'loading' ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Reset Password'}
               </motion.button>
             </form>

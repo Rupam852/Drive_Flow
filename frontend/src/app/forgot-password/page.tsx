@@ -85,7 +85,7 @@ export default function ForgotPasswordPage() {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={status === 'loading'}
-                className="w-full py-3.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-medium shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-medium flex items-center justify-center gap-2"
               >
                 {status === 'loading' ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Send Reset Link'}
               </motion.button>

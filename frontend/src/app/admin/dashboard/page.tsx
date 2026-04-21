@@ -128,7 +128,7 @@ export default function AdminDashboard() {
           <Link href="/admin/files" className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
             Manage Files
           </Link>
-          <Link href="/admin/users" className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition-all text-sm font-medium shadow-lg shadow-purple-600/20">
+          <Link href="/admin/users" className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition-all text-sm font-medium">
             View Users
           </Link>
         </div>
