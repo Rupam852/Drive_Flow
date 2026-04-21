@@ -438,7 +438,8 @@ export default function AdminFilesPage() {
         if (uploadReq.status >= 200 && uploadReq.status < 300) {
           resolve(JSON.parse(uploadReq.responseText));
         } else {
-          reject(new Error('Upload failed'));
+          console.error('Upload failed with status:', uploadReq.status, uploadReq.responseText);
+          reject(new Error(`Upload failed: ${uploadReq.statusText || 'Unknown Error'}`));
         }
       };
       uploadReq.onerror = () => {
