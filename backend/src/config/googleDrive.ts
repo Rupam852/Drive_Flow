@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const oauth2Client = new google.auth.OAuth2(
+export const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
   'http://localhost:5050'
@@ -20,4 +20,5 @@ const drive = google.drive({
   auth: oauth2Client,
 });
 
+export { oauth2Client as auth };
 export default drive;
