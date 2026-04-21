@@ -600,9 +600,16 @@ export const getDriveStats = async (req: Request, res: Response) => {
     // Trigger sync in background
     syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
 
+    const isAdmin = (req as any).user?.role === 'admin';
+
     // Calculate usedBytes from our LOCAL DB (Sum of all managed active files)
+    const statsMatch: any = { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } };
+    if (!isAdmin) {
+      statsMatch.isHidden = { $ne: true };
+    }
+
     const statsResult = await FileMetadata.aggregate([
-      { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
+      { $match: statsMatch },
       { $group: { _id: null, totalSize: { $sum: '$size' } } }
     ]);
     const usedBytes = statsResult.length > 0 ? statsResult[0].totalSize : 0;
@@ -611,22 +618,37 @@ export const getDriveStats = async (req: Request, res: Response) => {
     const limitBytes = 10737418240; // 10 GB in bytes (10 * 1024 * 1024 * 1024)
 
     // Count ALL Active Files recursively (Strictly excluding folders)
-    const totalFiles = await FileMetadata.countDocuments({ 
+    const fileCountQuery: any = { 
       rootId: DRIVE_FOLDER_ID,
       status: 'active', 
       type: { $ne: 'application/vnd.google-apps.folder' } 
-    });
+    };
+    if (!isAdmin) {
+      fileCountQuery.isHidden = { $ne: true };
+    }
+
+    const totalFiles = await FileMetadata.countDocuments(fileCountQuery);
     
     // Count ONLY Root Folders (immediate children of the main drive folder)
-    const totalFolders = await FileMetadata.countDocuments({ 
+    const folderCountQuery: any = { 
       status: 'active', 
       type: 'application/vnd.google-apps.folder',
       parentId: DRIVE_FOLDER_ID
-    });
+    };
+    if (!isAdmin) {
+      folderCountQuery.isHidden = { $ne: true };
+    }
+
+    const totalFolders = await FileMetadata.countDocuments(folderCountQuery);
 
     // File type breakdown
+    const typeBreakdownMatch: any = { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } };
+    if (!isAdmin) {
+      typeBreakdownMatch.isHidden = { $ne: true };
+    }
+
     const typesRes = await FileMetadata.aggregate([
-      { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
+      { $match: typeBreakdownMatch },
       { $group: { _id: '$type', count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
@@ -1208,13 +1230,24 @@ export const toggleHideFile = async (req: Request, res: Response) => {
       return;
     }
 
+    // If it's a folder, recursively apply the same to all children
+    if (updated.type === 'application/vnd.google-apps.folder' || updated.type === 'folder') {
+      const childIds = await getAllChildIds([fileId]);
+      if (childIds.length > 0) {
+        await FileMetadata.updateMany(
+          { fileId: { $in: childIds } },
+          { isHidden: hide }
+        );
+      }
+    }
+
     await logActivity(
       (req as any).user?._id,
       hide ? 'hide_file' : 'unhide_file',
       `${hide ? 'Hidden' : 'Unhidden'} file: ${updated.name}`
     );
 
-    res.json({ message: `File ${hide ? 'hidden' : 'visible'} successfully`, isHidden: hide });
+    res.json({ message: `File and its contents ${hide ? 'hidden' : 'visible'} successfully`, isHidden: hide });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }
