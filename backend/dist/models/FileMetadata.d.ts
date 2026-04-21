@@ -6,6 +6,7 @@ export interface IFileMetadata extends Document {
     size?: number;
     ownerUserId: mongoose.Types.ObjectId;
     parentId?: string;
+    rootId?: string;
     status: 'active' | 'deleted' | 'trashed';
     createdAt: Date;
     updatedAt: Date;
