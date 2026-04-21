@@ -45,11 +45,11 @@ export default function AdminUsersPage() {
 
   useEffect(() => { fetchUsers(); }, []);
 
-  const updateStatus = async (id: string, action: 'approve' | 'reject') => {
+  const updateStatus = async (id: string, action: 'approve' | 'reject' | 'pending') => {
     setActionLoading(id + action);
     try {
       await api.put(`/users/${id}/${action}`);
-      setUsers(prev => prev.map(u => u._id === id ? { ...u, status: action === 'approve' ? 'approved' : 'rejected' } : u));
+      setUsers(prev => prev.map(u => u._id === id ? { ...u, status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : 'pending' } : u));
     } catch (e) { console.error(e); }
     finally { setActionLoading(null); }
   };
@@ -157,6 +157,16 @@ export default function AdminUsersPage() {
                               >
                                 {actionLoading === user._id + 'reject' ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> : <XCircle className="w-3 h-3" />}
                                 Reject
+                              </button>
+                            )}
+                            {user.status !== 'pending' && (
+                              <button
+                                onClick={() => updateStatus(user._id, 'pending')}
+                                disabled={!!actionLoading}
+                                className="px-3 py-1.5 text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-lg hover:bg-yellow-500/30 transition-colors flex items-center gap-1"
+                              >
+                                {actionLoading === user._id + 'pending' ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> : <Clock className="w-3 h-3" />}
+                                Pending
                               </button>
                             )}
                             <button
