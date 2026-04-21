@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Folder, File, Files, Upload, FolderPlus, FilePlus, Download, Pencil,
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
-  MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink
+  MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink,
+  Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -33,10 +34,40 @@ const isConvertible = (f: DriveFile) => {
 const isDoc = (f: DriveFile) => isConvertible(f) || f.mimeType.includes('pdf') || f.mimeType.includes('text');
 
 const FileIcon = ({ file }: { file: DriveFile }) => {
-  if (isFolder(file)) return <Folder className="w-5 h-5 text-yellow-400" />;
-  if (isImage(file)) return <Image className="w-5 h-5 text-blue-400" />;
-  if (isDoc(file)) return <FileText className="w-5 h-5 text-blue-300" />;
-  if (file.mimeType.startsWith('video/')) return <Film className="w-5 h-5 text-purple-400" />;
+  const mime = file.mimeType.toLowerCase();
+  
+  if (isFolder(file)) return <Folder className="w-5 h-5 text-yellow-400 fill-yellow-400/10" />;
+  
+  // Images
+  if (isImage(file)) return <Image className="w-5 h-5 text-emerald-400" />;
+  
+  // Videos
+  if (isVideo(file)) return <Film className="w-5 h-5 text-purple-400" />;
+  
+  // Audio
+  if (mime.startsWith('audio/')) return <Music className="w-5 h-5 text-pink-400" />;
+  
+  // PDFs
+  if (mime === 'application/pdf') return <FileText className="w-5 h-5 text-red-500" />;
+  
+  // Documents / Word
+  if (mime.includes('document') || mime.includes('msword')) return <FileText className="w-5 h-5 text-blue-500" />;
+  
+  // Spreadsheets / Excel
+  if (mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('sheet')) return <FileSpreadsheet className="w-5 h-5 text-green-500" />;
+  
+  // Presentations / PPT
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return <Monitor className="w-5 h-5 text-orange-500" />;
+  
+  // Archives / ZIP
+  if (mime.includes('zip') || mime.includes('rar') || mime.includes('tar') || mime.includes('7z')) return <Archive className="w-5 h-5 text-amber-500" />;
+  
+  // APKs / Apps
+  if (mime.includes('android.package-archive') || file.name.toLowerCase().endsWith('.apk')) return <Smartphone className="w-5 h-5 text-teal-400" />;
+  
+  // Scripts / Code
+  if (mime.includes('javascript') || mime.includes('json') || mime.includes('html') || mime.includes('css')) return <Package className="w-5 h-5 text-indigo-400" />;
+
   return <File className="w-5 h-5 text-gray-400" />;
 };
 
