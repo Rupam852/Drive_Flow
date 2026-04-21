@@ -575,6 +575,8 @@ export default function AdminFilesPage() {
       setSelected(new Set());
       setShowMoveModal(false);
       addToast('Moved successfully');
+      fetchStats();
+      loadFiles(currentFolder.id);
     } catch (e) { addToast('Move failed', 'error'); }
     finally { setActionLoading(false); }
   };
@@ -852,6 +854,8 @@ export default function AdminFilesPage() {
       setFiles(prev => prev.map(f => f.id === renaming.id ? { ...f, name: newName } : f));
       setRenaming(null);
       addToast('File renamed!');
+      loadFiles(currentFolder.id);
+      fetchStats();
     } catch (e) {
       addToast('Error renaming', 'error');
     } finally {
@@ -867,6 +871,7 @@ export default function AdminFilesPage() {
       setSelected(new Set());
       addToast('Items moved to trash');
       fetchStats();
+      loadFiles(currentFolder.id);
     } catch (e) { addToast('Delete failed', 'error'); }
     finally { setDeletingIds(prev => prev.filter(id => !ids.includes(id))); }
   };
