@@ -102,16 +102,26 @@ export default function UserFilesPage() {
     }
     fetchStats();
 
-    const handlePopState = () => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (e.state?.path) {
+        setPath(e.state.path);
+        loadFiles(e.state.path[e.state.path.length - 1].id);
+        return;
+      }
       const params = new URLSearchParams(window.location.search);
       const folderId = params.get('folder') || ROOT_ID;
       const existing = path.find(p => p.id === folderId);
       if (existing) {
         setPath(path.slice(0, path.indexOf(existing) + 1));
+        loadFiles(folderId);
       } else {
-        setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: 'Folder' }]);
+        api.get(`/files/${folderId}/metadata`).then(res => {
+          setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: res.data.name }]);
+        }).catch(() => {
+          setPath([{ id: ROOT_ID, name: 'Root' }, { id: folderId, name: 'Folder' }]);
+        });
+        loadFiles(folderId);
       }
-      if (!searchQuery) loadFiles(folderId);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -139,11 +149,12 @@ export default function UserFilesPage() {
   }, [files, activeCategory]);
 
   const navigate = (folder: DriveFile) => {
-    setSearchQuery(''); // Clear search when navigating into a folder
-    setPath(p => [...p, { id: folder.id, name: folder.name }]);
+    setSearchQuery(''); 
+    const newPath = [...path, { id: folder.id, name: folder.name }];
+    setPath(newPath);
     const url = new URL(window.location.href);
     url.searchParams.set('folder', folder.id);
-    window.history.pushState({}, '', url);
+    window.history.pushState({ path: newPath }, '', url);
   };
 
   const breadcrumbNav = (idx: number) => {
@@ -151,7 +162,7 @@ export default function UserFilesPage() {
     setPath(newPath);
     const url = new URL(window.location.href);
     url.searchParams.set('folder', newPath[newPath.length - 1].id);
-    window.history.pushState({}, '', url);
+    window.history.pushState({ path: newPath }, '', url);
   };
 
   const handleDownload = async (file: DriveFile, format?: string) => {
