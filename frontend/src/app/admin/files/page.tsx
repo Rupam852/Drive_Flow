@@ -1678,6 +1678,10 @@ function AdminFilesContent() {
                   <MoreVertical className="w-5 h-5 text-purple-400" /> System Activity
                 </h3>
                 <div className="flex items-center gap-2">
+                  <button onClick={fetchLogs} disabled={loadingLogs}
+                    className="p-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl transition-all border border-white/10 disabled:opacity-50" title="Refresh Logs">
+                    <RefreshCw className={`w-4 h-4 ${loadingLogs ? 'animate-spin' : ''}`} />
+                  </button>
                   {logs.length > 0 && (
                     <button onClick={handleClearLogs}
                       className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all text-xs font-bold uppercase tracking-widest border border-red-500/20">
