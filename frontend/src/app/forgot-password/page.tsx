@@ -13,15 +13,18 @@ export default function ForgotPasswordPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Submitting forgot password for:', email);
     setStatus('loading');
     setError('');
     try {
-      await api.post('/auth/forgot-password', { email });
+      const response = await api.post('/auth/forgot-password', { email });
+      console.log('Forgot password success:', response.data);
       setStatus('sent');
     } catch (err: any) {
-      console.error('Forgot password error:', err);
-      console.log('Error response data:', err.response?.data);
-      setError(err.response?.data?.message || 'Something went wrong');
+      console.error('Forgot password full error:', err);
+      const msg = err.response?.data?.message || 'Something went wrong';
+      console.log('Extracted error message:', msg);
+      setError(msg);
       setStatus('error');
     }
   };
