@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean } | null>(null);
+  const [isNativeApp, setIsNativeApp] = useState(false);
   const router = useRouter();
 
   // Server health check on mount
@@ -42,6 +43,8 @@ export default function LoginPage() {
       }
     };
     checkServer();
+    // Detect if running inside Capacitor Android app
+    setIsNativeApp(!!(window as any).Capacitor?.isNativePlatform?.());
   }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -184,35 +187,37 @@ export default function LoginPage() {
         </p>
       </motion.div>
 
-      {/* Android App Download Banner */}
-      <motion.a
-        href="https://drive.google.com/uc?export=download&id=1EH7ZYEMbhNuMOgCLLhjerlIvick3k-0F"
-        target="_blank"
-        rel="noopener noreferrer"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.5 }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.97 }}
-        className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
-      >
-        {/* Pulsing dot */}
-        <span className="absolute top-3 right-3 flex h-2 w-2">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-        </span>
-        <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-          <Smartphone className="w-5 h-5 text-emerald-400" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-emerald-300 font-semibold text-sm">Android App Available</p>
-          <p className="text-emerald-500/80 text-xs mt-0.5">Please download this app for better experience</p>
-        </div>
-        <div className="flex items-center gap-1 shrink-0 bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
-          <Download className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-emerald-300 text-xs font-bold">Download</span>
-        </div>
-      </motion.a>
+      {/* Android App Download Banner — only on web, hidden inside the app */}
+      {!isNativeApp && (
+        <motion.a
+          href="https://drive.google.com/uc?export=download&id=1EH7ZYEMbhNuMOgCLLhjerlIvick3k-0F"
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+        >
+          {/* Pulsing dot */}
+          <span className="absolute top-3 right-3 flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+            <Smartphone className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-emerald-300 font-semibold text-sm">Android App Available</p>
+            <p className="text-emerald-500/80 text-xs mt-0.5">Please download this app for better experience</p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-emerald-300 text-xs font-bold">Download</span>
+          </div>
+        </motion.a>
+      )}
 
       </div> {/* end Card + Banner wrapper */}
       {/* Rejection / Pending Popup */}
