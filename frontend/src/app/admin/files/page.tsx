@@ -981,6 +981,17 @@ function AdminFilesContent() {
     }
   };
 
+  // Universal download trigger - works on both web and Android
+  const triggerDownload = (url: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 500);
+  };
+
   const handleBulkDownload = async (customName?: string) => {
     if (selected.size === 0) return;
     
@@ -1000,16 +1011,15 @@ function AdminFilesContent() {
       return;
     }
 
-    const zipName = customName;
     setShowZipModal(false);
-    addToast('Preparing multi-item ZIP...');
+    addToast('Preparing ZIP download...');
     setDownloadProgress(-1);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
       const ids = Array.from(selected).join(',');
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&token=${token}`;
-      window.open(url, '_blank');
+      triggerDownload(url);
       setSelected(new Set());
     } catch (e: any) {
       addToast('Bulk download failed', 'error');
@@ -1025,9 +1035,9 @@ function AdminFilesContent() {
       return;
     }
     if (format) {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}&format=${format}`;
-      window.open(url, '_blank');
+      triggerDownload(url);
       setShowDownloadModal(false);
       return;
     }
@@ -1037,9 +1047,9 @@ function AdminFilesContent() {
       setDownloadProgress(-1); 
       
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
         const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&token=${token}`;
-        window.open(url, '_blank');
+        triggerDownload(url);
       } catch (e: any) {
         console.error(e);
         addToast('Folder download failed', 'error');
@@ -1051,14 +1061,10 @@ function AdminFilesContent() {
 
     setDownloadProgress(-1);
     try {
-      addToast('Preparing direct download...');
-      const res = await api.get(`/files/${file.id}/direct-download`);
-      const { webContentLink } = res.data;
-      if (webContentLink) {
-        window.open(webContentLink, '_blank');
-      } else {
-        addToast('Direct link not available', 'error');
-      }
+      addToast('Starting download...');
+      const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}`;
+      triggerDownload(url);
     } catch (e) {
       console.error(e);
       addToast('Download failed', 'error');
