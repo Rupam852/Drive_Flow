@@ -70,6 +70,9 @@ export default function UserFilesPage() {
   const [zipNameModal, setZipNameModal] = useState(false);
   const [zipName, setZipName] = useState('');
   const zipNameRef = useRef<HTMLInputElement>(null);
+  const [downloadStatus, setDownloadStatus] = useState<{ show: boolean; fileName: string; status: 'loading' | 'success' | 'error' }>({
+    show: false, fileName: '', status: 'loading'
+  });
 
   // Animate fake counter 1→99 during indeterminate download phase
   useEffect(() => {
@@ -206,16 +209,42 @@ export default function UserFilesPage() {
   };
 
   // Universal download trigger - works on both web and Android WebView
-  const triggerDownload = (url: string) => {
-    // On Capacitor native (Android), _system opens system browser which handles downloads
+  const triggerDownload = (url: string, fileName = 'file') => {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = isNative ? '_system' : '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => document.body.removeChild(a), 500);
+    if (isNative) {
+      // On Android: show in-app status overlay instead of opening system browser
+      setDownloadStatus({ show: true, fileName, status: 'loading' });
+      fetch(url)
+        .then(res => {
+          if (!res.ok) throw new Error('Download failed');
+          return res.blob();
+        })
+        .then(blob => {
+          // Create blob URL and trigger save without opening browser
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = fileName;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 500);
+          setDownloadStatus({ show: true, fileName, status: 'success' });
+          setTimeout(() => setDownloadStatus(s => ({ ...s, show: false })), 3000);
+        })
+        .catch(() => {
+          setDownloadStatus({ show: true, fileName, status: 'error' });
+          setTimeout(() => setDownloadStatus(s => ({ ...s, show: false })), 3000);
+        });
+    } else {
+      // On web: standard anchor download
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 500);
+    }
   };
 
   const getToken = () =>
@@ -232,24 +261,24 @@ export default function UserFilesPage() {
     }
 
     if (format) {
+      const ext = format === 'pdf' ? '.pdf' : '.docx';
       const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}&format=${format}`;
-      triggerDownload(url);
+      triggerDownload(url, file.name.replace(/\.[^.]+$/, '') + ext);
       setShowDownloadModal(false);
       return;
     }
 
-    // Folder download → ZIP via GET with proper filename
+    // Folder download → ZIP
     if (isFolder(file)) {
-      addToast('Preparing folder ZIP...');
-      setDownloadProgress(-1);
-      const name = encodeURIComponent(file.name + '.zip');
-      const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}&fileName=${name}`;
-      
       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      const zipFileName = file.name + '.zip';
+      const name = encodeURIComponent(zipFileName);
+      const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}&fileName=${name}`;
       if (isNative) {
-        triggerDownload(url);
-        setTimeout(() => setDownloadProgress(null), 3000);
+        triggerDownload(url, zipFileName);
       } else {
+        addToast('Preparing folder ZIP...');
+        setDownloadProgress(-1);
         try {
           const response = await api.get(`/files/bulk-download?fileIds=${file.id}`, {
             responseType: 'blob',
@@ -261,7 +290,7 @@ export default function UserFilesPage() {
           const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
           const link = document.createElement('a');
           link.href = blobUrl;
-          link.setAttribute('download', file.name + '.zip');
+          link.setAttribute('download', zipFileName);
           document.body.appendChild(link);
           link.click();
           link.remove();
@@ -275,16 +304,15 @@ export default function UserFilesPage() {
       return;
     }
 
-    // Single file: direct download (proper filename + Content-Length)
-    addToast('Starting download...');
-    setDownloadProgress(-1);
-    try {
-      const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}`;
-      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-      if (isNative) {
-        triggerDownload(url);
-        setTimeout(() => setDownloadProgress(null), 2000);
-      } else {
+    // Single file download
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}`;
+    if (isNative) {
+      triggerDownload(url, file.name);
+    } else {
+      addToast('Starting download...');
+      setDownloadProgress(-1);
+      try {
         const response = await api.get(`/files/${file.id}/download`, {
           responseType: 'blob',
           onDownloadProgress: (pe) => {
@@ -300,10 +328,10 @@ export default function UserFilesPage() {
         link.remove();
         window.URL.revokeObjectURL(blobUrl);
         setDownloadProgress(null);
+      } catch (e) {
+        addToast('Download failed', 'error');
+        setDownloadProgress(null);
       }
-    } catch (e) {
-      addToast('Download failed', 'error');
-      setDownloadProgress(null);
     }
     setShowDownloadModal(false);
   };
@@ -327,8 +355,7 @@ export default function UserFilesPage() {
       
       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
       if (isNative) {
-        triggerDownload(url);
-        setTimeout(() => setDownloadProgress(null), 3000);
+        triggerDownload(url, finalName + '.zip');
       } else {
         const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
           responseType: 'blob',
@@ -672,7 +699,7 @@ export default function UserFilesPage() {
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                   {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
-                    <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
+                    <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${getToken()}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
                       className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
                       <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
@@ -696,7 +723,7 @@ export default function UserFilesPage() {
                 
                 {isImage(previewFile) ? (
                   <img 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}`}
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${getToken()}`}
                     alt={previewFile.name} 
                     className="max-h-full max-w-full object-contain shadow-2xl relative z-10" />
                 ) : isVideo(previewFile) ? (
@@ -704,10 +731,10 @@ export default function UserFilesPage() {
                     controls 
                     autoPlay 
                     className="max-h-full w-full relative z-10 shadow-2xl" 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}`} />
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${getToken()}`} />
                 ) : (previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) ? (
-                  <iframe 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}#toolbar=0`}
+                  <iframe
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${getToken()}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
                     className="w-full h-full border-none relative z-10 bg-white" />
                 ) : (
                   <div className="flex flex-col items-center gap-6 text-gray-500 relative z-10">
@@ -940,6 +967,99 @@ export default function UserFilesPage() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+      {/* Download Status Overlay - Android only */}
+      <AnimatePresence>
+        {downloadStatus.show && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 backdrop-blur-xl p-6"
+            onClick={() => downloadStatus.status !== 'loading' && setDownloadStatus(s => ({ ...s, show: false }))}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 20 }}
+              transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+              className="glass-card w-full max-w-xs rounded-[32px] p-8 flex flex-col items-center gap-5 shadow-[0_0_80px_rgba(0,0,0,0.6)] border border-white/10"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Icon */}
+              <div className="relative">
+                {downloadStatus.status === 'loading' && (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    className="w-20 h-20 rounded-full border-4 border-purple-500/20 border-t-purple-500"
+                  />
+                )}
+                {downloadStatus.status === 'success' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', damping: 15, stiffness: 300 }}
+                    className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500/30 to-green-500/20 border-2 border-emerald-500/50 flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.3)]"
+                  >
+                    <motion.svg
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 0.4, delay: 0.1 }}
+                      className="w-10 h-10 text-emerald-400"
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}
+                    >
+                      <motion.path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </motion.svg>
+                  </motion.div>
+                )}
+                {downloadStatus.status === 'error' && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', damping: 15, stiffness: 300 }}
+                    className="w-20 h-20 rounded-full bg-red-500/20 border-2 border-red-500/40 flex items-center justify-center shadow-[0_0_30px_rgba(239,68,68,0.2)]"
+                  >
+                    <X className="w-10 h-10 text-red-400" />
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Text */}
+              <div className="text-center">
+                <p className="text-white font-bold text-lg mb-1">
+                  {downloadStatus.status === 'loading' && 'Downloading...'}
+                  {downloadStatus.status === 'success' && 'Download Complete!'}
+                  {downloadStatus.status === 'error' && 'Download Failed'}
+                </p>
+                <p className="text-gray-400 text-sm truncate max-w-[200px]">
+                  {downloadStatus.fileName}
+                </p>
+                {downloadStatus.status === 'loading' && (
+                  <p className="text-purple-400 text-xs mt-2 animate-pulse">Please wait...</p>
+                )}
+                {downloadStatus.status === 'success' && (
+                  <p className="text-emerald-400 text-xs mt-2">Saved to your Downloads folder</p>
+                )}
+                {downloadStatus.status === 'error' && (
+                  <p className="text-red-400 text-xs mt-2">Please try again</p>
+                )}
+              </div>
+
+              {/* Close button - only when done */}
+              {downloadStatus.status !== 'loading' && (
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  onClick={() => setDownloadStatus(s => ({ ...s, show: false }))}
+                  className="px-8 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-sm font-medium transition-all active:scale-95"
+                >
+                  Close
+                </motion.button>
+              )}
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 

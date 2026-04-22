@@ -33,7 +33,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
 
     resetTokens.set(hashedToken, {
       email,
-      expires: Date.now() + 30 * 60 * 1000, // 30 minutes
+      expires: Date.now() + 10 * 60 * 1000, // 10 minutes
     });
 
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
@@ -54,9 +54,9 @@ export const forgotPassword = async (req: Request, res: Response) => {
       html: `
         <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:32px;background:#0f172a;color:#f8fafc;border-radius:16px;">
           <h2 style="color:#8b5cf6;">DriveFlow Password Reset</h2>
-          <p>You requested a password reset. Click the link below within 30 minutes:</p>
+          <p>You requested a password reset. Click the link below within <strong>10 minutes</strong>:</p>
           <a href="${resetUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#8b5cf6;color:white;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a>
-          <p style="color:#94a3b8;font-size:12px;">If you didn't request this, please ignore this email.</p>
+          <p style="color:#94a3b8;font-size:12px;">This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
         </div>
       `,
     });
@@ -85,8 +85,8 @@ export const resetPassword = async (req: Request, res: Response) => {
       return;
     }
 
-    if (newPassword.length < 6 || newPassword.length > 8) {
-      res.status(400).json({ message: 'Password must be between 6 and 8 characters long.' });
+    if (newPassword.length < 6 || newPassword.length > 9) {
+      res.status(400).json({ message: 'Password must be between 6 and 9 characters long.' });
       return;
     }
 
