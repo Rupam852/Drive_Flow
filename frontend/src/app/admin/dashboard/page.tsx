@@ -73,7 +73,9 @@ export default function AdminDashboard() {
       }
 
       if (statsRes.data) setStats(statsRes.data);
-      if (usersRes.data) setUserCount(usersRes.data.length);
+      if (usersRes.data) {
+        setUserCount(usersRes.data.filter((u: any) => u.role !== 'admin').length);
+      }
       if (logsRes.data) setLogs(logsRes.data.slice(0, 5));
     } catch (e: any) {
       console.error('Dashboard load error:', e);
