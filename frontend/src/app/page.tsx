@@ -34,15 +34,9 @@ export default function Home() {
         clearInterval(interval);
         
         setTimeout(() => {
-          // Check if user is already logged in
-          const token = localStorage.getItem('token');
-          const role = localStorage.getItem('role');
-          
-          if (token && role) {
-            router.push(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
-          } else {
-            router.push('/login');
-          }
+          // Redirect to login page every time root is hit, but DO NOT clear storage
+          // This allows seeing the login page while keeping the old session alive.
+          router.push('/login');
         }, 800);
         
       } catch (e: any) {

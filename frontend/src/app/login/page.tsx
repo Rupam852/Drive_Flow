@@ -20,13 +20,8 @@ export default function LoginPage() {
 
   // Server health check on mount
   useEffect(() => {
-    // Check if already logged in
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    if (token && role) {
-      router.replace(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
-      return;
-    }
+    // We removed the auto-redirect to dashboard here to allow users to see the login page 
+    // even if they have a token, as requested by the user.
 
     const checkServer = async () => {
       try {
