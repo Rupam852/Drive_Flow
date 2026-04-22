@@ -13,14 +13,10 @@ export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
 
-    if (!user) {
-      // Send success even if user not found (security best practice)
+    // Only allow 'pending' or 'approved' users to reset password
+    if (!user || user.status === 'rejected') {
+      // Send success even if user not found or rejected (security best practice)
       res.json({ message: 'If this email exists, a reset link has been sent.' });
-      return;
-    }
-
-    if (user.role === 'admin') {
-      res.status(403).json({ message: 'Admin password cannot be reset via this method.' });
       return;
     }
 
@@ -77,8 +73,8 @@ export const resetPassword = async (req: Request, res: Response) => {
     }
 
     const user = await User.findOne({ email: tokenData.email });
-    if (!user) {
-      res.status(400).json({ message: 'User not found.' });
+    if (!user || user.status === 'rejected') {
+      res.status(400).json({ message: 'User not found or account restricted.' });
       return;
     }
 
