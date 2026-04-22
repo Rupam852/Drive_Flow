@@ -203,6 +203,23 @@ export default function UserFilesPage() {
     window.history.pushState({ path: newPath }, '', url);
   };
 
+  // Universal download trigger - works on both web and Android WebView
+  const triggerDownload = (url: string) => {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => document.body.removeChild(a), 500);
+  };
+
+  const getToken = () =>
+    localStorage.getItem('token_user') || localStorage.getItem('token') || '';
+
+  const getApiBase = () =>
+    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
   const handleDownload = async (file: DriveFile, format?: string) => {
     if (isConvertible(file) && !format && !isFolder(file)) {
       setDownloadingFile(file);
@@ -211,69 +228,28 @@ export default function UserFilesPage() {
     }
 
     if (format) {
-      // Use backend for format conversion
-      const token = localStorage.getItem('token');
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}&format=${format}`;
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', file.name);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}&format=${format}`;
+      triggerDownload(url);
       setShowDownloadModal(false);
       return;
     }
 
-    // If it's a folder, use the bulk-download endpoint to zip it
+    // Folder download → ZIP via GET
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
-      try {
-        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, { 
-          responseType: 'blob',
-          onDownloadProgress: (progressEvent) => {
-            if (progressEvent.total) {
-              setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
-            } else {
-              setDownloadProgress(-1);
-            }
-          }
-        });
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${file.name}.zip`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } catch (e) {
-        console.error(e);
-        addToast('Folder download failed', 'error');
-      } finally {
-        setDownloadProgress(null);
-      }
+      setDownloadProgress(-1);
+      const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}`;
+      triggerDownload(url);
+      setDownloadProgress(null);
       return;
     }
 
-    // Direct download
-    try {
-      addToast('Preparing direct download...');
-      const res = await api.get(`/files/${file.id}/direct-download`);
-      const { webContentLink } = res.data;
-      if (webContentLink) {
-        const link = document.createElement('a');
-        link.href = webContentLink;
-        link.setAttribute('target', '_blank');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } else {
-        addToast('Direct download not available', 'error');
-      }
-    } catch (e) {
-      console.error(e);
-      addToast('Download failed', 'error');
-    }
+    // Direct file download
+    addToast('Starting download...');
+    setDownloadProgress(-1);
+    const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}`;
+    triggerDownload(url);
+    setDownloadProgress(null);
     setShowDownloadModal(false);
   };
 
@@ -287,29 +263,14 @@ export default function UserFilesPage() {
   const confirmBulkDownload = async () => {
     setZipNameModal(false);
     const finalName = zipName.trim() || 'driveflow-downloads';
-    addToast('Preparing ZIP file...');
+    addToast('Preparing ZIP download...');
+    setDownloadProgress(-1);
     try {
-      const ids = Array.from(selected);
-      const res = await api.post('/files/bulk-download', { fileIds: ids }, { 
-        responseType: 'blob',
-        onDownloadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
-          } else {
-            setDownloadProgress(-1);
-          }
-        }
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${finalName}.zip`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const ids = Array.from(selected).join(',');
+      const url = `${getApiBase()}/files/bulk-download?fileIds=${ids}&token=${getToken()}`;
+      triggerDownload(url);
       setSelected(new Set());
-      addToast(`Downloaded as "${finalName}.zip"`);
+      addToast(`Download started: "${finalName}.zip"`);
     } catch (e) {
       console.error(e);
       addToast('Error downloading files', 'error');
