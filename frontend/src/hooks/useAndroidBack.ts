@@ -3,33 +3,58 @@
 import { useEffect } from 'react';
 import { App } from '@capacitor/app';
 
+type BackHandler = () => boolean;
+
+interface HandlerEntry {
+  handler: BackHandler;
+  priority: number;
+}
+
+const backHandlers: HandlerEntry[] = [];
+let listenerRegistered = false;
+
 /**
  * useAndroidBack - Handles Android hardware/gesture back button in Capacitor.
- * Pass a handler function that returns true if the back was handled (stops propagation),
- * or false to let the default behavior proceed.
+ * @param handler Function that returns true if handled (stops propagation)
+ * @param priority Higher priority runs first (e.g. modals=10, page nav=5, layout=0)
+ * @param deps Dependency array for the effect
  */
-export function useAndroidBack(handler: () => boolean, deps: React.DependencyList = []) {
+export function useAndroidBack(handler: BackHandler, priority: number = 0, deps: React.DependencyList = []) {
   useEffect(() => {
-    let listenerPromise: ReturnType<typeof App.addListener> | null = null;
-
-    // Only register on native Capacitor (Android/iOS)
     if ((window as any).Capacitor?.isNativePlatform?.()) {
-      listenerPromise = App.addListener('backButton', (info) => {
-        const handled = handler();
-        if (!handled && info.canGoBack) {
-          window.history.back();
-        } else if (!handled && !info.canGoBack) {
-          // On root — exit app
-          App.exitApp();
-        }
-      });
-    }
-
-    return () => {
-      if (listenerPromise) {
-        listenerPromise.then((l) => l.remove()).catch(() => {});
+      if (!listenerRegistered) {
+        App.addListener('backButton', (info) => {
+          let handled = false;
+          
+          // Sort handlers by priority descending (highest first)
+          const sortedHandlers = [...backHandlers].sort((a, b) => b.priority - a.priority);
+          
+          for (const entry of sortedHandlers) {
+            if (entry.handler()) {
+              handled = true;
+              break;
+            }
+          }
+          
+          if (!handled && info.canGoBack) {
+            window.history.back();
+          } else if (!handled && !info.canGoBack) {
+            App.exitApp();
+          }
+        });
+        listenerRegistered = true;
       }
-    };
+
+      const entry = { handler, priority };
+      backHandlers.push(entry);
+
+      return () => {
+        const index = backHandlers.indexOf(entry);
+        if (index > -1) {
+          backHandlers.splice(index, 1);
+        }
+      };
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }
