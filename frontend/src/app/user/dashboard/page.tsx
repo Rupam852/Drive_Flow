@@ -45,7 +45,7 @@ export default function UserDashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const role = sessionStorage.getItem('role');
+        const role = localStorage.getItem('role');
         if (role !== 'user') {
           router.replace('/login');
           return;
@@ -53,11 +53,17 @@ export default function UserDashboard() {
         setMounted(true);
         
         const [statsRes, logsRes] = await Promise.all([
-          api.get('/files/stats'),
-          api.get('/files/user-logs'),
+          api.get('/files/stats').catch(e => {
+            console.error('Stats fetch failed:', e);
+            return { data: null };
+          }),
+          api.get('/files/user-logs').catch(e => {
+            console.error('Logs fetch failed:', e);
+            return { data: [] };
+          }),
         ]);
-        setStats(statsRes.data);
-        setLogs(logsRes.data.slice(0, 5));
+        if (statsRes.data) setStats(statsRes.data);
+        if (logsRes.data) setLogs(logsRes.data.slice(0, 5));
       } catch (e) { 
         console.error(e); 
         router.replace('/login');

@@ -52,9 +52,18 @@ export default function AdminDashboard() {
     else setLoading(true);
     try {
       const [statsRes, usersRes, logsRes] = await Promise.all([
-        api.get(`/files/admin-stats${cleanup ? '?cleanup=true' : ''}`),
-        api.get('/files/admin-users'),
-        api.get('/files/admin-logs'),
+        api.get(`/files/admin-stats${cleanup ? '?cleanup=true' : ''}`).catch(e => {
+          console.error('Stats fetch failed:', e);
+          return { data: null };
+        }),
+        api.get('/files/admin-users').catch(e => {
+          console.error('Users fetch failed:', e);
+          return { data: [] };
+        }),
+        api.get('/files/admin-logs').catch(e => {
+          console.error('Logs fetch failed:', e);
+          return { data: [] };
+        }),
       ]);
       if (statsRes.data) setStats(statsRes.data);
       if (usersRes.data) setUserCount(usersRes.data.length);
@@ -69,7 +78,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     try {
-      const role = sessionStorage.getItem('role');
+      const role = localStorage.getItem('role');
       if (role !== 'admin') {
         router.replace('/login');
       } else {

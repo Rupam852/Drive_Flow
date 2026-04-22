@@ -959,7 +959,7 @@ export const emptyTrash = async (req: Request, res: Response) => {
 // @desc  Get all users (Admin only)
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
-    const users = await User.find({ role: 'user' }).select('-passwordHash').sort({ createdAt: -1 });
+    const users = await User.find({}).select('-passwordHash').sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
