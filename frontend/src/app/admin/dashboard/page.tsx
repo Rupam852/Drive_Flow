@@ -123,6 +123,8 @@ export default function AdminDashboard() {
       case 'upload': return '↑';
       case 'delete': return '×';
       case 'download': return '↓';
+      case 'login': return '→';
+      case 'register': return '+';
       default: return '•';
     }
   };
@@ -132,6 +134,8 @@ export default function AdminDashboard() {
       case 'upload': return 'bg-emerald-500';
       case 'delete': return 'bg-red-500';
       case 'download': return 'bg-blue-500';
+      case 'login': return 'bg-purple-500';
+      case 'register': return 'bg-pink-500';
       default: return 'bg-purple-500';
     }
   };

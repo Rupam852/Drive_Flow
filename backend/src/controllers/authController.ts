@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, IUser } from '../models/User';
 
+import { logActivity } from '../utils/logger';
+
 const generateToken = (id: string, role: string) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET as string, {
     expiresIn: '30d',
@@ -31,6 +33,7 @@ export const registerUser = async (req: Request, res: Response) => {
     });
 
     if (user) {
+      await logActivity(user._id as any, 'register', `New account registered: ${name}`);
       res.status(201).json({
         message: 'Registration successful. Please wait for admin approval.',
       });
@@ -58,6 +61,8 @@ export const loginUser = async (req: Request, res: Response) => {
         res.status(403).json({ message: 'Your profile has been rejected. Please contact admin.' });
         return;
       }
+
+      await logActivity(user._id as any, 'login', `User logged in: ${user.name}`);
 
       res.json({
         _id: user._id,
