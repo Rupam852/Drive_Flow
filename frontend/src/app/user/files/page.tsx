@@ -205,9 +205,11 @@ export default function UserFilesPage() {
 
   // Universal download trigger - works on both web and Android WebView
   const triggerDownload = (url: string) => {
+    // On Capacitor native (Android), _system opens system browser which handles downloads
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     const a = document.createElement('a');
     a.href = url;
-    a.target = '_blank';
+    a.target = isNative ? '_system' : '_blank';
     a.rel = 'noopener noreferrer';
     document.body.appendChild(a);
     a.click();
