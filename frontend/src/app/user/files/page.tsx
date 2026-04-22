@@ -398,9 +398,10 @@ export default function UserFilesPage() {
     });
   };
 
-  const handleItemTouchStart = (id: string, e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+  const handleItemPointerDown = (id: string, e: React.PointerEvent) => {
+    // Only handle primary button (finger / left click)
+    if (e.button !== 0 && e.pointerType !== 'touch') return;
+    touchStartPos.current = { x: e.clientX, y: e.clientY };
     longPressTimerRef.current = setTimeout(() => {
       longPressTimerRef.current = null;
       setSelected(prev => {
@@ -412,20 +413,19 @@ export default function UserFilesPage() {
     }, 500);
   };
 
-  const handleItemTouchMove = (e: React.TouchEvent) => {
+  const handleItemPointerMove = (e: React.PointerEvent) => {
     if (!longPressTimerRef.current || !touchStartPos.current) return;
-    const touch = e.touches[0];
-    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
-    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
-    // If user scrolled more than 8px, cancel long press
-    if (dx > 8 || dy > 8) {
+    const dx = Math.abs(e.clientX - touchStartPos.current.x);
+    const dy = Math.abs(e.clientY - touchStartPos.current.y);
+    // Cancel long press if finger moves more than 12px (natural trembling is ~5px)
+    if (dx > 12 || dy > 12) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
       touchStartPos.current = null;
     }
   };
 
-  const handleItemTouchEnd = () => {
+  const handleItemPointerUp = () => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
@@ -610,11 +610,12 @@ export default function UserFilesPage() {
                           }
                         </button>
                         <button onClick={() => handleItemClick(file)}
-                          onTouchStart={(e) => handleItemTouchStart(file.id, e)}
-                          onTouchMove={handleItemTouchMove}
-                          onTouchEnd={handleItemTouchEnd}
+                          onPointerDown={(e) => handleItemPointerDown(file.id, e)}
+                          onPointerMove={handleItemPointerMove}
+                          onPointerUp={handleItemPointerUp}
+                          onPointerCancel={handleItemPointerUp}
                           onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
-                          className="flex items-center gap-3 text-white hover:text-purple-300 transition-colors text-left flex-1">
+                          className="no-long-press flex items-center gap-3 text-white hover:text-purple-300 transition-colors text-left flex-1">
                           <FileIcon file={file} />
                           <span className="text-sm font-medium truncate max-w-[200px]">{file.name}</span>
                         </button>
@@ -661,11 +662,12 @@ export default function UserFilesPage() {
                   }
                 }}
                 onClick={() => handleItemClick(file)}
-                onTouchStart={(e) => handleItemTouchStart(file.id, e)}
-                onTouchMove={handleItemTouchMove}
-                onTouchEnd={handleItemTouchEnd}
+                onPointerDown={(e) => handleItemPointerDown(file.id, e)}
+                onPointerMove={handleItemPointerMove}
+                onPointerUp={handleItemPointerUp}
+                onPointerCancel={handleItemPointerUp}
                 onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
-                className={`relative p-4 rounded-3xl border transition-all cursor-pointer group flex flex-col items-center gap-3
+                className={`no-long-press relative p-4 rounded-3xl border transition-all cursor-pointer group flex flex-col items-center gap-3
                   ${selected.has(file.id) 
                     ? 'bg-purple-500/10 border-purple-500/40 shadow-sm' 
                     : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'}`}>

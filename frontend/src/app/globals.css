@@ -119,3 +119,13 @@ header[class*="sticky"],
 header[class*="fixed"] {
   padding-top: env(safe-area-inset-top);
 }
+
+/* ── Android WebView: prevent default long-press behavior on file cards ── */
+/* This stops the browser from showing text-select / context menu on hold */
+.no-long-press {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
