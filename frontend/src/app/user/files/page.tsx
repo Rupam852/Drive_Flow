@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, File, Download, Eye, X, ChevronRight, Home, Image, FileText, Film, MoreVertical, Check, Square, Search, ExternalLink } from 'lucide-react';
 import api from '@/lib/api';
+import { useAndroidBack } from '@/hooks/useAndroidBack';
+
 
 interface DriveFile {
   id: string;
@@ -334,7 +336,24 @@ export default function UserFilesPage() {
     }
   };
 
+  // Android back gesture — close modals first, then navigate up folder, then go back
+  useAndroidBack(() => {
+    if (selected.size > 0)      { setSelected(new Set()); return true; }
+    if (previewFile)            { setPreviewFile(null); return true; }
+    if (showDownloadModal)      { setShowDownloadModal(false); return true; }
+    if (showMoveModal)          { setShowMoveModal(false); return true; }
+    if (zipNameModal)           { setZipNameModal(false); return true; }
+    if (path.length > 1) {
+      const newPath = path.slice(0, -1);
+      setPath(newPath);
+      loadFiles(newPath[newPath.length - 1].id);
+      return true;
+    }
+    return false;
+  }, [selected, previewFile, showDownloadModal, showMoveModal, zipNameModal, path]);
+
   return (
+
     <motion.div 
       className="space-y-4"
       onPanEnd={(_, info) => {

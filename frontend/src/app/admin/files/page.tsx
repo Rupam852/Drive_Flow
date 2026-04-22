@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
+import { useAndroidBack } from '@/hooks/useAndroidBack';
+
 
 interface DriveFile {
   id: string;
@@ -1083,7 +1085,30 @@ function AdminFilesContent() {
     });
   };
 
+  // Android back gesture — modal priority, then folder nav, then dashboard
+  useAndroidBack(() => {
+    if (selected.size > 0)           { setSelected(new Set()); return true; }
+    if (confirmModal.show)           { setConfirmModal(prev => ({ ...prev, show: false })); return true; }
+    if (previewFile)                 { setPreviewFile(null); return true; }
+    if (renaming)                    { setRenaming(null); return true; }
+    if (showDownloadModal)           { setShowDownloadModal(false); return true; }
+    if (showZipModal)                { setShowZipModal(false); return true; }
+    if (showNewFolderModal)          { setShowNewFolderModal(false); return true; }
+    if (showMoveModal)               { setShowMoveModal(false); return true; }
+    if (showLogs)                    { setShowLogs(false); return true; }
+    if (showTrash)                   { setShowTrash(false); return true; }
+    if (showUsers)                   { setShowUsers(false); return true; }
+    if (showDuplicates)              { setShowDuplicates(false); return true; }
+    if (path.length > 1) {
+      breadcrumbNav(path.length - 2);
+      return true;
+    }
+    return false; // let layout handle (go to dashboard or exit)
+  }, [selected, confirmModal.show, previewFile, renaming, showDownloadModal, showZipModal,
+      showNewFolderModal, showMoveModal, showLogs, showTrash, showUsers, showDuplicates, path]);
+
   return (
+
     <motion.div
       className="space-y-4"
       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}

@@ -8,6 +8,8 @@ import {
   HardDrive,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAndroidBack } from '@/hooks/useAndroidBack';
+
 
 const navItems = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
@@ -52,6 +54,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
+
+  // Android back gesture handling
+  useAndroidBack(() => {
+    if (sidebarOpen) {
+      setSidebarOpen(false);
+      return true; // handled
+    }
+    return false; // let default (history.back / exitApp) run
+  }, [sidebarOpen]);
+
 
   const handleLogout = () => {
     localStorage.removeItem('token_admin');
