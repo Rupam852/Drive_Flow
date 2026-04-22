@@ -1029,7 +1029,7 @@ function AdminFilesContent() {
     } catch (e: any) {
       addToast('Bulk download failed', 'error');
     } finally {
-      setDownloadProgress(null);
+      setTimeout(() => setDownloadProgress(null), 3000);
     }
   };
 
@@ -1054,7 +1054,7 @@ function AdminFilesContent() {
       const name = encodeURIComponent(file.name + '.zip');
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&token=${token}&fileName=${name}`;
       triggerDownload(url);
-      setDownloadProgress(null);
+      setTimeout(() => setDownloadProgress(null), 3000);
       return;
     }
 
@@ -1066,7 +1066,7 @@ function AdminFilesContent() {
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}`;
       triggerDownload(url);
     }
-    setDownloadProgress(null);
+    setTimeout(() => setDownloadProgress(null), 2000);
     setShowDownloadModal(false);
   };
 

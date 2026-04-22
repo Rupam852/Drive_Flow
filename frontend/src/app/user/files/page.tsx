@@ -245,7 +245,7 @@ export default function UserFilesPage() {
       const name = encodeURIComponent(file.name + '.zip');
       const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}&fileName=${name}`;
       triggerDownload(url);
-      setDownloadProgress(null);
+      setTimeout(() => setDownloadProgress(null), 3000);
       return;
     }
 
@@ -253,7 +253,7 @@ export default function UserFilesPage() {
     addToast('Starting download...');
     setDownloadProgress(-1);
     triggerDownload(`${getApiBase()}/files/${file.id}/download?token=${getToken()}`);
-    setDownloadProgress(null);
+    setTimeout(() => setDownloadProgress(null), 2000);
     setShowDownloadModal(false);
   };
 
@@ -280,7 +280,7 @@ export default function UserFilesPage() {
       console.error(e);
       addToast('Error downloading files', 'error');
     } finally {
-      setDownloadProgress(null);
+      setTimeout(() => setDownloadProgress(null), 3000);
     }
   };
 
