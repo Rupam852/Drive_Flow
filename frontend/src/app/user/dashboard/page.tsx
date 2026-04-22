@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { HardDrive, File, Folder } from 'lucide-react';
+import { HardDrive, File, Folder, AlertCircle } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -38,6 +38,7 @@ const fmt = (bytes?: string) => {
 export default function UserDashboard() {
   const [stats, setStats] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
@@ -55,18 +56,23 @@ export default function UserDashboard() {
         const [statsRes, logsRes] = await Promise.all([
           api.get('/files/stats').catch(e => {
             console.error('Stats fetch failed:', e);
-            return { data: null };
+            return { data: null, error: e };
           }),
           api.get('/files/user-logs').catch(e => {
             console.error('Logs fetch failed:', e);
-            return { data: [] };
+            return { data: [], error: e };
           }),
         ]);
+
+        if (!statsRes.data && (statsRes as any).error) {
+          setError(`Connection Error: ${api.defaults.baseURL}`);
+        }
+
         if (statsRes.data) setStats(statsRes.data);
         if (logsRes.data) setLogs(logsRes.data.slice(0, 5));
-      } catch (e) { 
+      } catch (e: any) { 
         console.error(e); 
-        router.replace('/login');
+        setError('System Error: ' + (e.message || 'Unknown failure'));
       }
       finally { setLoading(false); }
     };
@@ -103,8 +109,25 @@ export default function UserDashboard() {
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">My Dashboard</h2>
           <p className="text-gray-400 text-sm">Welcome back to DriveFlow</p>
+          <div className="text-[10px] text-gray-600 mt-1 uppercase tracking-widest font-mono">
+            API: {api.defaults.baseURL}
+          </div>
         </div>
       </div>
+
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-500/10 border border-red-500/20 text-red-200 p-4 rounded-2xl flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400" />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => window.location.reload()} className="text-xs font-bold uppercase tracking-wider hover:underline">Retry</button>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {cards.map((c, i) => (

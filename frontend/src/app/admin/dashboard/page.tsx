@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw } from 'lucide-react';
+import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
