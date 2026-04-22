@@ -25,6 +25,11 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
     
+    if (formData.password.length < 6 || formData.password.length > 8) {
+      setError('Password must be between 6 and 8 characters long');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;

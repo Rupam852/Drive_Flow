@@ -19,6 +19,10 @@ function ResetPasswordForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (newPassword.length < 6 || newPassword.length > 8) {
+      setError('Password must be between 6 and 8 characters long');
+      return;
+    }
     if (newPassword !== confirmPassword) { setError('Passwords do not match'); return; }
     setStatus('loading');
     try {
