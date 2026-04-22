@@ -32,8 +32,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!mounted) return;
     
     try {
-      const role = localStorage.getItem('role');
-      if (role === 'admin') {
+      const token = localStorage.getItem('token_admin');
+      if (token) {
         setAuthorized(true);
       } else {
         router.replace('/login');
@@ -54,8 +54,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [sidebarOpen]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
+    localStorage.removeItem('token_admin');
+    // Only remove generic role if it matches admin
+    if (localStorage.getItem('role') === 'admin') {
+      localStorage.removeItem('role');
+      localStorage.removeItem('token');
+    }
     router.push('/login');
   };
 

@@ -28,8 +28,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     if (!mounted) return;
     
     try {
-      const role = localStorage.getItem('role');
-      if (role === 'user') {
+      const token = localStorage.getItem('token_user');
+      if (token) {
         setAuthorized(true);
       } else {
         router.replace('/login');
@@ -50,8 +50,12 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }, [sidebarOpen]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
+    localStorage.removeItem('token_user');
+    // Only remove generic role if it matches user
+    if (localStorage.getItem('role') === 'user') {
+      localStorage.removeItem('role');
+      localStorage.removeItem('token');
+    }
     router.push('/login');
   };
 

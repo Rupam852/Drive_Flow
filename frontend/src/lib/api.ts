@@ -14,7 +14,21 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('token');
+    const path = window.location.pathname;
+    let token = null;
+
+    // Smart Multi-Session: Pick token based on current role path
+    if (path.startsWith('/admin')) {
+      token = localStorage.getItem('token_admin');
+    } else if (path.startsWith('/user')) {
+      token = localStorage.getItem('token_user');
+    }
+
+    // Fallback to legacy generic token
+    if (!token) {
+      token = localStorage.getItem('token');
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
