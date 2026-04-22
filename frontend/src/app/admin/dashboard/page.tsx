@@ -147,16 +147,16 @@ export default function AdminDashboard() {
           <h2 className="text-2xl font-bold text-white mb-1">Overview</h2>
           <p className="text-gray-400 text-sm">Welcome back, Admin</p>
         </div>
-        <div className="hidden sm:flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
           <button onClick={() => load(true)} disabled={refreshing}
-            className={`flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl transition-all text-sm font-medium ${refreshing ? 'opacity-50' : 'hover:bg-white/10 active:scale-95'}`}>
-            <RefreshCw className={`w-4 h-4 text-purple-400 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Cleaning...' : 'Deep Refresh'}
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-white rounded-xl transition-all text-xs sm:text-sm font-medium ${refreshing ? 'opacity-50' : 'hover:bg-white/10 active:scale-95'}`}>
+            <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{refreshing ? 'Cleaning...' : 'Deep Refresh'}</span>
           </button>
-          <Link href="/admin/files" className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
+          <Link href="/admin/files" className="px-3 py-2 sm:px-4 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-xs sm:text-sm font-medium">
             Manage Files
           </Link>
-          <Link href="/admin/users" className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition-all text-sm font-medium">
+          <Link href="/admin/users" className="px-3 py-2 sm:px-4 bg-purple-600 text-white rounded-xl hover:bg-purple-500 transition-all text-xs sm:text-sm font-medium">
             View Users
           </Link>
         </div>
