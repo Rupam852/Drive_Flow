@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-4">
             <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-white mb-2">Check Your Email</h2>
-            <p className="text-gray-300">If an account exists for <span className="text-white font-medium">{email}</span>, a password reset link has been sent.</p>
+            <p className="text-gray-300">A password reset link has been sent to <span className="text-white font-medium">{email}</span>. Please check your inbox.</p>
           </motion.div>
         ) : (
           <>
