@@ -1304,61 +1304,61 @@ function AdminFilesContent() {
               <Files className="w-4 h-4 text-blue-400" /> <span className="whitespace-nowrap">Duplicates</span>
             </button>
           </div>
+        </div>
 
-          {/* New / Upload Group */}
-          <div className="flex items-center gap-2 shrink-0 relative z-[80]">
-            <div className="relative">
-              <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
-                className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
-                <Plus className="w-4 h-4 text-purple-400" /> New
-              </button>
-              <AnimatePresence>
-                {showNewMenu && (
-                  <>
-                    <div className="fixed inset-0 z-[60] cursor-default" onClick={() => setShowNewMenu(false)} />
-                    <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                      className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[180px] shadow-2xl">
-                      <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
-                        <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
-                      </button>
-                      <button onClick={() => { handleCreateDoc(); setShowNewMenu(false); }}
-                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
-                        <FileText className="w-4 h-4 text-blue-400" /> New Document
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
+        {/* New / Upload Group - Moved outside overflow container to prevent clipping */}
+        <div className="flex items-center gap-2 shrink-0 relative z-[80]">
+          <div className="relative">
+            <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
+              <Plus className="w-4 h-4 text-purple-400" /> New
+            </button>
+            <AnimatePresence>
+              {showNewMenu && (
+                <>
+                  <div className="fixed inset-0 z-[60] cursor-default" onClick={() => setShowNewMenu(false)} />
+                  <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                    className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[180px] shadow-2xl">
+                    <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
+                      <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
+                    </button>
+                    <button onClick={() => { handleCreateDoc(); setShowNewMenu(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
+                      <FileText className="w-4 h-4 text-blue-400" /> New Document
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
 
-            {/* Upload Menu */}
-            <div className="relative">
-              <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-bold hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-95 border border-white/10">
-                <Upload className="w-4 h-4" /> Upload
-              </button>
-              <AnimatePresence>
-                {showUploadMenu && (
-                  <>
-                    <div className="fixed inset-0 z-[60] cursor-default" onClick={() => setShowUploadMenu(false)} />
-                    <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                      className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[200px] shadow-2xl">
-                      <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
-                        <Files className="w-4 h-4 text-purple-400" /> Upload Files
-                      </button>
-                      <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
-                        className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
-                        <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
-                      </button>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-              <input ref={fileInput} type="file" multiple className="hidden" onChange={handleUpload} />
-              <input ref={folderInput} type="file" multiple className="hidden" onChange={handleUpload} {...({ webkitdirectory: '', directory: '' } as any)} />
-            </div>
+          {/* Upload Menu */}
+          <div className="relative">
+            <button onClick={() => { setShowUploadMenu(!showUploadMenu); setShowNewMenu(false); }}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl text-sm font-bold hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-95 border border-white/10">
+              <Upload className="w-4 h-4" /> Upload
+            </button>
+            <AnimatePresence>
+              {showUploadMenu && (
+                <>
+                  <div className="fixed inset-0 z-[60] cursor-default" onClick={() => setShowUploadMenu(false)} />
+                  <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                    className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[200px] shadow-2xl">
+                    <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
+                      <Files className="w-4 h-4 text-purple-400" /> Upload Files
+                    </button>
+                    <button onClick={() => { folderInput.current?.click(); setShowUploadMenu(false); }}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
+                      <Folder className="w-4 h-4 text-yellow-400" /> Upload Folder
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+            <input ref={fileInput} type="file" multiple className="hidden" onChange={handleUpload} />
+            <input ref={folderInput} type="file" multiple className="hidden" onChange={handleUpload} {...({ webkitdirectory: '', directory: '' } as any)} />
           </div>
         </div>
       </div>
