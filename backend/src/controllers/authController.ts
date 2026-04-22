@@ -21,6 +21,11 @@ export const registerUser = async (req: Request, res: Response) => {
       throw new Error('User already exists');
     }
 
+    if (password.length < 6 || password.length > 8) {
+      res.status(400);
+      throw new Error('Password must be between 6 and 8 characters long');
+    }
+
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 

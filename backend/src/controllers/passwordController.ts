@@ -85,6 +85,11 @@ export const resetPassword = async (req: Request, res: Response) => {
       return;
     }
 
+    if (newPassword.length < 6 || newPassword.length > 8) {
+      res.status(400).json({ message: 'Password must be between 6 and 8 characters long.' });
+      return;
+    }
+
     const salt = await bcrypt.genSalt(10);
     user.passwordHash = await bcrypt.hash(newPassword, salt);
     await user.save();
