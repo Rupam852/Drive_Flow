@@ -1005,32 +1005,13 @@ function AdminFilesContent() {
     addToast('Preparing multi-item ZIP...');
     setDownloadProgress(-1);
 
-    const controller = new AbortController();
-    downloadAbortController.current = controller;
-
     try {
-      const res = await api.post('/files/bulk-download', { 
-        fileIds: Array.from(selected) 
-      }, {
-        responseType: 'blob',
-        signal: controller.signal,
-        onDownloadProgress: (progressEvent: any) => {
-          if (progressEvent.total) {
-            setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
-          }
-        }
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${zipName}.zip`);
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const token = localStorage.getItem('token');
+      const ids = Array.from(selected).join(',');
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&token=${token}`;
+      window.open(url, '_blank');
       setSelected(new Set());
     } catch (e: any) {
-      if (e.name === 'CanceledError' || e.message === 'canceled') return;
       addToast('Bulk download failed', 'error');
     } finally {
       setDownloadProgress(null);
@@ -1046,12 +1027,7 @@ function AdminFilesContent() {
     if (format) {
       const token = localStorage.getItem('token');
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}&format=${format}`;
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', file.name);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      window.open(url, '_blank');
       setShowDownloadModal(false);
       return;
     }
@@ -1060,31 +1036,11 @@ function AdminFilesContent() {
       addToast('Preparing folder ZIP...');
       setDownloadProgress(-1); 
       
-      const controller = new AbortController();
-      downloadAbortController.current = controller;
-
       try {
-        const res = await api.post('/files/bulk-download', { fileIds: [file.id] }, {
-          responseType: 'blob',
-          signal: controller.signal,
-          onDownloadProgress: (progressEvent: any) => {
-            if (progressEvent.total && progressEvent.total > 0) {
-              setDownloadProgress(Math.round((progressEvent.loaded * 100) / progressEvent.total));
-            } else {
-              setDownloadProgress(-1);
-            }
-          }
-        });
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `${file.name}.zip`);
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        const token = localStorage.getItem('token');
+        const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&token=${token}`;
+        window.open(url, '_blank');
       } catch (e: any) {
-        if (e.name === 'CanceledError' || e.message === 'canceled') return;
         console.error(e);
         addToast('Folder download failed', 'error');
       } finally {
@@ -1099,12 +1055,7 @@ function AdminFilesContent() {
       const res = await api.get(`/files/${file.id}/direct-download`);
       const { webContentLink } = res.data;
       if (webContentLink) {
-        const link = document.createElement('a');
-        link.href = webContentLink;
-        link.setAttribute('target', '_blank');
-        document.body.appendChild(link);
-        link.click();
-        link.parentNode?.removeChild(link);
+        window.open(webContentLink, '_blank');
       } else {
         addToast('Direct link not available', 'error');
       }
@@ -1633,7 +1584,7 @@ function AdminFilesContent() {
                     src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true`} />
                 ) : (previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) ? (
                   <iframe
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}#toolbar=0`}
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
                     className="w-full h-full border-none relative z-10 bg-white" />
                 ) : (
                   <div className="flex flex-col items-center gap-6 text-gray-500 relative z-10">
