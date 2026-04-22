@@ -39,7 +39,7 @@ const activityLogSchema = new mongoose_1.Schema({
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: 'User', required: true },
     action: { type: String, required: true },
     details: { type: String, required: true },
-    timestamp: { type: Date, default: Date.now },
+    timestamp: { type: Date, default: Date.now, expires: 3600 },
 });
 exports.ActivityLog = mongoose_1.default.model('ActivityLog', activityLogSchema);
 //# sourceMappingURL=ActivityLog.js.map

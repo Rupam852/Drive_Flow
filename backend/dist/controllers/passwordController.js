@@ -13,14 +13,17 @@ const resetTokens = new Map();
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
     try {
-        const user = await User_1.User.findOne({ email });
+        const user = await User_1.User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            // Send success even if user not found (security best practice)
-            res.json({ message: 'If this email exists, a reset link has been sent.' });
+            res.status(404).json({
+                message: 'please this email is not registered please first register then use forgot password feature'
+            });
             return;
         }
-        if (user.role === 'admin') {
-            res.status(403).json({ message: 'Admin password cannot be reset via this method.' });
+        if (user.status === 'rejected') {
+            res.status(403).json({
+                message: 'This account has been restricted. Please contact support.'
+            });
             return;
         }
         // Generate unique token
@@ -69,8 +72,8 @@ const resetPassword = async (req, res) => {
             return;
         }
         const user = await User_1.User.findOne({ email: tokenData.email });
-        if (!user) {
-            res.status(400).json({ message: 'User not found.' });
+        if (!user || user.status === 'rejected') {
+            res.status(400).json({ message: 'User not found or account restricted.' });
             return;
         }
         const salt = await bcryptjs_1.default.genSalt(10);
