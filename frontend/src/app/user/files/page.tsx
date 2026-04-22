@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Folder, File, Download, Eye, X, ChevronRight, Home, Image, FileText, Film, MoreVertical, Check, Square, Search } from 'lucide-react';
+import { Folder, File, Download, Eye, X, ChevronRight, Home, Image, FileText, Film, MoreVertical, Check, Square, Search, ExternalLink } from 'lucide-react';
 import api from '@/lib/api';
 
 interface DriveFile {
@@ -615,14 +615,20 @@ export default function UserFilesPage() {
                     <p className="text-[10px] text-gray-500 uppercase tracking-widest">{previewFile.mimeType}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
+                  {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
+                    <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
+                      className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
+                      <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </button>
+                  )}
                   <button onClick={() => handleDownload(previewFile)}
-                    className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
-                    <Download className="w-5 h-5" />
+                    className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
+                    <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <button onClick={() => setPreviewFile(null)} 
-                    className="p-3 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-xl transition-all active:scale-90">
-                    <X className="w-6 h-6" />
+                  <button onClick={() => setPreviewFile(null)}
+                    className="p-2 sm:p-3 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-xl transition-all active:scale-90">
+                    <X className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 </div>
               </div>
