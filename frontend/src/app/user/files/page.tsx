@@ -234,21 +234,21 @@ export default function UserFilesPage() {
       return;
     }
 
-    // Folder download → ZIP via GET
+    // Folder download → ZIP via GET with proper filename
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
       setDownloadProgress(-1);
-      const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}`;
+      const name = encodeURIComponent(file.name + '.zip');
+      const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}&fileName=${name}`;
       triggerDownload(url);
       setDownloadProgress(null);
       return;
     }
 
-    // Direct file download
+    // Single file: direct download (proper filename + Content-Length)
     addToast('Starting download...');
     setDownloadProgress(-1);
-    const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}`;
-    triggerDownload(url);
+    triggerDownload(`${getApiBase()}/files/${file.id}/download?token=${getToken()}`);
     setDownloadProgress(null);
     setShowDownloadModal(false);
   };
@@ -267,7 +267,8 @@ export default function UserFilesPage() {
     setDownloadProgress(-1);
     try {
       const ids = Array.from(selected).join(',');
-      const url = `${getApiBase()}/files/bulk-download?fileIds=${ids}&token=${getToken()}`;
+      const name = encodeURIComponent(finalName + '.zip');
+      const url = `${getApiBase()}/files/bulk-download?fileIds=${ids}&token=${getToken()}&fileName=${name}`;
       triggerDownload(url);
       setSelected(new Set());
       addToast(`Download started: "${finalName}.zip"`);
