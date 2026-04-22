@@ -53,6 +53,7 @@ router.delete('/admin-users/:userId', protect, admin, deleteUser);
 router.delete('/trash/all', protect, admin, emptyTrash);
 router.delete('/trash', protect, admin, deletePermanently);
 router.post('/bulk-download', protect, approved, bulkDownload);
+router.get('/bulk-download', protect, approved, bulkDownload);
 router.put('/:id/hide', protect, admin, toggleHideFile);
 
 // CRUD
