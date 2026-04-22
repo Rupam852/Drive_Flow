@@ -213,16 +213,10 @@ export default function UserFilesPage() {
   const triggerDownload = (url: string, fileName = 'file') => {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     if (isNative) {
-      // On Android: use system browser which saves to actual Downloads folder
-      // fetch+blob trick only saves to WebView memory (not accessible by user)
-      addToast(`Downloading "${fileName}" — check your Downloads folder`);
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_system'; // Opens Chrome → triggers Android Download Manager → saves to Downloads
-      a.rel = 'noopener noreferrer';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => document.body.removeChild(a), 500);
+      // On Android: window.open with _system opens system browser for download
+      // This saves to the actual Downloads folder without navigating the WebView
+      addToast(`Downloading "${fileName}"...`);
+      window.open(url, '_system');
     } else {
       // On web: standard anchor download
       const a = document.createElement('a');
@@ -263,6 +257,7 @@ export default function UserFilesPage() {
       const name = encodeURIComponent(zipFileName);
       const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}&fileName=${name}`;
       if (isNative) {
+        // Android: no fake progress, direct trigger
         triggerDownload(url, zipFileName);
       } else {
         addToast('Preparing folder ZIP...');
@@ -334,36 +329,42 @@ export default function UserFilesPage() {
   const confirmBulkDownload = async () => {
     setZipNameModal(false);
     const finalName = zipName.trim() || 'driveflow-downloads';
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+
+    if (isNative) {
+      // Android: no fake progress animation — direct system download
+      const ids = Array.from(selected).join(',');
+      const name = encodeURIComponent(finalName + '.zip');
+      const url = `${getApiBase()}/files/bulk-download?fileIds=${ids}&token=${getToken()}&fileName=${name}`;
+      triggerDownload(url, finalName + '.zip');
+      setSelected(new Set());
+      return;
+    }
+
+    // Web: show progress animation
     addToast('Preparing ZIP download...');
     setDownloadProgress(-1);
     try {
       const ids = Array.from(selected).join(',');
       const name = encodeURIComponent(finalName + '.zip');
-      const url = `${getApiBase()}/files/bulk-download?fileIds=${ids}&token=${getToken()}&fileName=${name}`;
-      
-      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-      if (isNative) {
-        triggerDownload(url, finalName + '.zip');
-      } else {
-        const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
-          responseType: 'blob',
-          onDownloadProgress: (pe) => {
-            if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
-            else setDownloadProgress(-1);
-          }
-        });
-        const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.setAttribute('download', finalName + '.zip');
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(blobUrl);
-        setDownloadProgress(null);
-      }
+      const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
+        responseType: 'blob',
+        onDownloadProgress: (pe) => {
+          if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+          else setDownloadProgress(-1);
+        }
+      });
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', finalName + '.zip');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+      setDownloadProgress(null);
       setSelected(new Set());
-      addToast(`Download started: "${finalName}.zip"`);
+      addToast(`Downloaded: "${finalName}.zip"`);
     } catch (e) {
       console.error(e);
       addToast('Error downloading files', 'error');
