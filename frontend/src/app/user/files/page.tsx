@@ -244,16 +244,67 @@ export default function UserFilesPage() {
       setDownloadProgress(-1);
       const name = encodeURIComponent(file.name + '.zip');
       const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}&fileName=${name}`;
-      triggerDownload(url);
-      setTimeout(() => setDownloadProgress(null), 3000);
+      
+      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      if (isNative) {
+        triggerDownload(url);
+        setTimeout(() => setDownloadProgress(null), 3000);
+      } else {
+        try {
+          const response = await api.get(`/files/bulk-download?fileIds=${file.id}`, {
+            responseType: 'blob',
+            onDownloadProgress: (pe) => {
+              if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+              else setDownloadProgress(-1);
+            }
+          });
+          const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.setAttribute('download', file.name + '.zip');
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(blobUrl);
+          setDownloadProgress(null);
+        } catch (e) {
+          addToast('Folder download failed', 'error');
+          setDownloadProgress(null);
+        }
+      }
       return;
     }
 
     // Single file: direct download (proper filename + Content-Length)
     addToast('Starting download...');
     setDownloadProgress(-1);
-    triggerDownload(`${getApiBase()}/files/${file.id}/download?token=${getToken()}`);
-    setTimeout(() => setDownloadProgress(null), 2000);
+    try {
+      const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}`;
+      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      if (isNative) {
+        triggerDownload(url);
+        setTimeout(() => setDownloadProgress(null), 2000);
+      } else {
+        const response = await api.get(`/files/${file.id}/download`, {
+          responseType: 'blob',
+          onDownloadProgress: (pe) => {
+            if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+          }
+        });
+        const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.setAttribute('download', file.name);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        setDownloadProgress(null);
+      }
+    } catch (e) {
+      addToast('Download failed', 'error');
+      setDownloadProgress(null);
+    }
     setShowDownloadModal(false);
   };
 
@@ -273,14 +324,35 @@ export default function UserFilesPage() {
       const ids = Array.from(selected).join(',');
       const name = encodeURIComponent(finalName + '.zip');
       const url = `${getApiBase()}/files/bulk-download?fileIds=${ids}&token=${getToken()}&fileName=${name}`;
-      triggerDownload(url);
+      
+      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      if (isNative) {
+        triggerDownload(url);
+        setTimeout(() => setDownloadProgress(null), 3000);
+      } else {
+        const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
+          responseType: 'blob',
+          onDownloadProgress: (pe) => {
+            if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+            else setDownloadProgress(-1);
+          }
+        });
+        const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.setAttribute('download', finalName + '.zip');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        setDownloadProgress(null);
+      }
       setSelected(new Set());
       addToast(`Download started: "${finalName}.zip"`);
     } catch (e) {
       console.error(e);
       addToast('Error downloading files', 'error');
-    } finally {
-      setTimeout(() => setDownloadProgress(null), 3000);
+      setDownloadProgress(null);
     }
   };
 

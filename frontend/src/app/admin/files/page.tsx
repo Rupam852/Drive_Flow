@@ -1024,12 +1024,33 @@ function AdminFilesContent() {
       const ids = Array.from(selected).join(',');
       const name = encodeURIComponent((customName || 'DriveFlow_Export') + '.zip');
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&token=${token}&fileName=${name}`;
-      triggerDownload(url);
+      
+      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      if (isNative) {
+        triggerDownload(url);
+        setTimeout(() => setDownloadProgress(null), 3000);
+      } else {
+        const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
+          responseType: 'blob',
+          onDownloadProgress: (pe) => {
+            if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+            else setDownloadProgress(-1);
+          }
+        });
+        const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.setAttribute('download', (customName || 'DriveFlow_Export') + '.zip');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        setDownloadProgress(null);
+      }
       setSelected(new Set());
     } catch (e: any) {
       addToast('Bulk download failed', 'error');
-    } finally {
-      setTimeout(() => setDownloadProgress(null), 3000);
+      setDownloadProgress(null);
     }
   };
 
@@ -1053,20 +1074,69 @@ function AdminFilesContent() {
       const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
       const name = encodeURIComponent(file.name + '.zip');
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&token=${token}&fileName=${name}`;
-      triggerDownload(url);
-      setTimeout(() => setDownloadProgress(null), 3000);
+      
+      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      if (isNative) {
+        triggerDownload(url);
+        setTimeout(() => setDownloadProgress(null), 3000);
+      } else {
+        try {
+          const response = await api.get(`/files/bulk-download?fileIds=${file.id}`, {
+            responseType: 'blob',
+            onDownloadProgress: (pe) => {
+              if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+              else setDownloadProgress(-1);
+            }
+          });
+          const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.setAttribute('download', file.name + '.zip');
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          window.URL.revokeObjectURL(blobUrl);
+          setDownloadProgress(null);
+        } catch (e) {
+          addToast('Folder download failed', 'error');
+          setDownloadProgress(null);
+        }
+      }
       return;
     }
 
-    // Single file: use direct download (gives proper filename + Content-Length)
+    // Single file: use direct download for mobile, or axios for web
     addToast('Starting download...');
     setDownloadProgress(-1);
-    {
+    try {
       const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}`;
-      triggerDownload(url);
+      
+      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      if (isNative) {
+        triggerDownload(url);
+        setTimeout(() => setDownloadProgress(null), 2000);
+      } else {
+        const response = await api.get(`/files/${file.id}/download`, {
+          responseType: 'blob',
+          onDownloadProgress: (pe) => {
+            if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+          }
+        });
+        const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.setAttribute('download', file.name);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(blobUrl);
+        setDownloadProgress(null);
+      }
+    } catch (e) {
+      addToast('Download failed', 'error');
+      setDownloadProgress(null);
     }
-    setTimeout(() => setDownloadProgress(null), 2000);
     setShowDownloadModal(false);
   };
 
