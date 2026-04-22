@@ -19,6 +19,8 @@ export default function ForgotPasswordPage() {
       await api.post('/auth/forgot-password', { email });
       setStatus('sent');
     } catch (err: any) {
+      console.error('Forgot password error:', err);
+      console.log('Error response data:', err.response?.data);
       setError(err.response?.data?.message || 'Something went wrong');
       setStatus('error');
     }
