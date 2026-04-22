@@ -20,12 +20,21 @@ export default function LoginPage() {
 
   // Server health check on mount
   useEffect(() => {
-    // We removed the auto-redirect to dashboard here to allow users to see the login page 
-    // even if they have a token, as requested by the user.
-
     const checkServer = async () => {
       try {
         await api.get('/auth/health'); 
+        
+        // Mobile App Persistence Fix: If on Capacitor and already logged in, redirect to dashboard automatically
+        const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+        if (isNative) {
+          const role = localStorage.getItem('role');
+          const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
+          if (role && token) {
+            router.replace(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+            return; // don't set loading false, just redirect
+          }
+        }
+
         setLoading(false);
       } catch (err) {
         // If it fails, we might just stop loading after a timeout to not block forever

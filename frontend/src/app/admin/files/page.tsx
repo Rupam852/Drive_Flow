@@ -1085,7 +1085,7 @@ function AdminFilesContent() {
     });
   };
 
-  // Android back gesture — modal priority, then folder nav, then dashboard
+  // Android back gesture — priority 10 (modals first, then folder nav, then let layout handle)
   useAndroidBack(() => {
     if (selected.size > 0)           { setSelected(new Set()); return true; }
     if (confirmModal.show)           { setConfirmModal(prev => ({ ...prev, show: false })); return true; }
@@ -1104,7 +1104,7 @@ function AdminFilesContent() {
       return true;
     }
     return false; // let layout handle (go to dashboard or exit)
-  }, [selected, confirmModal.show, previewFile, renaming, showDownloadModal, showZipModal,
+  }, 10, [selected, confirmModal.show, previewFile, renaming, showDownloadModal, showZipModal,
       showNewFolderModal, showMoveModal, showLogs, showTrash, showUsers, showDuplicates, path]);
 
   return (

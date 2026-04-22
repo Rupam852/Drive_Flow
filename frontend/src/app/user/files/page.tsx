@@ -336,7 +336,7 @@ export default function UserFilesPage() {
     }
   };
 
-  // Android back gesture — close modals first, then navigate up folder, then go back
+  // Android back gesture — priority 10
   useAndroidBack(() => {
     if (selected.size > 0)      { setSelected(new Set()); return true; }
     if (previewFile)            { setPreviewFile(null); return true; }
@@ -350,7 +350,7 @@ export default function UserFilesPage() {
       return true;
     }
     return false;
-  }, [selected, previewFile, showDownloadModal, showMoveModal, zipNameModal, path]);
+  }, 10, [selected, previewFile, showDownloadModal, showMoveModal, zipNameModal, path]);
 
   return (
 

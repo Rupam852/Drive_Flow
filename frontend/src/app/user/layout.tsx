@@ -50,14 +50,23 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     return () => { document.body.style.overflow = ''; };
   }, [sidebarOpen]);
 
-  // Android back gesture handling
+  // Android back gesture handling (priority 0)
   useAndroidBack(() => {
     if (sidebarOpen) {
       setSidebarOpen(false);
       return true; // handled
     }
-    return false; // let default (history.back / exitApp) run
-  }, [sidebarOpen]);
+    
+    // Check if we are on dashboard. If so, return false to let Capacitor exit app.
+    // If not on dashboard, navigate to dashboard
+    if (pathname === '/user/dashboard') {
+      import('@capacitor/app').then(({ App }) => App.exitApp());
+      return true;
+    } else {
+      router.push('/user/dashboard');
+      return true;
+    }
+  }, 0, [sidebarOpen, pathname, router]);
 
   const handleLogout = () => {
     localStorage.removeItem('token_user');
