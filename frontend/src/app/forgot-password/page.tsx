@@ -80,9 +80,18 @@ export default function ForgotPasswordPage() {
 
         {status === 'sent' ? (
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-4">
-            <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
+            <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/30 shadow-[0_0_30px_rgba(34,197,94,0.2)]">
+              <CheckCircle2 className="w-10 h-10 text-green-400" />
+            </div>
             <h2 className="text-2xl font-bold text-white mb-2">Check Your Email</h2>
-            <p className="text-gray-300">A password reset link has been sent to <span className="text-white font-medium">{email}</span>. Please check your inbox.</p>
+            <p className="text-gray-300 mb-8">A password reset link has been sent to <span className="text-white font-medium">{email}</span>. Please check your inbox within <span className="text-purple-400 font-semibold">10 minutes</span>.</p>
+            <Link
+              href="/login"
+              className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-semibold hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-purple-500/20"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Go to Login Page
+            </Link>
           </motion.div>
         ) : (
           <>
