@@ -213,29 +213,16 @@ export default function UserFilesPage() {
   const triggerDownload = (url: string, fileName = 'file') => {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     if (isNative) {
-      // On Android: show in-app status overlay instead of opening system browser
-      setDownloadStatus({ show: true, fileName, status: 'loading' });
-      fetch(url)
-        .then(res => {
-          if (!res.ok) throw new Error('Download failed');
-          return res.blob();
-        })
-        .then(blob => {
-          // Create blob URL and trigger save without opening browser
-          const blobUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = fileName;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(blobUrl); }, 500);
-          setDownloadStatus({ show: true, fileName, status: 'success' });
-          setTimeout(() => setDownloadStatus(s => ({ ...s, show: false })), 3000);
-        })
-        .catch(() => {
-          setDownloadStatus({ show: true, fileName, status: 'error' });
-          setTimeout(() => setDownloadStatus(s => ({ ...s, show: false })), 3000);
-        });
+      // On Android: use system browser which saves to actual Downloads folder
+      // fetch+blob trick only saves to WebView memory (not accessible by user)
+      addToast(`Downloading "${fileName}" — check your Downloads folder`);
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_system'; // Opens Chrome → triggers Android Download Manager → saves to Downloads
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 500);
     } else {
       // On web: standard anchor download
       const a = document.createElement('a');
