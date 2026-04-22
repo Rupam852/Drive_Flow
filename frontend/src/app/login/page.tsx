@@ -84,11 +84,14 @@ export default function LoginPage() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--color-primary)] rounded-full blur-[120px] opacity-30 pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none" />
 
+      {/* Card + Banner wrapper */}
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md gap-3">
+
       <motion.div 
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="glass-card w-full max-w-md p-8 rounded-[2rem] relative z-10"
+        className="glass-card w-full p-8 rounded-[2rem]"
       >
         <div className="text-center mb-8">
           <motion.div 
@@ -191,7 +194,7 @@ export default function LoginPage() {
         transition={{ delay: 0.4, duration: 0.5 }}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.97 }}
-        className="relative z-10 mt-4 w-full max-w-md flex items-center gap-4 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+        className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
       >
         {/* Pulsing dot */}
         <span className="absolute top-3 right-3 flex h-2 w-2">
@@ -211,6 +214,7 @@ export default function LoginPage() {
         </div>
       </motion.a>
 
+      </div> {/* end Card + Banner wrapper */}
       {/* Rejection / Pending Popup */}
       {showPopup && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
