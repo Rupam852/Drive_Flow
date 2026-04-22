@@ -45,6 +45,7 @@ export default function LoginPage() {
       const userData = res.data;
       
       localStorage.setItem('token', userData.token);
+      localStorage.setItem(`token_${userData.role}`, userData.token); // Role-specific for multi-session
       localStorage.setItem('role', userData.role);
       localStorage.setItem('user', JSON.stringify(userData));
 
