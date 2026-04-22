@@ -1018,7 +1018,8 @@ function AdminFilesContent() {
     try {
       const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
       const ids = Array.from(selected).join(',');
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&token=${token}`;
+      const name = encodeURIComponent((customName || 'DriveFlow_Export') + '.zip');
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&token=${token}&fileName=${name}`;
       triggerDownload(url);
       setSelected(new Set());
     } catch (e: any) {
@@ -1044,34 +1045,24 @@ function AdminFilesContent() {
 
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
-      setDownloadProgress(-1); 
-      
-      try {
-        const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
-        const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&token=${token}`;
-        triggerDownload(url);
-      } catch (e: any) {
-        console.error(e);
-        addToast('Folder download failed', 'error');
-      } finally {
-        setDownloadProgress(null);
-      }
+      setDownloadProgress(-1);
+      const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
+      const name = encodeURIComponent(file.name + '.zip');
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&token=${token}&fileName=${name}`;
+      triggerDownload(url);
+      setDownloadProgress(null);
       return;
     }
 
+    // Single file: use direct download (gives proper filename + Content-Length)
+    addToast('Starting download...');
     setDownloadProgress(-1);
-    try {
-      addToast('Starting download...');
+    {
       const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}`;
       triggerDownload(url);
-    } catch (e) {
-      console.error(e);
-      addToast('Download failed', 'error');
-    } finally {
-      setDownloadProgress(null);
     }
-
+    setDownloadProgress(null);
     setShowDownloadModal(false);
   };
 
