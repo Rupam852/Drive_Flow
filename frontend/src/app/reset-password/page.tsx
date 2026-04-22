@@ -19,8 +19,8 @@ function ResetPasswordForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword.length < 6 || newPassword.length > 8) {
-      setError('Password must be between 6 and 8 characters long');
+    if (newPassword.length < 6 || newPassword.length > 9) {
+      setError('Password must be between 6 and 9 characters long');
       return;
     }
     if (newPassword !== confirmPassword) { setError('Passwords do not match'); return; }
@@ -54,7 +54,7 @@ function ResetPasswordForm() {
                 <Lock className="text-white w-8 h-8" />
               </div>
               <h1 className="text-3xl font-bold text-white">New Password</h1>
-              <p className="text-[var(--color-muted)] mt-2">Choose a strong new password</p>
+              <p className="text-[var(--color-muted)] mt-2">6–9 characters. Link valid for 10 minutes.</p>
             </div>
             {error && (
               <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl mb-6 flex items-start gap-3">
@@ -72,6 +72,7 @@ function ResetPasswordForm() {
                       required
                       className="block w-full pl-11 pr-12 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
                       placeholder={label}
+                      maxLength={9}
                       value={i === 0 ? newPassword : confirmPassword}
                       onChange={(e) => i === 0 ? setNewPassword(e.target.value) : setConfirmPassword(e.target.value)}
                     />

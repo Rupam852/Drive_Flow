@@ -1643,7 +1643,7 @@ function AdminFilesContent() {
                     </button>
                   )}
                   {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
-                    <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
+                    <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
                       className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
                       <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
@@ -1667,7 +1667,7 @@ function AdminFilesContent() {
 
                 {isImage(previewFile) ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true`}
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true`}
                     alt={previewFile.name}
                     className="max-h-full max-w-full object-contain shadow-2xl relative z-10" />
                 ) : isVideo(previewFile) ? (
@@ -1675,10 +1675,10 @@ function AdminFilesContent() {
                     controls
                     autoPlay
                     className="max-h-full w-full relative z-10 shadow-2xl"
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true`} />
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true`} />
                 ) : (previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) ? (
                   <iframe
-                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
                     className="w-full h-full border-none relative z-10 bg-white" />
                 ) : (
                   <div className="flex flex-col items-center gap-6 text-gray-500 relative z-10">
