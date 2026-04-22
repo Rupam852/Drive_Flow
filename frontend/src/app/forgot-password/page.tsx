@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Mail, ArrowLeft, CheckCircle2, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Mail, ArrowLeft, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
 
@@ -10,23 +10,20 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle');
   const [error, setError] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting forgot password for:', email);
     setStatus('loading');
     setError('');
     try {
-      const response = await api.post('/auth/forgot-password', { email });
-      console.log('Forgot password success:', response.data);
+      await api.post('/auth/forgot-password', { email });
       setStatus('sent');
     } catch (err: any) {
-      console.error('Forgot password full error:', err);
       const msg = err.response?.data?.message || 'Something went wrong';
-      console.log('Extracted error message:', msg);
       setError(msg);
       setStatus('error');
-      alert('Error: ' + msg);
+      setShowModal(true);
     }
   };
 
@@ -34,6 +31,41 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-dynamic">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--color-primary)] rounded-full blur-[120px] opacity-30 pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none" />
+
+      {/* Custom Error Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowModal(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="glass-card w-full max-w-sm p-6 rounded-3xl relative z-10 border border-white/10 shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-500/30">
+                <XCircle className="w-8 h-8 text-red-400" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Notice</h3>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                {error}
+              </p>
+              <button
+                onClick={() => setShowModal(false)}
+                className="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-colors border border-white/10"
+              >
+                Close
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -58,7 +90,7 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/30">
                 <Mail className="text-white w-8 h-8" />
               </div>
-              <h1 className="text-3xl font-bold text-white">Reset Password v2.2</h1>
+              <h1 className="text-3xl font-bold text-white">Reset Password</h1>
               <p className="text-[var(--color-muted)] mt-2">Enter your email to receive a reset link</p>
             </div>
 
