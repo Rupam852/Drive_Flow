@@ -21,8 +21,8 @@ export default function LoginPage() {
   // Server health check on mount
   useEffect(() => {
     // Check if already logged in
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
+    const token = sessionStorage.getItem('token');
+    const role = sessionStorage.getItem('role');
     if (token && role) {
       router.replace(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
       return;
@@ -49,9 +49,9 @@ export default function LoginPage() {
       const res = await api.post('/auth/login', { email, password });
       const userData = res.data;
       
-      localStorage.setItem('token', userData.token);
-      localStorage.setItem('role', userData.role);
-      localStorage.setItem('user', JSON.stringify(userData));
+      sessionStorage.setItem('token', userData.token);
+      sessionStorage.setItem('role', userData.role);
+      sessionStorage.setItem('user', JSON.stringify(userData));
 
       if (userData.role === 'admin') {
         router.push('/admin/dashboard');

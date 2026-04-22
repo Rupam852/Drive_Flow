@@ -28,7 +28,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     if (!mounted) return;
     
     try {
-      const role = localStorage.getItem('role');
+      const role = sessionStorage.getItem('role');
       if (role === 'user') {
         setAuthorized(true);
       } else {
@@ -50,8 +50,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }, [sidebarOpen]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('role');
     router.push('/login');
   };
 
