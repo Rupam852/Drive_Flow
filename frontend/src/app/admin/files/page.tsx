@@ -1318,7 +1318,7 @@ function AdminFilesContent() {
                 <>
                   <div className="fixed inset-0 z-[40] cursor-default" onClick={() => setShowNewMenu(false)} />
                   <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                    className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[50] min-w-[180px] shadow-2xl">
+                    className="absolute left-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[50] min-w-[180px] shadow-2xl">
                     <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
                       className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
                       <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
