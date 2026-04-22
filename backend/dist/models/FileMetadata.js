@@ -44,6 +44,7 @@ const fileMetadataSchema = new mongoose_1.Schema({
     parentId: { type: String },
     rootId: { type: String, index: true },
     status: { type: String, enum: ['active', 'deleted', 'trashed'], default: 'active' },
+    isHidden: { type: Boolean, default: false },
 }, { timestamps: true });
 // Optimize queries for stats and listing
 fileMetadataSchema.index({ fileId: 1 });

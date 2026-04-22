@@ -1227,9 +1227,9 @@ export const toggleHideFile = async (req: Request, res: Response) => {
       try {
         const driveMeta = await drive.files.get({ fileId, fields: 'id, name, mimeType' });
         fileMeta = await FileMetadata.create({
-          fileId: driveMeta.data.id,
-          name: driveMeta.data.name,
-          type: driveMeta.data.mimeType,
+          fileId: driveMeta.data.id || fileId,
+          name: driveMeta.data.name || 'Untitled',
+          type: driveMeta.data.mimeType || 'unknown',
           rootId: DRIVE_FOLDER_ID,
           ownerUserId: (req as any).user?._id,
           status: 'active',

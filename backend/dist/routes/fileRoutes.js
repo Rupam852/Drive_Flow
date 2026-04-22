@@ -24,6 +24,7 @@ router.delete('/admin-users/:userId', authMiddleware_1.protect, authMiddleware_1
 router.delete('/trash/all', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.emptyTrash);
 router.delete('/trash', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.deletePermanently);
 router.post('/bulk-download', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.bulkDownload);
+router.put('/:id/hide', authMiddleware_1.protect, authMiddleware_1.admin, fileController_1.toggleHideFile);
 // CRUD
 router.get('/search', authMiddleware_1.protect, fileController_1.searchFiles);
 router.get('/', authMiddleware_1.protect, fileController_1.listFiles);

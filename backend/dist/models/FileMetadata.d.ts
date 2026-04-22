@@ -8,6 +8,7 @@ export interface IFileMetadata extends Document {
     parentId?: string;
     rootId?: string;
     status: 'active' | 'deleted' | 'trashed';
+    isHidden: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

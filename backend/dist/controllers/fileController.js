@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.findDuplicates = exports.getFileMetadata = exports.clearActivityLogs = exports.getDownloadLink = exports.finalizeUpload = exports.uploadProxy = exports.getUploadSession = exports.deleteUser = exports.updateUserStatus = exports.getAllUsers = exports.emptyTrash = exports.deletePermanently = exports.restoreAll = exports.restoreBulk = exports.restoreFile = exports.getTrashedFiles = exports.getUserActivityLogs = exports.getActivityLogs = exports.searchFiles = exports.bulkDownload = exports.getDriveStats = exports.downloadFile = exports.trashFiles = exports.moveFiles = exports.renameFile = exports.createDoc = exports.createFolder = exports.uploadFile = exports.listFiles = exports.upload = void 0;
+exports.toggleHideFile = exports.findDuplicates = exports.getFileMetadata = exports.clearActivityLogs = exports.getDownloadLink = exports.finalizeUpload = exports.uploadProxy = exports.getUploadSession = exports.deleteUser = exports.updateUserStatus = exports.getAllUsers = exports.emptyTrash = exports.deletePermanently = exports.restoreAll = exports.restoreBulk = exports.restoreFile = exports.getTrashedFiles = exports.getUserActivityLogs = exports.getActivityLogs = exports.searchFiles = exports.bulkDownload = exports.getDriveStats = exports.downloadFile = exports.trashFiles = exports.moveFiles = exports.renameFile = exports.createDoc = exports.createFolder = exports.uploadFile = exports.listFiles = exports.upload = void 0;
 const axios_1 = __importDefault(require("axios"));
 const stream_1 = require("stream");
 const multer_1 = __importDefault(require("multer"));
@@ -82,14 +82,32 @@ const listFiles = async (req, res) => {
                 return 1;
             return (a.name || '').localeCompare(b.name || '', undefined, { numeric: true, sensitivity: 'base' });
         });
+        // Determine if requester is admin
+        const isAdmin = req.user?.role === 'admin';
+        // Fetch hidden status from DB for all files in this folder
+        const fileIds = files.map(f => f.id).filter(Boolean);
+        const hiddenMetas = await FileMetadata_1.FileMetadata.find({ fileId: { $in: fileIds }, isHidden: true }, 'fileId isHidden').lean();
+        const hiddenSet = new Set(hiddenMetas.map(m => m.fileId));
         // Fast memory-based folder size calculation
         const getFolderSize = await createFolderSizeCalculator();
-        const filesWithFolderSizes = files.map((file) => {
+        const filesWithFolderSizes = files
+            .filter(file => {
+            // Non-admin: skip hidden files
+            if (!isAdmin && hiddenSet.has(file.id))
+                return false;
+            return true;
+        })
+            .map((file) => {
+            let sized = file;
             if (file.mimeType === 'application/vnd.google-apps.folder') {
                 const folderSize = getFolderSize(file.id);
-                return { ...file, size: folderSize.toString() };
+                sized = { ...file, size: folderSize.toString() };
             }
-            return file;
+            // Attach isHidden flag for admin UI
+            if (isAdmin) {
+                sized = { ...sized, isHidden: hiddenSet.has(file.id) };
+            }
+            return sized;
         });
         res.json(filesWithFolderSizes);
     }
@@ -508,29 +526,46 @@ const getDriveStats = async (req, res) => {
         };
         // Trigger sync in background
         syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
+        const isAdmin = req.user?.role === 'admin';
         // Calculate usedBytes from our LOCAL DB (Sum of all managed active files)
+        const statsMatch = { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } };
+        if (!isAdmin) {
+            statsMatch.isHidden = { $ne: true };
+        }
         const statsResult = await FileMetadata_1.FileMetadata.aggregate([
-            { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
+            { $match: statsMatch },
             { $group: { _id: null, totalSize: { $sum: '$size' } } }
         ]);
         const usedBytes = statsResult.length > 0 ? statsResult[0].totalSize : 0;
         // Set a VIRTUAL storage limit of exactly 10GB for our app
         const limitBytes = 10737418240; // 10 GB in bytes (10 * 1024 * 1024 * 1024)
         // Count ALL Active Files recursively (Strictly excluding folders)
-        const totalFiles = await FileMetadata_1.FileMetadata.countDocuments({
+        const fileCountQuery = {
             rootId: DRIVE_FOLDER_ID,
             status: 'active',
             type: { $ne: 'application/vnd.google-apps.folder' }
-        });
+        };
+        if (!isAdmin) {
+            fileCountQuery.isHidden = { $ne: true };
+        }
+        const totalFiles = await FileMetadata_1.FileMetadata.countDocuments(fileCountQuery);
         // Count ONLY Root Folders (immediate children of the main drive folder)
-        const totalFolders = await FileMetadata_1.FileMetadata.countDocuments({
+        const folderCountQuery = {
             status: 'active',
             type: 'application/vnd.google-apps.folder',
             parentId: DRIVE_FOLDER_ID
-        });
+        };
+        if (!isAdmin) {
+            folderCountQuery.isHidden = { $ne: true };
+        }
+        const totalFolders = await FileMetadata_1.FileMetadata.countDocuments(folderCountQuery);
         // File type breakdown
+        const typeBreakdownMatch = { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } };
+        if (!isAdmin) {
+            typeBreakdownMatch.isHidden = { $ne: true };
+        }
         const typesRes = await FileMetadata_1.FileMetadata.aggregate([
-            { $match: { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } } },
+            { $match: typeBreakdownMatch },
             { $group: { _id: '$type', count: { $sum: 1 } } },
             { $sort: { count: -1 } }
         ]);
@@ -628,11 +663,17 @@ const searchFiles = async (req, res) => {
         // Case-insensitive substring match is usually better for files
         const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(escaped, 'i');
-        const files = await FileMetadata_1.FileMetadata.find({
+        const isAdmin = req.user?.role === 'admin';
+        const query = {
             rootId: DRIVE_FOLDER_ID,
             status: 'active',
             name: { $regex: regex }
-        }).limit(100);
+        };
+        // Non-admin users cannot see hidden files in search
+        if (!isAdmin) {
+            query.isHidden = { $ne: true };
+        }
+        const files = await FileMetadata_1.FileMetadata.find(query).limit(100);
         const getFolderSize = await createFolderSizeCalculator();
         const mapped = files.map((f) => {
             let size = f.size?.toString() || '0';
@@ -644,7 +685,8 @@ const searchFiles = async (req, res) => {
                 name: f.name,
                 mimeType: f.type,
                 size,
-                modifiedTime: f.updatedAt || new Date().toISOString()
+                modifiedTime: f.updatedAt || new Date().toISOString(),
+                isHidden: isAdmin ? f.isHidden : undefined,
             };
         });
         res.json(mapped);
@@ -798,15 +840,19 @@ exports.deletePermanently = deletePermanently;
 // @desc  Empty trash bin
 const emptyTrash = async (req, res) => {
     try {
-        try {
-            await googleDrive_1.default.files.emptyTrash();
-        }
-        catch (e) {
-            console.warn('Drive emptyTrash failed (likely scope issue):', e.message);
-            // We continue and delete from MongoDB anyway to act as a soft delete
+        const trashedFiles = await FileMetadata_1.FileMetadata.find({ rootId: DRIVE_FOLDER_ID, status: 'trashed' });
+        let deletedCount = 0;
+        for (const file of trashedFiles) {
+            try {
+                await googleDrive_1.default.files.delete({ fileId: file.fileId });
+                deletedCount++;
+            }
+            catch (e) {
+                console.warn(`Drive delete failed for ${file.fileId}:`, e.message);
+            }
         }
         await FileMetadata_1.FileMetadata.deleteMany({ rootId: DRIVE_FOLDER_ID, status: 'trashed' });
-        await (0, logger_1.logActivity)(req.user?._id, 'empty_trash', 'Emptied trash bin');
+        await (0, logger_1.logActivity)(req.user?._id, 'empty_trash', `Permanently deleted ${deletedCount} items from trash bin`);
         res.json({ message: 'Trash emptied' });
     }
     catch (error) {
@@ -1065,4 +1111,55 @@ const findDuplicates = async (req, res) => {
     }
 };
 exports.findDuplicates = findDuplicates;
+// @desc  Toggle hide/unhide a file or folder (Admin only)
+// @route PUT /api/files/:id/hide
+const toggleHideFile = async (req, res) => {
+    try {
+        const fileId = req.params['id'];
+        const { hide } = req.body;
+        if (typeof hide !== 'boolean') {
+            res.status(400).json({ message: '`hide` must be a boolean (true or false)' });
+            return;
+        }
+        // Try to find the file in DB first to get its type
+        let fileMeta = await FileMetadata_1.FileMetadata.findOne({ fileId });
+        // If not in DB, fetch from Drive to ensure we have type/name for the record
+        if (!fileMeta) {
+            try {
+                const driveMeta = await googleDrive_1.default.files.get({ fileId, fields: 'id, name, mimeType' });
+                fileMeta = await FileMetadata_1.FileMetadata.create({
+                    fileId: driveMeta.data.id || fileId,
+                    name: driveMeta.data.name || 'Untitled',
+                    type: driveMeta.data.mimeType || 'unknown',
+                    rootId: DRIVE_FOLDER_ID,
+                    ownerUserId: req.user?._id,
+                    status: 'active',
+                    isHidden: hide
+                });
+            }
+            catch (err) {
+                res.status(404).json({ message: 'File not found in Drive or Database' });
+                return;
+            }
+        }
+        else {
+            // Update existing record
+            fileMeta.isHidden = hide;
+            await fileMeta.save();
+        }
+        // If it's a folder, recursively apply the same to all children in DB
+        if (fileMeta.type === 'application/vnd.google-apps.folder' || fileMeta.type === 'folder') {
+            const childIds = await getAllChildIds([fileId]);
+            if (childIds.length > 0) {
+                await FileMetadata_1.FileMetadata.updateMany({ fileId: { $in: childIds } }, { isHidden: hide });
+            }
+        }
+        await (0, logger_1.logActivity)(req.user?._id, hide ? 'hide_file' : 'unhide_file', `${hide ? 'Hidden' : 'Unhidden'} item: ${fileMeta.name}`);
+        res.json({ message: `Visibility updated successfully`, isHidden: hide });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.toggleHideFile = toggleHideFile;
 //# sourceMappingURL=fileController.js.map

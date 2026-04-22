@@ -31,3 +31,4 @@ export declare const getDownloadLink: (req: Request, res: Response) => Promise<v
 export declare const clearActivityLogs: (req: Request, res: Response) => Promise<void>;
 export declare const getFileMetadata: (req: Request, res: Response) => Promise<void>;
 export declare const findDuplicates: (req: Request, res: Response) => Promise<void>;
+export declare const toggleHideFile: (req: Request, res: Response) => Promise<void>;
