@@ -44,32 +44,40 @@ export default function AdminDashboard() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   const load = async (cleanup = false) => {
     if (cleanup) setRefreshing(true);
     else setLoading(true);
+    setError('');
     try {
       const [statsRes, usersRes, logsRes] = await Promise.all([
         api.get(`/files/admin-stats${cleanup ? '?cleanup=true' : ''}`).catch(e => {
           console.error('Stats fetch failed:', e);
-          return { data: null };
+          return { data: null, error: e };
         }),
         api.get('/files/admin-users').catch(e => {
           console.error('Users fetch failed:', e);
-          return { data: [] };
+          return { data: [], error: e };
         }),
         api.get('/files/admin-logs').catch(e => {
           console.error('Logs fetch failed:', e);
-          return { data: [] };
+          return { data: [], error: e };
         }),
       ]);
+
+      if (!statsRes.data && (statsRes as any).error) {
+        setError(`Connection Error: ${api.defaults.baseURL}`);
+      }
+
       if (statsRes.data) setStats(statsRes.data);
       if (usersRes.data) setUserCount(usersRes.data.length);
       if (logsRes.data) setLogs(logsRes.data.slice(0, 5));
-    } catch (e) {
+    } catch (e: any) {
       console.error('Dashboard load error:', e);
+      setError('System Error: ' + (e.message || 'Unknown failure'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -134,6 +142,9 @@ export default function AdminDashboard() {
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">Overview</h2>
           <p className="text-gray-400 text-sm">Welcome back, Admin</p>
+          <div className="text-[10px] text-gray-600 mt-1 uppercase tracking-widest font-mono">
+            API: {api.defaults.baseURL}
+          </div>
         </div>
         <div className="hidden sm:flex items-center gap-3">
           <button onClick={() => load(true)} disabled={refreshing}
@@ -149,6 +160,20 @@ export default function AdminDashboard() {
           </Link>
         </div>
       </div>
+
+      {error && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-red-500/10 border border-red-500/20 text-red-200 p-4 rounded-2xl flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-400" />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => load()} className="text-xs font-bold uppercase tracking-wider hover:underline">Retry</button>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c, i) => (
