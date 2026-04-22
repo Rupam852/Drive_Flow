@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IActivityLog extends Document {
   user: mongoose.Types.ObjectId;
-  action: 'upload' | 'delete' | 'download' | 'rename' | 'move' | 'create_folder';
+  action: 'upload' | 'delete' | 'download' | 'rename' | 'move' | 'create_folder' | 'login' | 'register';
   details: string;
   timestamp: Date;
 }
