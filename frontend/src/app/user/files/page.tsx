@@ -59,7 +59,6 @@ export default function UserFilesPage() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [stats, setStats] = useState<any>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [longPressTimer, setLongPressTimer] = useState<any>(null);
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [downloadingFile, setDownloadingFile] = useState<any>(null);
   const [movingIds, setMovingIds] = useState<string[]>([]);
@@ -70,6 +69,8 @@ export default function UserFilesPage() {
   const [zipNameModal, setZipNameModal] = useState(false);
   const [zipName, setZipName] = useState('');
   const zipNameRef = useRef<HTMLInputElement>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const [downloadStatus, setDownloadStatus] = useState<{ show: boolean; fileName: string; status: 'loading' | 'success' | 'error' }>({
     show: false, fileName: '', status: 'loading'
   });
@@ -397,19 +398,39 @@ export default function UserFilesPage() {
     });
   };
 
-  const handleItemTouchStart = (id: string) => {
-    const timer = setTimeout(() => {
-      toggleSelect(id);
-      if (navigator.vibrate) navigator.vibrate(50);
+  const handleItemTouchStart = (id: string, e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    touchStartPos.current = { x: touch.clientX, y: touch.clientY };
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      setSelected(prev => {
+        const n = new Set(prev);
+        n.has(id) ? n.delete(id) : n.add(id);
+        return n;
+      });
+      if (navigator.vibrate) navigator.vibrate(60);
     }, 500);
-    setLongPressTimer(timer);
+  };
+
+  const handleItemTouchMove = (e: React.TouchEvent) => {
+    if (!longPressTimerRef.current || !touchStartPos.current) return;
+    const touch = e.touches[0];
+    const dx = Math.abs(touch.clientX - touchStartPos.current.x);
+    const dy = Math.abs(touch.clientY - touchStartPos.current.y);
+    // If user scrolled more than 8px, cancel long press
+    if (dx > 8 || dy > 8) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+      touchStartPos.current = null;
+    }
   };
 
   const handleItemTouchEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
     }
+    touchStartPos.current = null;
   };
 
   const handleMove = async (targetId: string, idsToMove?: string[]) => {
@@ -589,7 +610,8 @@ export default function UserFilesPage() {
                           }
                         </button>
                         <button onClick={() => handleItemClick(file)}
-                          onTouchStart={() => handleItemTouchStart(file.id)}
+                          onTouchStart={(e) => handleItemTouchStart(file.id, e)}
+                          onTouchMove={handleItemTouchMove}
                           onTouchEnd={handleItemTouchEnd}
                           onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
                           className="flex items-center gap-3 text-white hover:text-purple-300 transition-colors text-left flex-1">
@@ -639,7 +661,8 @@ export default function UserFilesPage() {
                   }
                 }}
                 onClick={() => handleItemClick(file)}
-                onTouchStart={() => handleItemTouchStart(file.id)}
+                onTouchStart={(e) => handleItemTouchStart(file.id, e)}
+                onTouchMove={handleItemTouchMove}
                 onTouchEnd={handleItemTouchEnd}
                 onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
                 className={`relative p-4 rounded-3xl border transition-all cursor-pointer group flex flex-col items-center gap-3
