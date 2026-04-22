@@ -1590,7 +1590,7 @@ function AdminFilesContent() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
-                  {previewFile.webViewLink && (
+                  {previewFile.webViewLink && isConvertible(previewFile) && (
                     <button onClick={() => window.open(previewFile.webViewLink, '_blank')}
                       className="p-2 sm:p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all active:scale-90 flex items-center gap-2" title="Edit in Docs">
                       <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
