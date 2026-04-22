@@ -1306,7 +1306,7 @@ function AdminFilesContent() {
           </div>
 
           {/* New / Upload Group */}
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0 relative z-[80]">
             <div className="relative">
               <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
                 className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
@@ -1315,7 +1315,7 @@ function AdminFilesContent() {
               <AnimatePresence>
                 {showNewMenu && (
                   <>
-                    <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowNewMenu(false)} />
+                    <div className="fixed inset-0 z-[60] cursor-default" onClick={() => setShowNewMenu(false)} />
                     <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
                       className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[180px] shadow-2xl">
                       <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
@@ -1341,7 +1341,7 @@ function AdminFilesContent() {
               <AnimatePresence>
                 {showUploadMenu && (
                   <>
-                    <div className="fixed inset-0 z-0 cursor-default" onClick={() => setShowUploadMenu(false)} />
+                    <div className="fixed inset-0 z-[60] cursor-default" onClick={() => setShowUploadMenu(false)} />
                     <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
                       className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[200px] shadow-2xl">
                       <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
