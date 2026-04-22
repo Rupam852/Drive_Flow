@@ -138,7 +138,7 @@ export default function AdminUsersPage() {
                         {new Date(user.createdAt).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 flex-nowrap whitespace-nowrap">
                           {user.status !== 'approved' && (
                             <button
                               onClick={() => updateStatus(user._id, 'approve')}
