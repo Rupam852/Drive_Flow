@@ -109,9 +109,6 @@ export default function UserDashboard() {
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">My Dashboard</h2>
           <p className="text-gray-400 text-sm">Welcome back to DriveFlow</p>
-          <div className="text-[10px] text-gray-600 mt-1 uppercase tracking-widest font-mono">
-            API: {api.defaults.baseURL}
-          </div>
         </div>
       </div>
 

@@ -146,9 +146,6 @@ export default function AdminDashboard() {
         <div>
           <h2 className="text-2xl font-bold text-white mb-1">Overview</h2>
           <p className="text-gray-400 text-sm">Welcome back, Admin</p>
-          <div className="text-[10px] text-gray-600 mt-1 uppercase tracking-widest font-mono">
-            API: {api.defaults.baseURL}
-          </div>
         </div>
         <div className="hidden sm:flex items-center gap-3">
           <button onClick={() => load(true)} disabled={refreshing}
