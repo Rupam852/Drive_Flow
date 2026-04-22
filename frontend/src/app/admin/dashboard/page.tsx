@@ -74,10 +74,7 @@ export default function AdminDashboard() {
 
       if (statsRes.data) setStats(statsRes.data);
       if (usersRes.data) setUserCount(usersRes.data.length);
-      if (logsRes.data) {
-        const userLogs = logsRes.data.filter((l: any) => l.user?.role !== 'admin');
-        setLogs(userLogs.slice(0, 5));
-      }
+      if (logsRes.data) setLogs(logsRes.data.slice(0, 5));
     } catch (e: any) {
       console.error('Dashboard load error:', e);
       setError('System Error: ' + (e.message || 'Unknown failure'));

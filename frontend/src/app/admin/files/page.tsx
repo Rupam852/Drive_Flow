@@ -411,8 +411,7 @@ function AdminFilesContent() {
     setLoadingLogs(true);
     try {
       const res = await api.get('/files/admin-logs');
-      // Filter out admin activity as requested - only show what users are doing
-      setLogs(res.data.filter((l: any) => l.user?.role !== 'admin'));
+      setLogs(res.data);
       setShowLogs(true);
     } catch (e) { console.error(e); }
     finally { setLoadingLogs(false); }
