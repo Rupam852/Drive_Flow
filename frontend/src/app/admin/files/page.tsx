@@ -1262,7 +1262,7 @@ function AdminFilesContent() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center justify-end gap-4 mb-2">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-end gap-3 mb-4">
         <div className="flex flex-nowrap items-center gap-3 shrink-0 ml-auto w-full overflow-x-auto no-scrollbar justify-start sm:justify-end py-1">
           {/* View Toggle */}
           <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 shrink-0">
@@ -1307,7 +1307,7 @@ function AdminFilesContent() {
         </div>
 
         {/* New / Upload Group - Moved outside overflow container to prevent clipping */}
-        <div className="flex items-center gap-2 shrink-0 relative z-[80]">
+        <div className="flex items-center gap-2 shrink-0 relative z-[20]">
           <div className="relative">
             <button onClick={() => { setShowNewMenu(!showNewMenu); setShowUploadMenu(false); }}
               className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all text-sm font-medium">
@@ -1316,9 +1316,9 @@ function AdminFilesContent() {
             <AnimatePresence>
               {showNewMenu && (
                 <>
-                  <div className="fixed inset-0 z-[60] cursor-default" onClick={() => setShowNewMenu(false)} />
+                  <div className="fixed inset-0 z-[40] cursor-default" onClick={() => setShowNewMenu(false)} />
                   <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                    className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[180px] shadow-2xl">
+                    className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[50] min-w-[180px] shadow-2xl">
                     <button onClick={() => { setShowNewFolderModal(true); setShowNewMenu(false); }}
                       className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
                       <FolderPlus className="w-4 h-4 text-yellow-400" /> New Folder
@@ -1342,9 +1342,9 @@ function AdminFilesContent() {
             <AnimatePresence>
               {showUploadMenu && (
                 <>
-                  <div className="fixed inset-0 z-[60] cursor-default" onClick={() => setShowUploadMenu(false)} />
+                  <div className="fixed inset-0 z-[40] cursor-default" onClick={() => setShowUploadMenu(false)} />
                   <motion.div initial={{ opacity: 0, scale: 0.95, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                    className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[70] min-w-[200px] shadow-2xl">
+                    className="absolute right-0 top-full mt-2 glass-card border border-white/10 rounded-2xl p-1.5 z-[50] min-w-[200px] shadow-2xl">
                     <button onClick={() => { fileInput.current?.click(); setShowUploadMenu(false); }}
                       className="flex items-center gap-3 w-full px-4 py-3 text-sm text-gray-200 hover:bg-white/10 rounded-xl transition-colors">
                       <Files className="w-4 h-4 text-purple-400" /> Upload Files
@@ -1522,7 +1522,7 @@ function AdminFilesContent() {
       {/* Rename Modal */}
       <AnimatePresence>
         {renaming && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               className="glass-card max-w-sm w-full p-6 rounded-2xl">
               <h3 className="text-white font-semibold text-lg mb-4">Rename</h3>
@@ -1545,7 +1545,7 @@ function AdminFilesContent() {
       {/* New Folder Modal */}
       <AnimatePresence>
         {showNewFolderModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               className="glass-card max-w-sm w-full p-6 rounded-2xl">
               <h3 className="text-white font-semibold text-lg mb-4">New Folder</h3>
@@ -1668,7 +1668,7 @@ function AdminFilesContent() {
       {/* Activity Logs Modal */}
       <AnimatePresence>
         {showLogs && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
             onClick={() => setShowLogs(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
@@ -1741,7 +1741,7 @@ function AdminFilesContent() {
       {/* Trash Modal */}
       <AnimatePresence>
         {showTrash && (
-          <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md sm:p-4"
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md sm:p-4"
             onClick={() => { setShowTrash(false); setSelectedTrash(new Set()); }}>
             <motion.div
               initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}
@@ -1859,7 +1859,7 @@ function AdminFilesContent() {
       {/* Users Modal */}
       <AnimatePresence>
         {showUsers && (
-          <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md sm:p-4"
+          <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-md sm:p-4"
             onClick={() => setShowUsers(false)}>
             <motion.div
               initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
@@ -1951,7 +1951,7 @@ function AdminFilesContent() {
 
       <AnimatePresence>
         {showDuplicates && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4"
             onClick={() => setShowDuplicates(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
