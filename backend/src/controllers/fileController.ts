@@ -669,12 +669,11 @@ export const getDriveStats = async (req: Request, res: Response) => {
 // @route POST /api/files/bulk-download
 export const bulkDownload = async (req: Request, res: Response) => {
   try {
-    let { fileIds } = req.body;
-    
-    // Fallback to query params for GET requests (crucial for mobile/Android window.open)
-    if (!fileIds && req.query.fileIds) {
-      fileIds = (req.query.fileIds as string).split(',');
-    }
+    // Support both POST (body) and GET (query params) - GET is used by Android app
+    let fileIds: string[] | undefined =
+      req.body?.fileIds ||
+      (req.query.fileIds ? (req.query.fileIds as string).split(',') : undefined);
+
     if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
       res.status(400).json({ message: 'No file IDs provided' });
       return;
