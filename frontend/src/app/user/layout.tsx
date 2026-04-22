@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, FolderOpen, LogOut, Menu, X, HardDrive } from 'lucide-react';
 import Link from 'next/link';
+import { useAndroidBack } from '@/hooks/useAndroidBack';
 
 const navItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: LayoutDashboard },
@@ -47,6 +48,15 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
+  }, [sidebarOpen]);
+
+  // Android back gesture handling
+  useAndroidBack(() => {
+    if (sidebarOpen) {
+      setSidebarOpen(false);
+      return true; // handled
+    }
+    return false; // let default (history.back / exitApp) run
   }, [sidebarOpen]);
 
   const handleLogout = () => {
