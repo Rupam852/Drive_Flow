@@ -13,10 +13,17 @@ export const forgotPassword = async (req: Request, res: Response) => {
   try {
     const user = await User.findOne({ email });
 
-    // Only allow 'pending' or 'approved' users to reset password
-    if (!user || user.status === 'rejected') {
-      // Send success even if user not found or rejected (security best practice)
-      res.json({ message: 'If this email exists, a reset link has been sent.' });
+    if (!user) {
+      res.status(404).json({ 
+        message: 'please this email is not registered please first register then use forgot password feature' 
+      });
+      return;
+    }
+
+    if (user.status === 'rejected') {
+      res.status(403).json({ 
+        message: 'This account has been restricted. Please contact support.' 
+      });
       return;
     }
 
