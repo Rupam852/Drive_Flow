@@ -2,8 +2,8 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, IUser } from '../models/User';
-
 import { logActivity } from '../utils/logger';
+import { ActivityLog } from '../models/ActivityLog';
 
 const generateToken = (id: string, role: string) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET as string, {
@@ -65,6 +65,11 @@ export const loginUser = async (req: Request, res: Response) => {
       if (user.status === 'rejected') {
         res.status(403).json({ message: 'Your profile has been rejected. Please contact admin.' });
         return;
+      }
+
+      // If Admin logs in, clear all old history to start fresh for this session
+      if (user.role === 'admin') {
+        await ActivityLog.deleteMany({});
       }
 
       await logActivity(user._id as any, 'login', `User logged in: ${user.name}`);
