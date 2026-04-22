@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/30">
                 <Mail className="text-white w-8 h-8" />
               </div>
-              <h1 className="text-3xl font-bold text-white">Reset Password</h1>
+              <h1 className="text-3xl font-bold text-white">Reset Password v2.1</h1>
               <p className="text-[var(--color-muted)] mt-2">Enter your email to receive a reset link</p>
             </div>
 
