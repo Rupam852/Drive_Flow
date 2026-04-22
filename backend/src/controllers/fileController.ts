@@ -680,7 +680,10 @@ export const bulkDownload = async (req: Request, res: Response) => {
     }
 
     const archive = zipLib('zip', { zlib: { level: 9 } });
-    res.setHeader('Content-Disposition', 'attachment; filename="bulk-download.zip"');
+    const zipName = req.query.fileName
+      ? decodeURIComponent(req.query.fileName as string)
+      : 'bulk-download.zip';
+    res.setHeader('Content-Disposition', `attachment; filename="${zipName}"; filename*=UTF-8''${encodeURIComponent(zipName)}`);
     res.setHeader('Content-Type', 'application/zip');
     
     archive.pipe(res);
