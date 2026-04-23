@@ -82,6 +82,11 @@ function ResetPasswordForm() {
                       </button>
                     )}
                   </div>
+                  {i === 0 && (
+                    <p className="text-[10px] text-gray-500 mt-1.5 ml-1 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> Password must be 6 to 9 characters long
+                    </p>
+                  )}
                 </div>
               ))}
               <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} type="submit" disabled={status === 'loading'}

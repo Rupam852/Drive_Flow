@@ -241,6 +241,9 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              <p className="text-[10px] text-gray-500 mt-1.5 ml-1 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> Use 6 to 9 characters for your password
+              </p>
             </div>
 
             <div>
