@@ -295,11 +295,11 @@ export default function AdminDashboard() {
                     {getActionIcon(log.action)}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-white text-xs font-medium leading-tight mb-0.5 truncate">
+                    <p className="text-white text-xs font-medium leading-tight mb-0.5 break-words">
                       <span className="text-purple-400">{log.user?.name || 'User'}</span>
                       {' '}{log.action === 'upload' ? 'uploaded' : log.action === 'delete' ? 'deleted' : 'accessed'}
                     </p>
-                    <p className="text-gray-500 text-[10px] truncate">{log.details}</p>
+                    <p className="text-gray-500 text-[10px] break-words">{log.details}</p>
                     <p className="text-[9px] text-gray-600 mt-0.5">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
