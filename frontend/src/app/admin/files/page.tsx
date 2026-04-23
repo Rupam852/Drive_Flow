@@ -574,7 +574,7 @@ function AdminFilesContent() {
     setLoadingUsers(true);
     try {
       const res = await api.get('/files/admin-users');
-      setUsers(res.data);
+      setUsers(res.data.filter((u: any) => u.name !== 'Default Admin'));
       setShowUsers(true);
     } catch (e) { console.error(e); }
     finally { setLoadingUsers(false); }

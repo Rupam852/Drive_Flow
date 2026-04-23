@@ -21,6 +21,10 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [showOtp, setShowOtp] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -37,16 +41,44 @@ export default function RegisterPage() {
 
     setIsSubmitting(true);
     try {
-      await api.post('/auth/register', {
+      const res = await api.post('/auth/register', {
         name: formData.name,
         email: formData.email,
         password: formData.password
       });
-      setSuccess(true);
+      if (res.data.requireOtp) {
+        setShowOtp(true);
+      } else {
+        setSuccess(true);
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setIsVerifying(true);
+    try {
+      await api.post('/auth/verify-email', { email: formData.email, otp });
+      setShowOtp(false);
+      setSuccess(true);
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Verification failed');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      await api.post('/auth/resend-otp', { email: formData.email });
+      alert('A new OTP has been sent to your email.');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to resend OTP');
     }
   };
 
@@ -108,6 +140,44 @@ export default function RegisterPage() {
               <Link href="/login" className="text-gray-400 hover:text-white transition-colors py-2">
                 Back to Login
               </Link>
+            </div>
+          </motion.div>
+        ) : showOtp ? (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center py-4"
+          >
+            <div className="w-16 h-16 bg-purple-500/20 rounded-full mx-auto mb-4 flex items-center justify-center">
+              <Mail className="w-8 h-8 text-purple-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">Verify Your Email</h3>
+            <p className="text-gray-300 mb-6 text-sm">We've sent a 6-digit code to <b>{formData.email}</b>. Please enter it below.</p>
+            
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <input
+                type="text"
+                required
+                maxLength={6}
+                className="block w-full text-center tracking-[0.5em] text-2xl py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
+                placeholder="------"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+              />
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={isVerifying || otp.length !== 6}
+                className="w-full py-3 bg-[var(--color-primary)] hover:bg-purple-500 text-white rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isVerifying ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Verify Email'}
+              </motion.button>
+            </form>
+            <div className="mt-6">
+              <button onClick={handleResendOtp} className="text-sm text-[var(--color-primary)] hover:text-white transition-colors">
+                Didn't receive the code? Resend
+              </button>
             </div>
           </motion.div>
         ) : (
@@ -209,8 +279,7 @@ export default function RegisterPage() {
             </motion.button>
           </form>
         )}
-
-        {!success && (
+        {!success && !showOtp && (
           <p className="mt-6 text-center text-sm text-gray-400">
             Already have an account?{' '}
             <Link href="/login" className="text-white font-medium hover:text-[var(--color-primary)] transition-colors">
