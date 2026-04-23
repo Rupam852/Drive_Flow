@@ -54,7 +54,7 @@ function ResetPasswordForm() {
                 <Lock className="text-white w-8 h-8" />
               </div>
               <h1 className="text-3xl font-bold text-white">New Password</h1>
-              <p className="text-[var(--color-muted)] mt-2">6–9 characters. Link valid for 10 minutes.</p>
+              <p className="text-[var(--color-muted)] mt-2">Link valid for 10 minutes.</p>
             </div>
             {error && (
               <div className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl mb-6 flex items-start gap-3">
