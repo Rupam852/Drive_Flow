@@ -6,6 +6,9 @@ export interface IUser extends Document {
   passwordHash: string;
   role: 'admin' | 'user';
   status: 'pending' | 'approved' | 'rejected';
+  isEmailVerified: boolean;
+  emailVerificationOtp?: string;
+  otpExpires?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +24,9 @@ const userSchema = new Schema<IUser>(
       enum: ['pending', 'approved', 'rejected'],
       default: 'pending',
     },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationOtp: { type: String },
+    otpExpires: { type: Date },
   },
   { timestamps: true }
 );
