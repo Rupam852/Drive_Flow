@@ -776,7 +776,7 @@ export default function UserFilesPage() {
             onClick={() => setShowDownloadModal(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10">
+              className="glass-card w-[90vw] sm:max-w-sm p-6 rounded-3xl shadow-2xl border border-white/10">
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                 <Download className="w-5 h-5 text-purple-400" /> Download Options
               </h3>
@@ -842,7 +842,7 @@ export default function UserFilesPage() {
       </AnimatePresence>
 
       {/* Toasts */}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-3">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[100] flex flex-col gap-3 pointer-events-none w-[90vw] sm:w-auto">
         <AnimatePresence>
           {toasts.map(t => (
             <motion.div key={t.id} initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 100, opacity: 0 }}
@@ -860,7 +860,7 @@ export default function UserFilesPage() {
         {downloadProgress !== null && (
           <div className="fixed inset-0 z-[110] flex items-center justify-center p-6 bg-black/70 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }}
-              className="glass-card p-8 rounded-3xl max-w-xs w-full text-center border border-white/20 shadow-2xl">
+              className="glass-card p-8 rounded-3xl w-[85vw] sm:max-w-xs text-center border border-white/20 shadow-2xl">
 
               {/* Circular Progress */}
               <div className="relative w-24 h-24 mx-auto mb-6">
@@ -943,7 +943,7 @@ export default function UserFilesPage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="w-full max-w-sm glass-card rounded-3xl p-6 border border-white/10 shadow-2xl"
+              className="w-[90vw] sm:max-w-sm glass-card rounded-3xl p-6 border border-white/10 shadow-2xl"
             >
               <div className="w-12 h-12 rounded-2xl bg-purple-500/20 flex items-center justify-center mb-4 mx-auto">
                 <Download className="w-6 h-6 text-purple-400" />
@@ -997,7 +997,7 @@ export default function UserFilesPage() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: 20 }}
               transition={{ type: 'spring', damping: 20, stiffness: 300 }}
-              className="glass-card w-full max-w-xs rounded-[32px] p-8 flex flex-col items-center gap-5 shadow-[0_0_80px_rgba(0,0,0,0.6)] border border-white/10"
+              className="glass-card w-[85vw] sm:max-w-xs rounded-[32px] p-8 flex flex-col items-center gap-5 shadow-[0_0_80px_rgba(0,0,0,0.6)] border border-white/10"
               onClick={e => e.stopPropagation()}
             >
               {/* Icon */}

@@ -2004,7 +2004,7 @@ function AdminFilesContent() {
             onClick={() => setShowDuplicates(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card max-w-2xl w-full max-h-[85vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl">
+              className="glass-card w-[95vw] sm:max-w-2xl max-h-[85vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl">
               <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
@@ -2083,7 +2083,7 @@ function AdminFilesContent() {
             onClick={() => setShowDownloadModal(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10">
+              className="glass-card w-[90vw] sm:max-w-sm p-6 rounded-3xl shadow-2xl border border-white/10">
               <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
                 <Download className="w-5 h-5 text-purple-400" /> Download Options
               </h3>
@@ -2132,7 +2132,7 @@ function AdminFilesContent() {
         {showUploadModal && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className={`glass-card w-full max-w-md overflow-hidden flex flex-col transition-all duration-500 shadow-2xl border border-white/10 ${isUploadMinimized ? 'h-16' : 'max-h-[80vh]'}`}>
+              className={`glass-card w-[95vw] sm:max-w-md overflow-hidden flex flex-col transition-all duration-500 shadow-2xl border border-white/10 ${isUploadMinimized ? 'h-16' : 'max-h-[80vh]'}`}>
               
               {/* Header */}
               <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between shrink-0">
@@ -2256,7 +2256,7 @@ function AdminFilesContent() {
         {confirmModal.show && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="glass-card max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-white/10 text-center">
+              className="glass-card w-[90vw] sm:max-w-sm p-6 rounded-3xl shadow-2xl border border-white/10 text-center">
               <div className={`w-14 h-14 rounded-2xl mx-auto mb-5 flex items-center justify-center ${confirmModal.isDanger ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'}`}>
                 {confirmModal.isDanger ? <Trash2 className="w-7 h-7" /> : <Check className="w-7 h-7" />}
               </div>
@@ -2296,7 +2296,7 @@ function AdminFilesContent() {
 
 
       {/* Toasts */}
-      <div className="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[200] flex flex-col gap-3 pointer-events-none w-[90vw] sm:w-auto">
         <AnimatePresence>
           {toasts.map(t => (
             <motion.div key={t.id} 
@@ -2442,7 +2442,7 @@ function AdminFilesContent() {
             onClick={() => setShowZipModal(false)}>
             <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="glass-card max-w-sm w-full p-6 rounded-[32px] shadow-2xl border border-white/10 relative overflow-hidden">
+              className="glass-card w-[90vw] sm:max-w-sm p-6 rounded-[32px] shadow-2xl border border-white/10 relative overflow-hidden">
               
               {/* Decorative background element */}
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -2525,7 +2525,7 @@ function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, a
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-        className="glass-card max-w-md w-full p-6 rounded-2xl flex flex-col max-h-[80vh]">
+        className="glass-card w-[95vw] sm:max-w-md p-6 rounded-2xl flex flex-col max-h-[80vh]">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-white font-semibold text-lg">Move to...</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
