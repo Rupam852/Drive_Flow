@@ -23,9 +23,9 @@ export const registerUser = async (req: Request, res: Response) => {
       throw new Error('User already exists');
     }
 
-    if (password.length < 6 || password.length > 8) {
+    if (password.length < 6 || password.length > 9) {
       res.status(400);
-      throw new Error('Password must be between 6 and 8 characters long');
+      throw new Error('Password must be between 6 and 9 characters long');
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
