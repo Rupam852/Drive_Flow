@@ -37,10 +37,9 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
-  /* Safe area for phones with notches / home indicator */
-  padding-left: env(safe-area-inset-left);
-  padding-right: env(safe-area-inset-right);
+  /* Safe area for phones with home indicator */
   padding-bottom: env(safe-area-inset-bottom);
+  margin: 0;
 }
 
 /* ── Glassmorphism Utilities ── */
