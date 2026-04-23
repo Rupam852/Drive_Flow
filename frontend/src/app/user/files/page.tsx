@@ -492,7 +492,7 @@ export default function UserFilesPage() {
                     {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
                     <button onClick={() => breadcrumbNav(i)}
                       className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}>
-                      {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
+                      {i === 0 ? <Home className="w-4 h-4" /> : p.name}
                     </button>
                   </span>
                 ))
@@ -605,7 +605,7 @@ export default function UserFilesPage() {
                           onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
                           className="no-long-press flex items-center gap-3 text-white hover:text-purple-300 transition-colors text-left flex-1">
                           <FileIcon file={file} />
-                          <span className="text-sm font-medium truncate max-w-[200px]">{file.name}</span>
+                          <span className="text-sm font-medium break-words">{file.name}</span>
                         </button>
                       </div>
                     </td>
@@ -677,7 +677,7 @@ export default function UserFilesPage() {
                   <FileIcon file={file} />
                 </div>
                 <div className="text-center w-full">
-                  <p className="text-white text-xs font-medium truncate mb-1">{file.name}</p>
+                  <p className="text-white text-xs font-medium break-words mb-1">{file.name}</p>
                   <p className="text-gray-500 text-[10px] font-medium">{fmt(file.size, isFolder(file))}</p>
                 </div>
 

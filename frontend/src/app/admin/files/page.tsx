@@ -1228,7 +1228,7 @@ function AdminFilesContent() {
                     onClick={() => breadcrumbNav(i)}
                     className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}
                   >
-                    {i === 0 ? <Home className="w-4 h-4" /> : (p.name.length > 20 ? p.name.substring(0, 17) + '...' : p.name)}
+                    {i === 0 ? <Home className="w-4 h-4" /> : p.name}
                   </button>
                 </span>
               ))}
@@ -1447,7 +1447,7 @@ function AdminFilesContent() {
                         onClick={() => handleItemClick(file)}
                         className="flex items-center gap-3 text-white hover:text-purple-300 transition-colors w-full text-left">
                         <FileIcon file={file} />
-                        <span className="text-sm font-medium truncate max-w-[150px] sm:max-w-[300px]">{file.name}</span>
+                        <span className="text-sm font-medium break-words">{file.name}</span>
                         {file.isHidden && <span title="Hidden from users"><EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /></span>}
                       </button>
                     </td>
@@ -1545,7 +1545,7 @@ function AdminFilesContent() {
                   <FileIcon file={file} />
                 </div>
                 <div className="text-center w-full">
-                  <p className="text-white text-xs font-medium truncate mb-1">{file.name}</p>
+                  <p className="text-white text-xs font-medium break-words mb-1">{file.name}</p>
                   <p className="text-gray-500 text-[10px]">{fmt(file.size, isFolder(file))}</p>
                 </div>
                 {/* Grid Hover Actions */}
@@ -1880,7 +1880,7 @@ function AdminFilesContent() {
 
                       {/* Name + Date */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium truncate">{file.name}</p>
+                        <p className="text-white text-sm font-medium break-words">{file.name}</p>
                         <p className="text-[10px] text-gray-500">{new Date(file.modifiedTime).toLocaleDateString()}</p>
                       </div>
 
