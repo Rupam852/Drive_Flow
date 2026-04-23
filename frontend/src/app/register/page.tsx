@@ -87,7 +87,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-[100dvh] w-full flex items-center justify-center p-4 bg-gradient-dynamic relative overflow-hidden">
+    <div className="min-h-[100dvh] w-full min-w-full flex items-center justify-center p-4 bg-gradient-dynamic relative overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--color-primary)] rounded-full blur-[120px] opacity-30 pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none" />
 
