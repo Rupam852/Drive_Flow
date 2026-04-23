@@ -82,10 +82,10 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-dynamic">
+    <div className="min-h-[100dvh] w-full flex items-center justify-center p-4 bg-gradient-dynamic relative overflow-hidden">
       {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--color-primary)] rounded-full blur-[120px] opacity-30 pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--color-primary)] rounded-full blur-[120px] opacity-30 pointer-events-none z-0 touch-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none z-0 touch-none" />
 
       {/* Card + Banner wrapper */}
       <div className="relative z-10 flex flex-col items-center w-full max-w-md gap-3">
@@ -226,7 +226,7 @@ export default function LoginPage() {
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="glass-card max-w-md w-full p-6 rounded-2xl text-center"
+            className="glass-card w-[90vw] sm:max-w-md p-5 sm:p-8 rounded-3xl text-center"
           >
             <AlertCircle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">Notice</h3>
