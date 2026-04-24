@@ -27,6 +27,7 @@ export default function Home() {
         
         setProgress(100);
         setMessage('Server Connected Successfully!');
+        sessionStorage.setItem('server_awake', 'true');
         clearInterval(interval);
         
         setTimeout(() => {
