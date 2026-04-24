@@ -712,7 +712,21 @@ export default function UserFilesPage() {
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                   {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
-                    <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${getToken()}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
+                    <button onClick={() => {
+                      const url = `${getApiBase()}/files/${previewFile.id}/download?token=${getToken()}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`;
+                      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+                      if (isNative) {
+                        window.open(url, '_system');
+                      } else {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }
+                    }}
                       className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
                       <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>

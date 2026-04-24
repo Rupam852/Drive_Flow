@@ -933,12 +933,25 @@ function AdminFilesContent() {
   const handleCreateDoc = async () => {
     if (actionLoading) return;
     setActionLoading(true);
+    
+    // Open a blank window immediately to bypass popup blockers
+    const newWindow = window.open('about:blank', '_blank');
+    
     try {
       const res = await api.post('/files/doc', { name: 'Untitled Document', parentId: currentFolder.id });
-      window.open(res.data.webViewLink, '_blank');
+      if (newWindow && res.data.webViewLink) {
+        newWindow.location.href = res.data.webViewLink;
+      } else if (newWindow) {
+        newWindow.close();
+        addToast('No edit link returned', 'error');
+      }
       await loadFiles(currentFolder.id);
       fetchStats();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e);
+      if (newWindow) newWindow.close();
+      addToast('Error creating document', 'error');
+    }
     finally { setActionLoading(false); }
   };
 
@@ -1636,14 +1649,42 @@ function AdminFilesContent() {
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                   {previewFile.webViewLink && isConvertible(previewFile) && (
-                    <button onClick={() => window.open(previewFile.webViewLink, '_blank')}
+                    <button onClick={() => {
+                      const url = previewFile.webViewLink;
+                      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+                      if (isNative) {
+                        window.open(url, '_system');
+                      } else {
+                        const a = document.createElement('a');
+                        a.href = url!;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }
+                    }}
                       className="p-2 sm:p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all active:scale-90 flex items-center gap-2" title="Edit in Docs">
                       <Pencil className="w-4 h-4 sm:w-5 sm:h-5" />
                       <span className="hidden sm:inline text-xs font-bold whitespace-nowrap">Edit in Docs</span>
                     </button>
                   )}
                   {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
-                    <button onClick={() => window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`, '_blank')}
+                    <button onClick={() => {
+                      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`;
+                      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+                      if (isNative) {
+                        window.open(url, '_system');
+                      } else {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }
+                    }}
                       className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Open in New Tab">
                       <ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />
                     </button>
