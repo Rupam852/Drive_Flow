@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMessage, setLoadingMessage] = useState('Connecting to Secure Server...');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean } | null>(null);
   const [isNativeApp, setIsNativeApp] = useState(false);
@@ -25,20 +26,24 @@ export default function LoginPage() {
       try {
         await api.get('/auth/health'); 
         
-        // Mobile App Persistence Fix: If on Capacitor and already logged in, redirect to dashboard automatically
+        setLoadingMessage('Server Connected Successfully!');
+        
+        // If server is awake, show success then proceed
+        setTimeout(() => {
+          setLoading(false);
+        }, 800);
+        
+        // Mobile App Persistence Fix...
         const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
         if (isNative) {
           const role = localStorage.getItem('role');
           const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
           if (role && token) {
             router.replace(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
-            return; // don't set loading false, just redirect
+            return;
           }
         }
-
-        setLoading(false);
       } catch (err) {
-        // If it fails, we might just stop loading after a timeout to not block forever
         setTimeout(() => setLoading(false), 2000);
       }
     };
@@ -78,7 +83,7 @@ export default function LoginPage() {
   };
 
   if (loading) {
-    return <LoadingScreen message="Connecting to Secure Server..." />;
+    return <LoadingScreen message={loadingMessage} progress={loadingMessage.includes('Successfully') ? 100 : undefined} />;
   }
 
   return (
