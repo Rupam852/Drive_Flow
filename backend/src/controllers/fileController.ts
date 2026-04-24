@@ -147,7 +147,7 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
         mimeType: req.file.mimetype,
         body: bufferToStream(req.file.buffer),
       },
-      fields: 'id, name, mimeType, size',
+      fields: 'id, name, mimeType, size, webViewLink',
     });
 
     await FileMetadata.create({
@@ -159,6 +159,7 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
       parentId,
       rootId: DRIVE_FOLDER_ID,
       status: 'active',
+      webViewLink: response.data.webViewLink ?? '',
     });
 
     await logActivity((req as any).user?._id, 'upload', `Uploaded file: ${req.file?.originalname}`);
@@ -229,6 +230,7 @@ export const createDoc = async (req: AuthRequest, res: Response) => {
       parentId: parent,
       rootId: DRIVE_FOLDER_ID,
       status: 'active',
+      webViewLink: response.data.webViewLink ?? '',
     });
 
     res.status(201).json(response.data);
@@ -547,14 +549,15 @@ export const getDriveStats = async (req: Request, res: Response) => {
     const syncDriveData = async (parentId: string, userId: string, rootId: string) => {
       try {
         const driveRes = await drive.files.list({
-          q: `'${parentId}' in parents and trashed = false`,
-          fields: 'files(id, name, mimeType, size)',
+          q: `'${parentId}' in parents`,
+          fields: 'files(id, name, mimeType, size, webViewLink, trashed)',
         });
 
         const driveFiles = driveRes.data.files || [];
         const driveFileIds = driveFiles.map(f => f.id).filter((id): id is string => !!id);
 
         // 1. Mark files as trashed if they are in DB but no longer in this Drive folder
+        // (This part is still useful if a file was moved out of our managed folder)
         const trashedFromDrive = await FileMetadata.find(
           { parentId: String(parentId), status: 'active', fileId: { $nin: driveFileIds } },
           'fileId type'
@@ -583,7 +586,8 @@ export const getDriveStats = async (req: Request, res: Response) => {
               parentId: parentId,
               rootId: rootId,
               ownerUserId: new mongoose.Types.ObjectId(userId),
-              status: 'active'
+              status: file.trashed ? 'trashed' : 'active',
+              webViewLink: file.webViewLink || ''
             },
             { upsert: true }
           );
@@ -791,6 +795,7 @@ export const searchFiles = async (req: Request, res: Response) => {
         size,
         modifiedTime: (f as any).updatedAt || new Date().toISOString(),
         isHidden: isAdmin ? f.isHidden : undefined,
+        webViewLink: f.webViewLink || '',
       };
     });
 
