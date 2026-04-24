@@ -26,12 +26,17 @@ export default function LoginPage() {
       try {
         await api.get('/auth/health'); 
         
-        setLoadingMessage('Server Connected Successfully!');
-        
-        // If server is awake, show success then proceed
-        setTimeout(() => {
+        const wasAwake = sessionStorage.getItem('server_awake') === 'true';
+
+        if (wasAwake) {
           setLoading(false);
-        }, 800);
+        } else {
+          setLoadingMessage('Server Connected Successfully!');
+          setTimeout(() => {
+            setLoading(false);
+            sessionStorage.setItem('server_awake', 'true');
+          }, 800);
+        }
         
         // Mobile App Persistence Fix...
         const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
