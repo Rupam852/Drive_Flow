@@ -26,12 +26,12 @@ export default function Home() {
         await api.get('/auth/health'); 
         
         setProgress(100);
-        setMessage('Server is awake! Redirecting...');
+        setMessage('Server Connected Successfully!');
         clearInterval(interval);
         
         setTimeout(() => {
           router.push('/login');
-        }, 800);
+        }, 1000);
         
       } catch (e: any) {
         setTimeout(pingServer, 3000);
