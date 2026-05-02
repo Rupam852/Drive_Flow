@@ -5,15 +5,16 @@ dotenv.config();
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false, // upgrade later with STARTTLS
+  requireTLS: true,
   auth: {
     user: process.env.MAILER_EMAIL,
     pass: process.env.MAILER_PASS,
   },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 export const sendOtpEmail = async (to: string, otp: string) => {
@@ -40,8 +41,8 @@ export const sendOtpEmail = async (to: string, otp: string) => {
 
     await transporter.sendMail(mailOptions);
     console.log(`OTP sent to ${to}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error sending email to ${to}:`, error);
-    throw new Error('Failed to send verification email');
+    throw new Error(`Failed to send verification email: ${error?.message || 'Unknown error'}`);
   }
 };
