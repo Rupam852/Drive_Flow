@@ -253,7 +253,7 @@ export default function LoginPage() {
                   onClick={async () => {
                     try {
                       await api.post('/auth/resend-otp', { email: showPopup.email });
-                      router.push(`/register?email=${encodeURIComponent(showPopup.email)}&verify=true`);
+                      router.push(`/register?email=${encodeURIComponent(showPopup.email || '')}&verify=true`);
                     } catch (err: any) {
                       alert(err.response?.data?.message || 'Failed to resend OTP');
                     }
