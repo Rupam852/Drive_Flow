@@ -36,30 +36,37 @@ export const forgotPassword = async (req: Request, res: Response) => {
       expires: Date.now() + 10 * 60 * 1000, // 10 minutes
     });
 
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
-    // Send email via Nodemailer
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.MAILER_EMAIL,
-        pass: process.env.MAILER_PASS, // App password
-      },
-    });
+    const emailSubject = 'Password Reset Request - DriveFlow';
+    const emailHtml = `
+      <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:32px;background:#0f172a;color:#f8fafc;border-radius:16px;">
+        <h2 style="color:#8b5cf6;">DriveFlow Password Reset</h2>
+        <p>You requested a password reset. Click the link below within <strong>10 minutes</strong>:</p>
+        <a href="${resetUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#8b5cf6;color:white;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a>
+        <p style="color:#94a3b8;font-size:12px;">This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
+      </div>
+    `;
 
-    await transporter.sendMail({
-      from: `"DriveFlow" <${process.env.MAILER_EMAIL}>`,
-      to: email,
-      subject: 'Password Reset Request - DriveFlow',
-      html: `
-        <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:32px;background:#0f172a;color:#f8fafc;border-radius:16px;">
-          <h2 style="color:#8b5cf6;">DriveFlow Password Reset</h2>
-          <p>You requested a password reset. Click the link below within <strong>10 minutes</strong>:</p>
-          <a href="${resetUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#8b5cf6;color:white;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a>
-          <p style="color:#94a3b8;font-size:12px;">This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
-        </div>
-      `,
-    });
+    // Send email via Vercel relay to bypass Render SMTP blocks
+    try {
+      const axios = require('axios');
+      await axios.post(
+        `${frontendUrl}/api/send-email`,
+        { to: email, subject: emailSubject, html: emailHtml },
+        {
+          headers: {
+            'x-api-key': process.env.API_SECRET_KEY || 'default-secret-key-123',
+            'Content-Type': 'application/json'
+          },
+          timeout: 15000
+        }
+      );
+    } catch (relayError: any) {
+      console.error(`Error delegating reset email to ${email}:`, relayError?.response?.data || relayError?.message);
+      throw new Error('Failed to send reset email. Please try again later.');
+    }
 
     res.json({ message: 'If this email exists, a reset link has been sent.' });
   } catch (error) {
