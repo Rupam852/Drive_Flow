@@ -165,7 +165,8 @@ export default function RegisterPage() {
               <Mail className="w-8 h-8 text-purple-400" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Verify Your Email</h3>
-            <p className="text-gray-300 mb-6 text-sm">We've sent a 6-digit code to <b>{formData.email}</b>. Please enter it below.</p>
+            <p className="text-gray-300 mb-2 text-sm">We've sent a 6-digit code to <b>{formData.email}</b>. Please enter it below.</p>
+            <p className="text-yellow-400/90 mb-6 text-xs font-medium bg-yellow-400/10 py-1.5 px-3 rounded-lg inline-block">Please check your Spam/Junk folder if you don't see it in your inbox.</p>
             
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <input

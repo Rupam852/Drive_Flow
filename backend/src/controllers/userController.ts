@@ -6,7 +6,7 @@ import { User } from '../models/User';
 // @access  Private/Admin
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const users = await User.find({}).select('-passwordHash');
+    const users = await User.find({ isEmailVerified: true }).select('-passwordHash');
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
