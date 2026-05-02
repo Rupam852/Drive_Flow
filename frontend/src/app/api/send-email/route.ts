@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 
 export async function POST(request: Request) {
   try {
-    const { to, otp } = await request.json();
+    const { to, otp, subject, html } = await request.json();
     const apiKey = request.headers.get('x-api-key');
 
     const serverApiKey = process.env.API_SECRET_KEY || 'default-secret-key-123';
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    if (!to || !otp) {
+    if (!to || (!otp && !html)) {
       return NextResponse.json({ message: 'Missing parameters' }, { status: 400 });
     }
 
@@ -36,8 +36,8 @@ export async function POST(request: Request) {
     const mailOptions = {
       from: `"DriveFlow" <${process.env.MAILER_EMAIL}>`,
       to,
-      subject: 'Verify your Email Address',
-      html: `
+      subject: subject || 'Verify your Email Address',
+      html: html || `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
           <h2 style="color: #6b21a8; text-align: center;">Welcome to DriveFlow!</h2>
           <p style="font-size: 16px; color: #333;">Hello,</p>
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`OTP sent to ${to} via Vercel`);
+    console.log(`Email sent to ${to} via Vercel`);
     
     return NextResponse.json({ message: 'Email sent successfully' }, { status: 200 });
 
