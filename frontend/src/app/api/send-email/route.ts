@@ -6,7 +6,8 @@ export async function POST(request: Request) {
     const { to, otp } = await request.json();
     const apiKey = request.headers.get('x-api-key');
 
-    if (apiKey !== process.env.API_SECRET_KEY) {
+    const serverApiKey = process.env.API_SECRET_KEY || 'default-secret-key-123';
+    if (apiKey !== serverApiKey) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
