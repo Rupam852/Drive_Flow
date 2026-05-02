@@ -59,6 +59,6 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error(`Error sending email via Vercel:`, error);
-    return NextResponse.json({ message: \`Failed to send email: \${error?.message || 'Unknown error'}\` }, { status: 500 });
+    return NextResponse.json({ message: `Failed to send email: ${error?.message || 'Unknown error'}` }, { status: 500 });
   }
 }
