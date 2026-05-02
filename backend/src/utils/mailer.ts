@@ -16,7 +16,7 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false
   }
-});
+} as any);
 
 export const sendOtpEmail = async (to: string, otp: string) => {
   try {
