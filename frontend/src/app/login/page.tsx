@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState('Connecting to Secure Server...');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean } | null>(null);
+  const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean; email?: string } | null>(null);
   const [isNativeApp, setIsNativeApp] = useState(false);
   const router = useRouter();
 
@@ -78,7 +78,7 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       if (err.response?.status === 403) {
-        setShowPopup({ message: err.response.data.message, isError: true });
+        setShowPopup({ message: err.response.data.message, isError: true, email: err.response.data.email || email });
       } else {
         setError(err.response?.data?.message || 'Login failed. Please try again.');
       }
@@ -241,13 +241,28 @@ export default function LoginPage() {
             <AlertCircle className="w-12 h-12 text-yellow-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-white mb-2">Notice</h3>
             <p className="text-gray-300 mb-6">{showPopup.message}</p>
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-center flex-wrap">
               <button 
                 onClick={() => setShowPopup(null)}
                 className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-colors"
               >
                 Close
               </button>
+              {showPopup.message.toLowerCase().includes('verify') && showPopup.email && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.post('/auth/resend-otp', { email: showPopup.email });
+                      router.push(`/register?email=${encodeURIComponent(showPopup.email)}&verify=true`);
+                    } catch (err: any) {
+                      alert(err.response?.data?.message || 'Failed to resend OTP');
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-[var(--color-secondary)] text-white hover:bg-pink-600 transition-colors"
+                >
+                  Verify Email
+                </button>
+              )}
               <a 
                 href={`mailto:rupambairagya08@gmail.com?subject=${showPopup.message.includes('rejected') ? 'Rejected Profile Inquiry' : 'Approval Request'}`}
                 className="px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white hover:bg-purple-500 transition-colors"
