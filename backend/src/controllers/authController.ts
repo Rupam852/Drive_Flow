@@ -87,12 +87,6 @@ export const loginUser = async (req: Request, res: Response) => {
         return;
       }
 
-      // Clear old history to start fresh for this session
-      if (user.role === 'admin') {
-        await ActivityLog.deleteMany({});
-      } else {
-        await ActivityLog.deleteMany({ user: user._id });
-      }
 
       await logActivity(user._id as any, 'login', `User logged in: ${user.name}`);
 

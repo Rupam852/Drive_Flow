@@ -8,7 +8,6 @@ const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const User_1 = require("../models/User");
 const logger_1 = require("../utils/logger");
-const ActivityLog_1 = require("../models/ActivityLog");
 const mailer_1 = require("../utils/mailer");
 const generateToken = (id, role) => {
     return jsonwebtoken_1.default.sign({ id, role }, process.env.JWT_SECRET, {
@@ -80,13 +79,6 @@ const loginUser = async (req, res) => {
             if (user.status === 'rejected') {
                 res.status(403).json({ message: 'Your profile has been rejected. Please contact admin.' });
                 return;
-            }
-            // Clear old history to start fresh for this session
-            if (user.role === 'admin') {
-                await ActivityLog_1.ActivityLog.deleteMany({});
-            }
-            else {
-                await ActivityLog_1.ActivityLog.deleteMany({ user: user._id });
             }
             await (0, logger_1.logActivity)(user._id, 'login', `User logged in: ${user.name}`);
             res.json({
