@@ -5,6 +5,9 @@ export interface IUser extends Document {
     passwordHash: string;
     role: 'admin' | 'user';
     status: 'pending' | 'approved' | 'rejected';
+    isEmailVerified: boolean;
+    emailVerificationOtp?: string;
+    otpExpires?: Date;
     createdAt: Date;
     updatedAt: Date;
 }

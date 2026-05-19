@@ -9,6 +9,8 @@ const passwordController_1 = require("../controllers/passwordController");
 const router = express_1.default.Router();
 router.post('/register', authController_1.registerUser);
 router.post('/login', authController_1.loginUser);
+router.post('/verify-email', authController_1.verifyEmail);
+router.post('/resend-otp', authController_1.resendOtp);
 router.post('/forgot-password', passwordController_1.forgotPassword);
 router.post('/reset-password', passwordController_1.resetPassword);
 exports.default = router;

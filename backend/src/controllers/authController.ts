@@ -46,7 +46,12 @@ export const registerUser = async (req: Request, res: Response) => {
     });
 
     if (user) {
-      await sendOtpEmail(user.email, otp);
+      // Send OTP email asynchronously to prevent blocking the response
+      // If it fails, the user can use "Resend OTP" on the verification page
+      sendOtpEmail(user.email, otp).catch((err) => {
+        console.error('Failed to send initial OTP email:', err);
+      });
+      
       await logActivity(user._id as any, 'register', `New account registered: ${name}`);
       res.status(201).json({
         message: 'Registration successful. OTP sent to email.',

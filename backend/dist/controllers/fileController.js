@@ -136,7 +136,7 @@ const uploadFile = async (req, res) => {
                 mimeType: req.file.mimetype,
                 body: bufferToStream(req.file.buffer),
             },
-            fields: 'id, name, mimeType, size',
+            fields: 'id, name, mimeType, size, webViewLink',
         });
         await FileMetadata_1.FileMetadata.create({
             fileId: response.data.id ?? '',
@@ -147,6 +147,7 @@ const uploadFile = async (req, res) => {
             parentId,
             rootId: DRIVE_FOLDER_ID,
             status: 'active',
+            webViewLink: response.data.webViewLink ?? '',
         });
         await (0, logger_1.logActivity)(req.user?._id, 'upload', `Uploaded file: ${req.file?.originalname}`);
         res.status(201).json(response.data);
@@ -213,6 +214,7 @@ const createDoc = async (req, res) => {
             parentId: parent,
             rootId: DRIVE_FOLDER_ID,
             status: 'active',
+            webViewLink: response.data.webViewLink ?? '',
         });
         res.status(201).json(response.data);
     }
@@ -490,12 +492,13 @@ const getDriveStats = async (req, res) => {
         const syncDriveData = async (parentId, userId, rootId) => {
             try {
                 const driveRes = await googleDrive_1.default.files.list({
-                    q: `'${parentId}' in parents and trashed = false`,
-                    fields: 'files(id, name, mimeType, size)',
+                    q: `'${parentId}' in parents`,
+                    fields: 'files(id, name, mimeType, size, webViewLink, trashed)',
                 });
                 const driveFiles = driveRes.data.files || [];
                 const driveFileIds = driveFiles.map(f => f.id).filter((id) => !!id);
                 // 1. Mark files as trashed if they are in DB but no longer in this Drive folder
+                // (This part is still useful if a file was moved out of our managed folder)
                 const trashedFromDrive = await FileMetadata_1.FileMetadata.find({ parentId: String(parentId), status: 'active', fileId: { $nin: driveFileIds } }, 'fileId type');
                 if (trashedFromDrive.length > 0) {
                     const trashedIds = trashedFromDrive.map(f => f.fileId);
@@ -513,7 +516,8 @@ const getDriveStats = async (req, res) => {
                         parentId: parentId,
                         rootId: rootId,
                         ownerUserId: new mongoose_1.default.Types.ObjectId(userId),
-                        status: 'active'
+                        status: file.trashed ? 'trashed' : 'active',
+                        webViewLink: file.webViewLink || ''
                     }, { upsert: true });
                     if (file.mimeType === 'application/vnd.google-apps.folder') {
                         await syncDriveData(file.id, userId, rootId);
@@ -586,13 +590,18 @@ exports.getDriveStats = getDriveStats;
 // @route POST /api/files/bulk-download
 const bulkDownload = async (req, res) => {
     try {
-        const { fileIds } = req.body;
+        // Support both POST (body) and GET (query params) - GET is used by Android app
+        let fileIds = req.body?.fileIds ||
+            (req.query.fileIds ? req.query.fileIds.split(',') : undefined);
         if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
             res.status(400).json({ message: 'No file IDs provided' });
             return;
         }
         const archive = zipLib('zip', { zlib: { level: 9 } });
-        res.setHeader('Content-Disposition', 'attachment; filename="bulk-download.zip"');
+        const zipName = req.query.fileName
+            ? decodeURIComponent(req.query.fileName)
+            : 'bulk-download.zip';
+        res.setHeader('Content-Disposition', `attachment; filename="${zipName}"; filename*=UTF-8''${encodeURIComponent(zipName)}`);
         res.setHeader('Content-Type', 'application/zip');
         archive.pipe(res);
         // Helper to get all files in a folder recursively
@@ -687,6 +696,7 @@ const searchFiles = async (req, res) => {
                 size,
                 modifiedTime: f.updatedAt || new Date().toISOString(),
                 isHidden: isAdmin ? f.isHidden : undefined,
+                webViewLink: f.webViewLink || '',
             };
         });
         res.json(mapped);
@@ -863,7 +873,7 @@ exports.emptyTrash = emptyTrash;
 // @desc  Get all users (Admin only)
 const getAllUsers = async (req, res) => {
     try {
-        const users = await User_1.User.find({ role: 'user' }).select('-passwordHash').sort({ createdAt: -1 });
+        const users = await User_1.User.find({ isEmailVerified: true }).select('-passwordHash').sort({ createdAt: -1 });
         res.json(users);
     }
     catch (error) {
