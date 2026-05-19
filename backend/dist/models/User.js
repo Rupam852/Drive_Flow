@@ -45,6 +45,9 @@ const userSchema = new mongoose_1.Schema({
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending',
     },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerificationOtp: { type: String },
+    otpExpires: { type: Date },
 }, { timestamps: true });
 exports.User = mongoose_1.default.model('User', userSchema);
 //# sourceMappingURL=User.js.map

@@ -7,7 +7,7 @@ const User_1 = require("../models/User");
 // @access  Private/Admin
 const getUsers = async (req, res) => {
     try {
-        const users = await User_1.User.find({}).select('-passwordHash');
+        const users = await User_1.User.find({ isEmailVerified: true }).select('-passwordHash');
         res.json(users);
     }
     catch (error) {
