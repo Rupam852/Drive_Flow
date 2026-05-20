@@ -14,45 +14,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [loadingMessage, setLoadingMessage] = useState('Connecting to Secure Server...');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean; email?: string } | null>(null);
   const [isNativeApp, setIsNativeApp] = useState(false);
   const router = useRouter();
 
-  // Server health check on mount
+  // Handle auto-login redirect or bypass loading screen
   useEffect(() => {
-    const checkServer = async () => {
-      try {
-        await api.get('/auth/health'); 
-        
-        const wasAwake = sessionStorage.getItem('server_awake') === 'true';
-
-        if (wasAwake) {
-          setLoading(false);
-        } else {
-          setLoadingMessage('Server Connected Successfully!');
-          setTimeout(() => {
-            setLoading(false);
-            sessionStorage.setItem('server_awake', 'true');
-          }, 800);
-        }
-        
-        // Mobile App Persistence Fix...
-        const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-        if (isNative) {
-          const role = localStorage.getItem('role');
-          const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
-          if (role && token) {
-            router.replace(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
-            return;
-          }
-        }
-      } catch (err) {
-        setTimeout(() => setLoading(false), 2000);
+    const checkAuth = () => {
+      const role = localStorage.getItem('role');
+      const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
+      
+      if (role && token) {
+        // Logged in, keep loading = true and redirect
+        router.replace(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
+      } else {
+        // Not logged in, disable loading screen immediately
+        setLoading(false);
       }
     };
-    checkServer();
+
+    checkAuth();
     // Detect if running inside Capacitor Android app
     setIsNativeApp(!!(window as any).Capacitor?.isNativePlatform?.());
   }, [router]);
@@ -88,7 +70,7 @@ export default function LoginPage() {
   };
 
   if (loading) {
-    return <LoadingScreen message={loadingMessage} progress={loadingMessage.includes('Successfully') ? 100 : undefined} />;
+    return <LoadingScreen message="Loading..." />;
   }
 
   return (
