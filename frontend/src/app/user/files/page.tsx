@@ -54,7 +54,7 @@ export default function UserFilesPage() {
   const [loading, setLoading] = useState(true);
   const [path, setPath] = useState<{ id: string; name: string }[]>([{ id: ROOT_ID, name: 'Root' }]);
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [stats, setStats] = useState<any>(null);
