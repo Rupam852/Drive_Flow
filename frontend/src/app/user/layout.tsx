@@ -19,15 +19,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   const router = useRouter();
   const pathname = usePathname();
 
-  // Phase 1: Mount
+  // Combined Mount & Auth Check (Client-only)
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Phase 2: Auth Check (Client only, after mount)
-  useEffect(() => {
-    if (!mounted) return;
-    
     try {
       const token = localStorage.getItem('token_user');
       if (token) {
@@ -38,7 +31,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     } catch (e) {
       router.replace('/login');
     }
-  }, [mounted, router]);
+    setMounted(true);
+  }, [router]);
 
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {
