@@ -16,7 +16,7 @@
         <!-- Cloud Path -->
         <path
             android:pathData="M25,65 C13.9543,65 5,56.0457 5,45 C5,34.619 12.9238,26.0827 23.0567,25.1054 C25.8016,14.8872 35.0345,7.5 46,7.5 C57.4851,7.5 66.9744,15.6582 68.8522,26.4385 C70.1837,25.819 71.6749,25.4688 73.25,25.4688 C83.6053,25.4688 92,33.8634 92,44.2188 C92,53.7198 84.973,61.5831 75.7265,62.7758"
-            android:strokeColor="#2563eb"
+            android:strokeColor="#38bdf8"
             android:strokeWidth="2.5"
             android:strokeLineCap="round"
             android:strokeLineJoin="round" />
@@ -24,13 +24,13 @@
         <!-- Structural Lines -->
         <path
             android:pathData="M28,48 L48,35 L68,48 L48,60 Z"
-            android:strokeColor="#2563eb"
+            android:strokeColor="#38bdf8"
             android:strokeWidth="1.5"
             android:strokeAlpha="0.8" />
             
         <path
             android:pathData="M48,35 L48,60 M28,48 L68,48"
-            android:strokeColor="#2563eb"
+            android:strokeColor="#38bdf8"
             android:strokeWidth="1.2"
             android:strokeAlpha="0.6" />
 
@@ -39,31 +39,31 @@
             <!-- Top Node -->
             <path
                 android:pathData="M48,35 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"
-                android:fillColor="#2563eb" />
+                android:fillColor="#38bdf8" />
             <!-- Left Node -->
             <path
                 android:pathData="M28,48 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"
-                android:fillColor="#2563eb" />
+                android:fillColor="#38bdf8" />
             <!-- Right Node -->
             <path
                 android:pathData="M68,48 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"
-                android:fillColor="#2563eb" />
+                android:fillColor="#38bdf8" />
             <!-- Bottom Node -->
             <path
                 android:pathData="M48,60 m-4,0 a4,4 0 1,1 8,0 a4,4 0 1,1 -8,0"
-                android:fillColor="#2563eb" />
+                android:fillColor="#38bdf8" />
         </group>
 
         <!-- Flow Descending Dots -->
         <path
             android:pathData="M48,64.5 L48,84"
-            android:strokeColor="#2563eb"
+            android:strokeColor="#38bdf8"
             android:strokeWidth="1.8"
             android:strokeLineCap="round" />
             
         <!-- Accent Dot -->
         <path
             android:pathData="M48,89 m-3.5,0 a3.5,3.5 0 1,1 7,0 a3.5,3.5 0 1,1 -7,0"
-            android:fillColor="#2563eb" />
+            android:fillColor="#38bdf8" />
     </group>
 </vector>
