@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User, IUser } from '../models/User';
 import { logActivity } from '../utils/logger';
 import { ActivityLog } from '../models/ActivityLog';
-import { sendOtpEmail } from '../utils/mailer';
+import { sendOtpEmail, sendCustomEmail } from '../utils/mailer';
 import crypto from 'crypto';
 
 const generateToken = (id: string, role: string) => {
@@ -134,6 +134,53 @@ export const verifyEmail = async (req: Request, res: Response) => {
     user.emailVerificationOtp = undefined;
     user.otpExpires = undefined;
     await user.save();
+
+    // Dispatch notification emails asynchronously
+    (async () => {
+      try {
+        // 1. Send user confirmation pending email
+        const userHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
+            <h2 style="color: #2563eb; text-align: center; margin-bottom: 20px;">Welcome to DriveFlow!</h2>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${user.name}</strong>,</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Thank you for registering and successfully verifying your email address!</p>
+            <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="font-size: 15px; color: #1e3a8a; margin: 0; font-weight: bold;">Account Status: Pending Admin Approval</p>
+              <p style="font-size: 14px; color: #1e40af; margin: 5px 0 0 0;">Please wait up to <strong>2 hours</strong>. Our admin team will quickly review and approve your account.</p>
+            </div>
+            <p style="font-size: 15px; color: #333; line-height: 1.6;">You will receive an automated email confirmation as soon as your account is approved and ready to access!</p>
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+          </div>
+        `;
+        await sendCustomEmail(user.email, '[DriveFlow] Account Pending Approval', userHtml);
+
+        // 2. Send admin notification email
+        const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'bott27124@gmail.com';
+        const adminHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #fcfcfc;">
+            <h2 style="color: #8b5cf6; text-align: center; margin-bottom: 20px;">🚨 New User Registered</h2>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello Admin,</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">A new user has registered and verified their email address. They are now waiting for your manual approval to access DriveFlow.</p>
+            <div style="background-color: #faf5ff; border: 1px dashed #8b5cf6; padding: 15px; margin: 20px 0; border-radius: 8px;">
+              <p style="font-size: 15px; color: #581c87; margin: 0 0 8px 0; font-weight: bold;">User Details:</p>
+              <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Name:</strong> ${user.name}</p>
+              <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Email:</strong> ${user.email}</p>
+              <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Registered At:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+            <p style="font-size: 15px; color: #333; line-height: 1.6;">Please log into your Admin Panel to approve or reject this user's profile.</p>
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="${process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app'}/login" style="background-color: #8b5cf6; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 10px rgba(139,92,246,0.25); display: inline-block;">Go to Admin Dashboard</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Automation Relay</p>
+          </div>
+        `;
+        await sendCustomEmail(adminEmail, '[DriveFlow Alert] New User Pending Approval', adminHtml);
+      } catch (err) {
+        console.error('Failed to dispatch registration notification emails:', err);
+      }
+    })();
 
     res.status(200).json({ message: 'Email verified successfully. Please wait for admin approval.' });
   } catch (error) {
