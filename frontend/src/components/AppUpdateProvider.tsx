@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Download, AlertTriangle } from 'lucide-react';
 import CloudLogo from './CloudLogo';
 import api from '@/lib/api';
+import { useAndroidBack } from '@/hooks/useAndroidBack';
+import { App } from '@capacitor/app';
 
 // Current Hardcoded Version of the Client APK
-const CURRENT_APP_VERSION = '1.0.2';
+const CURRENT_APP_VERSION = '1.0.3';
 
 interface AppUpdateContextType {
   currentVersion: string;
@@ -31,6 +33,19 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
   const [updateRequired, setUpdateRequired] = useState(false);
   const [latestVersion, setLatestVersion] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
+
+  // Intercept physical Back button on Android to prevent bypassing the forced-update screen
+  useAndroidBack(() => {
+    if (updateRequired) {
+      try {
+        App.exitApp();
+      } catch (err) {
+        console.error('Failed to exit app on back press:', err);
+      }
+      return true; // Stop event propagation
+    }
+    return false; // Let normal back actions proceed
+  }, 100, [updateRequired]);
 
   useEffect(() => {
     const checkAppVersion = async () => {
@@ -63,15 +78,19 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
     checkAppVersion();
   }, []);
 
-  const handleUpdate = () => {
+  const handleUpdate = (e: React.MouseEvent) => {
     if (!downloadUrl) return;
+    
+    // Prevent double triggers from concurrent native opens
+    e.preventDefault();
     
     // Safely trigger external system browser launch
     try {
       window.open(downloadUrl, '_system');
+    } catch (err) {
+      console.error('Failed to trigger native update launch:', err);
+      // Fallback
       window.open(downloadUrl, '_blank');
-    } catch (e) {
-      console.error('Failed to trigger update URL:', e);
     }
   };
 
@@ -135,11 +154,8 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
                 href={downloadUrl}
                 target="_system"
                 rel="noopener noreferrer"
-                onClick={(e) => {
-                  // Execute window.open fallbacks
-                  handleUpdate();
-                }}
-                className="w-full py-4 bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(37,99,235,0.3)] cursor-pointer decoration-none"
+                onClick={handleUpdate}
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(37,99,235,0.3)] cursor-pointer no-underline"
               >
                 <Download className="w-5 h-5" />
                 <span>Update Now</span>
