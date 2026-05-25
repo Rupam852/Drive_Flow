@@ -16,11 +16,7 @@ export default function Home() {
 
   useEffect(() => {
     // 1. Detect if running inside Capacitor Android APK vs Live Web Browser
-    const isWeb = typeof window !== 'undefined' && (
-      window.location.hostname.includes('driveflowrupam') ||
-      window.location.hostname.includes('vercel.app')
-    );
-    const isNative = !isWeb;
+    const isNative = typeof window !== 'undefined' && !!(window as any).Capacitor;
     setIsNativeApp(isNative);
 
     // 2. Auth Persistence and Target Pre-fetching

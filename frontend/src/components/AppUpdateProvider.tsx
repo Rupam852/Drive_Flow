@@ -49,13 +49,8 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
 
   useEffect(() => {
     const checkAppVersion = async () => {
-      // 1. Detect if running inside a Web Portal vs Native App/Local testing
-      const isWebPortal = typeof window !== 'undefined' && (
-        window.location.hostname.includes('driveflowrupam') ||
-        window.location.hostname.includes('vercel.app')
-      );
-      
-      const isNative = !isWebPortal;
+      // 1. Detect if running inside Capacitor Android APK vs Live Web Browser
+      const isNative = typeof window !== 'undefined' && !!(window as any).Capacitor;
 
       // Only check version inside the native app / test emulator
       if (!isNative) return;
