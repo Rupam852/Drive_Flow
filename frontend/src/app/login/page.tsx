@@ -35,6 +35,11 @@ export default function LoginPage() {
     };
 
     checkAuth();
+    
+    // Prefetch target dashboards in the background for zero-latency redirections
+    router.prefetch('/user/dashboard');
+    router.prefetch('/admin/dashboard');
+
     // Detect if running inside Capacitor Android app
     setIsNativeApp(!!(window as any).Capacitor?.isNativePlatform?.());
   }, [router]);
@@ -58,13 +63,15 @@ export default function LoginPage() {
       } else {
         router.push('/user/dashboard');
       }
+      // Note: We deliberately do NOT call setIsSubmitting(false) on success.
+      // This keeps the premium loading spinner active on the login button
+      // during the short frame where Next.js is transitioning, eliminating transition freeze.
     } catch (err: any) {
       if (err.response?.status === 403) {
         setShowPopup({ message: err.response.data.message, isError: true, email: err.response.data.email || email });
       } else {
         setError(err.response?.data?.message || 'Login failed. Please try again.');
       }
-    } finally {
       setIsSubmitting(false);
     }
   };

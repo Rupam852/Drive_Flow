@@ -16,7 +16,10 @@ export default function Home() {
     const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
     const targetPath = (role && token) ? (role === 'admin' ? '/admin/dashboard' : '/user/dashboard') : '/login';
 
-    // 2. Animate progress bar smoothly from 0 to 100 in 800ms
+    // 2. Prefetch the target path immediately in the background to eliminate redirection lag
+    router.prefetch(targetPath);
+
+    // 3. Animate progress bar smoothly from 0 to 100 in 800ms
     const duration = 800; // ms
     const intervalTime = 16; // ~60fps
     const step = 100 / (duration / intervalTime);
