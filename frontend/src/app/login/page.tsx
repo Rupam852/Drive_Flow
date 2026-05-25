@@ -189,7 +189,7 @@ export default function LoginPage() {
       {/* Android App Download Banner — only on web, hidden inside the app */}
       {!isNativeApp && (
         <motion.a
-          href="https://drive.google.com/uc?export=download&id=1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h"
+          href="https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk"
           target="_blank"
           rel="noopener noreferrer"
           initial={{ opacity: 0, y: 20 }}

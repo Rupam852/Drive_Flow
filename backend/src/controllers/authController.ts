@@ -244,7 +244,7 @@ export const getAppVersion = async (req: Request, res: Response) => {
   try {
     const latestVersion = process.env.LATEST_APP_VERSION || '1.0.0';
     const minRequiredVersion = process.env.MIN_REQUIRED_VERSION || '1.0.0';
-    const downloadUrl = process.env.APP_DOWNLOAD_URL || 'https://drive.google.com/uc?export=download&id=1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h';
+    const downloadUrl = process.env.APP_DOWNLOAD_URL || 'https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk';
     
     res.status(200).json({
       latestVersion,
