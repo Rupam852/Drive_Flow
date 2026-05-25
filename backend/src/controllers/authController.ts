@@ -190,3 +190,21 @@ export const seedAdmin = async () => {
     console.error('Error seeding admin', error);
   }
 };
+
+// @desc Get latest required mobile app version and download URL
+// @route GET /api/auth/app-version
+export const getAppVersion = async (req: Request, res: Response) => {
+  try {
+    const latestVersion = process.env.LATEST_APP_VERSION || '1.0.0';
+    const minRequiredVersion = process.env.MIN_REQUIRED_VERSION || '1.0.0';
+    const downloadUrl = process.env.APP_DOWNLOAD_URL || 'https://drive.google.com/uc?export=download&id=1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h';
+    
+    res.status(200).json({
+      latestVersion,
+      minRequiredVersion,
+      downloadUrl,
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
