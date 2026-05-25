@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import CloudLogo from '@/components/CloudLogo';
 
 export default function Home() {
   const router = useRouter();
@@ -67,9 +68,7 @@ export default function Home() {
               transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
               className="w-20 h-20 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-3xl flex items-center justify-center mb-6 border border-white/20 shadow-lg relative"
             >
-              <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
-              </svg>
+              <CloudLogo size={42} />
             </motion.div>
 
             {/* Title with Gradient Text */}

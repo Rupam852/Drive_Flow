@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
+import CloudLogo from '@/components/CloudLogo';
 
 
 const navItems = [
@@ -113,9 +114,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <Link href="/admin/dashboard" className="p-6 border-b border-white/10 hover:bg-white/5 transition-colors block"
           onClick={() => setSidebarOpen(false)}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-xl flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <HardDrive className="w-5 h-5 text-white" />
-            </div>
+            <CloudLogo size={38} />
             <div>
               <h1 className="font-bold text-white text-lg leading-none">DriveFlow</h1>
               <span className="text-xs text-purple-400">Admin Panel</span>
