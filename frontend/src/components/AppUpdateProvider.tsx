@@ -66,12 +66,13 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
   const handleUpdate = () => {
     if (!downloadUrl) return;
     
-    // Open in system external browser so native download starts immediately
-    if ((window as any).Capacitor) {
-      (window as any).Capacitor.trigger('openUrl', downloadUrl);
+    // Safely trigger external system browser launch
+    try {
+      window.open(downloadUrl, '_system');
+      window.open(downloadUrl, '_blank');
+    } catch (e) {
+      console.error('Failed to trigger update URL:', e);
     }
-    window.open(downloadUrl, '_system');
-    window.open(downloadUrl, '_blank');
   };
 
   return (
@@ -127,16 +128,22 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
                 </div>
               </div>
 
-              {/* Action Button */}
-              <motion.button
+              {/* Action Link Button */}
+              <motion.a
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={handleUpdate}
-                className="w-full py-4 bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(37,99,235,0.3)] cursor-pointer"
+                href={downloadUrl}
+                target="_system"
+                rel="noopener noreferrer"
+                onClick={(e) => {
+                  // Execute window.open fallbacks
+                  handleUpdate();
+                }}
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-sky-400 hover:from-blue-700 hover:to-sky-500 text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-[0_10px_25px_rgba(37,99,235,0.3)] cursor-pointer decoration-none"
               >
                 <Download className="w-5 h-5" />
                 <span>Update Now</span>
-              </motion.button>
+              </motion.a>
             </motion.div>
           </motion.div>
         )}
