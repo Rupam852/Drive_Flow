@@ -47,45 +47,55 @@ export default function Home() {
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.4, ease: [0.25, 1, 0.5, 1] }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-dynamic"
+          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-dynamic p-6"
         >
-          {/* Glassmorphic Card Container */}
+          {/* Glowing Logo Icon directly on the clean background */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
-            className="glass-card p-10 rounded-[2.5rem] flex flex-col items-center max-w-sm w-[90vw] text-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/10 relative overflow-hidden"
+            className="w-24 h-24 bg-sky-100/90 dark:bg-slate-900/95 rounded-[2rem] flex items-center justify-center mb-6 border border-sky-200/30 dark:border-slate-800/30 shadow-[0_15px_35px_rgba(0,0,0,0.15)] relative"
           >
-            {/* Ambient Background Glow inside the card */}
-            <div className="absolute -top-10 -left-10 w-24 h-24 bg-purple-500/20 rounded-full blur-2xl pointer-events-none" />
-            <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-pink-500/20 rounded-full blur-2xl pointer-events-none" />
+            <CloudLogo size={52} />
+          </motion.div>
 
-            {/* Glowing Logo Icon */}
-            <motion.div
-              animate={{ 
-                boxShadow: ["0 0 15px rgba(168,85,247,0.2)", "0 0 30px rgba(236,72,153,0.4)", "0 0 15px rgba(168,85,247,0.2)"] 
-              }}
-              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-              className="w-20 h-20 bg-gradient-to-tr from-purple-600 to-pink-500 rounded-3xl flex items-center justify-center mb-6 border border-white/20 shadow-lg relative"
-            >
-              <CloudLogo size={42} />
-            </motion.div>
+          {/* Title with sleek, clean text */}
+          <motion.h1
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="text-4xl font-extrabold tracking-wider text-white mb-2"
+          >
+            DriveFlow
+          </motion.h1>
 
-            {/* Title with Gradient Text */}
-            <h1 className="text-3xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-white via-purple-100 to-pink-200 mb-2">
-              DriveFlow
-            </h1>
-            <p className="text-sm text-purple-300/80 mb-8 font-medium">Securing Your Digital Workspace</p>
+          {/* Subtitle */}
+          <motion.p
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="text-sm text-sky-200/50 mb-12 font-medium tracking-wide"
+          >
+            Securing Your Digital Workspace
+          </motion.p>
 
+          {/* Sleek, simple progress indicator */}
+          <motion.div
+            initial={{ width: 0, opacity: 0 }}
+            animate={{ width: "240px", opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+            className="flex flex-col items-center"
+          >
             {/* Progress Bar Container */}
-            <div className="w-full bg-black/35 h-2 rounded-full overflow-hidden border border-white/5 relative">
+            <div className="w-60 bg-white/10 h-1.5 rounded-full overflow-hidden border border-white/5 relative shadow-inner">
               <motion.div
                 style={{ width: `${Math.min(progress, 100)}%` }}
-                className="absolute top-0 left-0 h-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500"
+                className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-sky-400"
               />
             </div>
 
-            <div className="mt-4 text-xs font-bold text-white/50 tracking-widest">
+            {/* Progress Percentage */}
+            <div className="mt-3 text-xs font-bold text-white/30 tracking-widest">
               {Math.min(Math.floor(progress), 100)}%
             </div>
           </motion.div>
