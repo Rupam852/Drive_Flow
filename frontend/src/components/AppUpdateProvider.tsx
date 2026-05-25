@@ -7,7 +7,7 @@ import CloudLogo from './CloudLogo';
 import api from '@/lib/api';
 
 // Current Hardcoded Version of the Client APK
-const CURRENT_APP_VERSION = '1.0.1';
+const CURRENT_APP_VERSION = '1.0.2';
 
 interface AppUpdateContextType {
   currentVersion: string;
