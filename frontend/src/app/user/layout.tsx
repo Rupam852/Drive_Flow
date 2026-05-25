@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, FolderOpen, LogOut, Menu, X, HardDrive } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, LogOut, Menu, X, HardDrive, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import CloudLogo from '@/components/CloudLogo';
@@ -11,6 +11,7 @@ import CloudLogo from '@/components/CloudLogo';
 const navItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: LayoutDashboard },
   { label: 'My Files', href: '/user/files', icon: FolderOpen },
+  { label: 'Profile', href: '/user/profile', icon: UserIcon },
 ];
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {

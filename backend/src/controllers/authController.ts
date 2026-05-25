@@ -255,3 +255,43 @@ export const getAppVersion = async (req: Request, res: Response) => {
     res.status(500).json({ message: (error as Error).message });
   }
 };
+
+// @desc    Update authenticated user profile name
+// @route   PUT /api/auth/profile
+// @access  Private
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const { name } = req.body;
+    if (!name || name.trim().length === 0) {
+      res.status(400).json({ message: 'Name is required' });
+      return;
+    }
+
+    const userId = (req as any).user?._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    user.name = name;
+    await user.save();
+
+    // Log user activity
+    await logActivity(user._id.toString(), 'update_profile', `User updated profile name to ${name}`);
+
+    res.status(200).json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
