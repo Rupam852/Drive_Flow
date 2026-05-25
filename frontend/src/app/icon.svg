@@ -1,0 +1,104 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      /* Default (Light Mode) styles */
+      :root {
+        --bg-start: #2563eb;
+        --bg-end: #3b82f6;
+        --cloud-stroke: #ffffff;
+        --line-stroke: rgba(255, 255, 255, 0.45);
+        --node-fill: #ffffff;
+        --node-stroke: #ffffff;
+        --node-glow: rgba(255, 255, 255, 0.4);
+        --accent-dot: #ffffff;
+      }
+
+      /* Dark Mode styles matching system setting */
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg-start: #0f172a;
+          --bg-end: #1e3a8a;
+          --cloud-stroke: #38bdf8;
+          --line-stroke: rgba(56, 189, 248, 0.35);
+          --node-fill: #0f172a;
+          --node-stroke: #38bdf8;
+          --node-glow: rgba(56, 189, 248, 0.6);
+          --accent-dot: #38bdf8;
+        }
+      }
+
+      .bg-gradient {
+        fill: url(#bgGradient);
+      }
+      .cloud-main {
+        stroke: var(--cloud-stroke);
+      }
+      .net-line {
+        stroke: var(--line-stroke);
+      }
+      .node-circle {
+        fill: var(--node-fill);
+        stroke: var(--node-stroke);
+        filter: url(#glowFilter);
+      }
+      .accent-circle {
+        fill: var(--accent-dot);
+      }
+    </style>
+
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="var(--bg-start)" />
+      <stop offset="100%" stop-color="var(--bg-end)" />
+    </linearGradient>
+
+    <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Blue Rounded Background (Matches system theme automatically) -->
+  <rect class="bg-gradient" width="512" height="512" rx="128" />
+
+  <!-- Cloud Structure Graphics inside the container -->
+  <g transform="translate(56, 56) scale(4)">
+    <!-- Cloud Outline -->
+    <path
+      class="cloud-main"
+      d="M25 65C13.9543 65 5 56.0457 5 45C5 34.619 12.9238 26.0827 23.0567 25.1054C25.8016 14.8872 35.0345 7.5 46 7.5C57.4851 7.5 66.9744 15.6582 68.8522 26.4385C70.1837 25.819 71.6749 25.4688 73.25 25.4688C83.6053 25.4688 92 33.8634 92 44.2188C92 53.7198 84.973 61.5831 75.7265 62.7758"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      fill="none"
+    />
+
+    <!-- Connecting Network Lines (Structure Concept) -->
+    <line class="net-line" x1="28" y1="48" x2="48" y2="35" stroke-width="1.5" />
+    <line class="net-line" x1="48" y1="35" x2="68" y2="48" stroke-width="1.5" />
+    <line class="net-line" x1="28" y1="48" x2="48" y2="60" stroke-width="1.5" />
+    <line class="net-line" x1="68" y1="48" x2="48" y2="60" stroke-width="1.5" />
+    
+    <line class="net-line" x1="48" y1="35" x2="48" y2="60" stroke-width="1.2" stroke-dasharray="2 2" />
+    <line class="net-line" x1="28" y1="48" x2="68" y2="48" stroke-width="1.2" stroke-dasharray="2 2" />
+
+    <!-- Node Circles with Glow Filter -->
+    <circle class="node-circle" cx="48" cy="35" r="4.5" stroke-width="1.5" />
+    <circle class="node-circle" cx="28" cy="48" r="4.5" stroke-width="1.5" />
+    <circle class="node-circle" cx="68" cy="48" r="4.5" stroke-width="1.5" />
+    <circle class="node-circle" cx="48" cy="60" r="4.5" stroke-width="1.5" />
+
+    <!-- Flow Descending Dots -->
+    <path
+      class="net-line"
+      d="M48 64.5V85"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-dasharray="3 3"
+      fill="none"
+    />
+    <circle class="accent-circle" cx="48" cy="89" r="3" />
+  </g>
+</svg>
