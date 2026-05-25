@@ -34,13 +34,15 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
 
   useEffect(() => {
     const checkAppVersion = async () => {
-      // 1. Detect if running inside Capacitor Native Platform
-      const isNative = typeof window !== 'undefined' && (
-        !!(window as any).Capacitor?.isNativePlatform?.() ||
-        (window as any).navigator?.userAgent?.toLowerCase().includes('capacitor')
+      // 1. Detect if running inside a Web Portal vs Native App/Local testing
+      const isWebPortal = typeof window !== 'undefined' && (
+        window.location.hostname.includes('driveflowrupam') ||
+        window.location.hostname.includes('vercel.app')
       );
+      
+      const isNative = !isWebPortal;
 
-      // Only check version inside the native APK
+      // Only check version inside the native app / test emulator
       if (!isNative) return;
 
       try {
