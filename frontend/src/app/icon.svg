@@ -3,14 +3,14 @@
     <style>
       /* Default (Light Mode) styles */
       :root {
-        --bg-start: #2563eb;
-        --bg-end: #3b82f6;
-        --cloud-stroke: #ffffff;
-        --line-stroke: rgba(255, 255, 255, 0.45);
+        --bg-start: #e0f2fe;
+        --bg-end: #bae6fd;
+        --cloud-stroke: #2563eb;
+        --line-stroke: rgba(37, 99, 235, 0.45);
         --node-fill: #ffffff;
-        --node-stroke: #ffffff;
-        --node-glow: rgba(255, 255, 255, 0.4);
-        --accent-dot: #ffffff;
+        --node-stroke: #2563eb;
+        --node-glow: rgba(37, 99, 235, 0.35);
+        --accent-dot: #2563eb;
       }
 
       /* Dark Mode styles matching system setting */
@@ -64,7 +64,7 @@
   <rect class="bg-gradient" width="512" height="512" rx="128" />
 
   <!-- Cloud Structure Graphics inside the container -->
-  <g transform="translate(56, 56) scale(4)">
+  <g transform="translate(64, 64) scale(3.84)">
     <!-- Cloud Outline -->
     <path
       class="cloud-main"
