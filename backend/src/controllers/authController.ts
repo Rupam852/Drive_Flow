@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import fs from 'fs';
+import path from 'path';
 import { User, IUser } from '../models/User';
 import { logActivity } from '../utils/logger';
 import { ActivityLog } from '../models/ActivityLog';
@@ -242,9 +244,30 @@ export const seedAdmin = async () => {
 // @route GET /api/auth/app-version
 export const getAppVersion = async (req: Request, res: Response) => {
   try {
-    const latestVersion = process.env.LATEST_APP_VERSION || '1.0.0';
-    const minRequiredVersion = process.env.MIN_REQUIRED_VERSION || '1.0.0';
+    let latestVersion = process.env.LATEST_APP_VERSION;
+    let minRequiredVersion = process.env.MIN_REQUIRED_VERSION;
     const downloadUrl = process.env.APP_DOWNLOAD_URL || 'https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk';
+
+    // Fully Automated: Read and parse version directly from frontend AppUpdateProvider.tsx
+    try {
+      const providerPath = path.join(__dirname, '..', '..', '..', 'frontend', 'src', 'components', 'AppUpdateProvider.tsx');
+      if (fs.existsSync(providerPath)) {
+        const content = fs.readFileSync(providerPath, 'utf8');
+        const match = content.match(/const CURRENT_APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+        if (match && match[1]) {
+          const autoVersion = match[1];
+          // Dynamically override latestVersion and minRequiredVersion if not strictly set in env
+          if (!latestVersion) latestVersion = autoVersion;
+          if (!minRequiredVersion) minRequiredVersion = autoVersion;
+        }
+      }
+    } catch (parseError) {
+      console.error('Failed to auto-detect app version from source:', parseError);
+    }
+
+    // Ultimate Safe Fallbacks
+    if (!latestVersion) latestVersion = '1.0.1';
+    if (!minRequiredVersion) minRequiredVersion = '1.0.1';
     
     res.status(200).json({
       latestVersion,
