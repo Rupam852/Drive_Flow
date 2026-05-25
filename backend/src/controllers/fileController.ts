@@ -233,6 +233,8 @@ export const createDoc = async (req: AuthRequest, res: Response) => {
       webViewLink: response.data.webViewLink ?? '',
     });
 
+    await logActivity((req as any).user?._id, 'create_doc', `Created document: ${response.data.name ?? name}`);
+
     res.status(201).json(response.data);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
@@ -245,13 +247,15 @@ export const renameFile = async (req: Request, res: Response) => {
   try {
     const { name } = req.body;
     const fileId = req.params['id'] as string;
+    const oldMeta = await FileMetadata.findOne({ fileId }, 'name');
+    const oldName = oldMeta ? oldMeta.name : 'Untitled';
     const response = await (drive.files.update as any)({
       fileId,
       requestBody: { name },
       fields: 'id, name',
     });
     await FileMetadata.findOneAndUpdate({ fileId }, { name });
-    await logActivity((req as any).user?._id, 'rename', `Renamed file ID ${fileId} to ${name}`);
+    await logActivity((req as any).user?._id, 'rename', `Renamed item: "${oldName}" to "${name}"`);
     res.json(response.data);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
@@ -286,7 +290,12 @@ export const moveFiles = async (req: Request, res: Response) => {
       results.push(response.data);
     }
 
-    await logActivity((req as any).user?._id, 'move', `Moved ${fileIds.length} files to folder ID ${targetId}`);
+    const targetFolder = await FileMetadata.findOne({ fileId: targetId }, 'name');
+    const targetName = targetId === DRIVE_FOLDER_ID ? 'Root' : (targetFolder ? targetFolder.name : 'Folder');
+    const filesToMove = await FileMetadata.find({ fileId: { $in: fileIds } }, 'name');
+    const fileNames = filesToMove.map(f => `"${f.name}"`).join(', ');
+
+    await logActivity((req as any).user?._id, 'move', `Moved ${fileIds.length} items (${fileNames}) to "${targetName}"`);
     res.json(results);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
@@ -326,6 +335,9 @@ export const trashFiles = async (req: Request, res: Response) => {
     const allNestedIds = await getAllChildIds(fileIds);
     const idsToUpdate = [...fileIds, ...allNestedIds];
 
+    const filesToTrash = await FileMetadata.find({ fileId: { $in: fileIds } }, 'name');
+    const fileNames = filesToTrash.map(f => `"${f.name}"`).join(', ');
+
     for (const id of fileIds) {
       await drive.files.update({ fileId: id, requestBody: { trashed: true } });
     }
@@ -336,7 +348,7 @@ export const trashFiles = async (req: Request, res: Response) => {
       { status: 'trashed' }
     );
 
-    await logActivity((req as any).user?._id, 'trash', `Moved ${fileIds.length} items to trash (including nested contents)`);
+    await logActivity((req as any).user?._id, 'trash', `Moved ${fileIds.length} items (${fileNames}) to trash`);
     res.json({ message: 'Items moved to trash' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
@@ -747,6 +759,7 @@ export const bulkDownload = async (req: Request, res: Response) => {
       }
     }
 
+    await logActivity((req as any).user?._id, 'download', `Downloaded bulk ZIP: ${zipName}`);
     await archive.finalize();
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
@@ -870,8 +883,9 @@ export const restoreFile = async (req: Request, res: Response) => {
   try {
     const fileId = req.params['id'] as string;
     await drive.files.update({ fileId, requestBody: { trashed: false } });
-    await FileMetadata.findOneAndUpdate({ fileId }, { status: 'active' });
-    await logActivity((req as any).user?._id, 'restore', `Restored file ID ${fileId}`);
+    const meta = await FileMetadata.findOneAndUpdate({ fileId }, { status: 'active' });
+    const name = meta ? meta.name : 'Untitled';
+    await logActivity((req as any).user?._id, 'restore', `Restored item: "${name}"`);
     res.json({ message: 'File restored successfully' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
@@ -890,7 +904,9 @@ export const restoreBulk = async (req: Request, res: Response) => {
       await drive.files.update({ fileId: id, requestBody: { trashed: false } });
       await FileMetadata.findOneAndUpdate({ fileId: id }, { status: 'active' });
     }
-    await logActivity((req as any).user?._id, 'bulk_restore', `Restored ${fileIds.length} items`);
+    const restoredMetas = await FileMetadata.find({ fileId: { $in: fileIds } }, 'name');
+    const names = restoredMetas.map(m => `"${m.name}"`).join(', ');
+    await logActivity((req as any).user?._id, 'bulk_restore', `Restored ${fileIds.length} items (${names})`);
     res.json({ message: 'Items restored' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
@@ -927,6 +943,9 @@ export const deletePermanently = async (req: Request, res: Response) => {
     const allNestedIds = await getAllChildIds(fileIds);
     const idsToDelete = [...fileIds, ...allNestedIds];
 
+    const deletedMetas = await FileMetadata.find({ fileId: { $in: fileIds } }, 'name');
+    const names = deletedMetas.map(m => `"${m.name}"`).join(', ');
+
     for (const id of fileIds) {
       try {
         await drive.files.delete({ fileId: id });
@@ -938,7 +957,7 @@ export const deletePermanently = async (req: Request, res: Response) => {
 
     await FileMetadata.deleteMany({ fileId: { $in: idsToDelete } });
     
-    await logActivity((req as any).user?._id, 'delete_permanent', `Permanently deleted ${fileIds.length} items`);
+    await logActivity((req as any).user?._id, 'delete_permanent', `Permanently deleted ${fileIds.length} items (${names})`);
     res.json({ message: 'Items deleted permanently' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });

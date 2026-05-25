@@ -99,6 +99,79 @@ const fmt = (bytes?: string, isFolder?: boolean) => {
   return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 };
 
+const getActionText = (action: string) => {
+  switch (action) {
+    case 'upload': return 'uploaded';
+    case 'download': return 'downloaded';
+    case 'delete': return 'deleted';
+    case 'trash': return 'moved to trash';
+    case 'delete_permanent': return 'permanently deleted';
+    case 'restore':
+    case 'bulk_restore':
+    case 'restore_all': return 'restored';
+    case 'create_folder': return 'created folder';
+    case 'create_doc': return 'created document';
+    case 'register': return 'registered';
+    case 'login': return 'logged in';
+    case 'rename': return 'renamed';
+    case 'move': return 'moved';
+    case 'hide_file': return 'hid';
+    case 'unhide_file': return 'unhid';
+    case 'delete_user': return 'deleted user';
+    case 'update_user_status': return 'updated user status';
+    case 'clear_logs': return 'cleared logs';
+    case 'empty_trash': return 'emptied trash';
+    default: return action.replace('_', ' ');
+  }
+};
+
+const getActionStyles = (action: string) => {
+  switch (action) {
+    case 'upload':
+      return {
+        bg: 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]',
+        icon: <Upload className="w-3 h-3 text-white" />
+      };
+    case 'download':
+      return {
+        bg: 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]',
+        icon: <Download className="w-3 h-3 text-white" />
+      };
+    case 'delete':
+    case 'trash':
+    case 'delete_permanent':
+    case 'delete_user':
+      return {
+        bg: 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]',
+        icon: <Trash2 className="w-3 h-3 text-white" />
+      };
+    case 'restore':
+    case 'bulk_restore':
+    case 'restore_all':
+      return {
+        bg: 'bg-teal-500 shadow-[0_0_10px_rgba(20,184,166,0.4)]',
+        icon: <RefreshCw className="w-3 h-3 text-white" />
+      };
+    case 'create_folder':
+    case 'create_doc':
+      return {
+        bg: 'bg-pink-500 shadow-[0_0_10px_rgba(236,72,153,0.4)]',
+        icon: <FolderPlus className="w-3 h-3 text-white" />
+      };
+    case 'login':
+    case 'register':
+      return {
+        bg: 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.4)]',
+        icon: <Users className="w-3 h-3 text-white" />
+      };
+    default:
+      return {
+        bg: 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]',
+        icon: <Clock className="w-3 h-3 text-white" />
+      };
+  }
+};
+
 function AdminFilesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1794,25 +1867,20 @@ function AdminFilesContent() {
                         <div className="absolute left-[11px] top-6 bottom-0 w-[2px] bg-white/5 group-hover:bg-purple-500/20 transition-colors" />
                       )}
                       {/* Timeline Dot */}
-                      <div className={`absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center z-10 transition-all
-                        ${log.action === 'upload' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]' :
-                          log.action === 'delete' ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.4)]' :
-                            log.action === 'download' ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.4)]' :
-                              'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]'}`}>
-                        {log.action === 'upload' ? <Upload className="w-3 h-3 text-white" /> :
-                          log.action === 'delete' ? <Trash2 className="w-3 h-3 text-white" /> :
-                            log.action === 'download' ? <Download className="w-3 h-3 text-white" /> :
-                              <Clock className="w-3 h-3 text-white" />}
-                      </div>
+                      {(() => {
+                        const styles = getActionStyles(log.action);
+                        return (
+                          <div className={`absolute left-0 top-1.5 w-6 h-6 rounded-full border-2 border-black flex items-center justify-center z-10 transition-all ${styles.bg}`}>
+                            {styles.icon}
+                          </div>
+                        );
+                      })()}
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <p className="text-white text-sm font-semibold">
                             <span className="text-purple-400 font-bold">{log.user?.name || 'Someone'}</span>
-                            {' '}{log.action === 'upload' ? 'uploaded' :
-                              log.action === 'delete' ? 'deleted' :
-                                log.action === 'download' ? 'downloaded' :
-                                  log.action.replace('_', ' ')}
+                            {' '}{getActionText(log.action)}
                           </p>
                           <span className="text-[10px] text-gray-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>

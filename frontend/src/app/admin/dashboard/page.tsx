@@ -123,10 +123,22 @@ export default function AdminDashboard() {
   const getActionIcon = (action: string) => {
     switch (action) {
       case 'upload': return '↑';
-      case 'delete': return '×';
       case 'download': return '↓';
-      case 'login': return '→';
+      case 'delete':
+      case 'trash':
+      case 'delete_user':
+      case 'delete_permanent': return '×';
+      case 'restore':
+      case 'bulk_restore':
+      case 'restore_all': return '↺';
+      case 'create_folder':
+      case 'create_doc':
       case 'register': return '+';
+      case 'login': return '→';
+      case 'rename': return '✎';
+      case 'move': return '⇄';
+      case 'hide_file': return '👁';
+      case 'unhide_file': return '👁';
       default: return '•';
     }
   };
@@ -134,11 +146,49 @@ export default function AdminDashboard() {
   const getActionColor = (action: string) => {
     switch (action) {
       case 'upload': return 'bg-emerald-500';
-      case 'delete': return 'bg-red-500';
       case 'download': return 'bg-blue-500';
-      case 'login': return 'bg-purple-500';
+      case 'delete':
+      case 'trash':
+      case 'delete_permanent':
+      case 'delete_user': return 'bg-red-500';
+      case 'restore':
+      case 'bulk_restore':
+      case 'restore_all': return 'bg-teal-500';
+      case 'create_folder':
+      case 'create_doc':
       case 'register': return 'bg-pink-500';
+      case 'login': return 'bg-purple-500';
+      case 'rename': return 'bg-amber-500';
+      case 'move': return 'bg-indigo-500';
+      case 'hide_file': return 'bg-gray-600';
+      case 'unhide_file': return 'bg-slate-500';
       default: return 'bg-purple-500';
+    }
+  };
+
+  const getActionText = (action: string) => {
+    switch (action) {
+      case 'upload': return 'uploaded';
+      case 'download': return 'downloaded';
+      case 'delete': return 'deleted';
+      case 'trash': return 'moved to trash';
+      case 'delete_permanent': return 'permanently deleted';
+      case 'restore':
+      case 'bulk_restore':
+      case 'restore_all': return 'restored';
+      case 'create_folder': return 'created folder';
+      case 'create_doc': return 'created document';
+      case 'register': return 'registered';
+      case 'login': return 'logged in';
+      case 'rename': return 'renamed';
+      case 'move': return 'moved';
+      case 'hide_file': return 'hid';
+      case 'unhide_file': return 'unhid';
+      case 'delete_user': return 'deleted user';
+      case 'update_user_status': return 'updated user status';
+      case 'clear_logs': return 'cleared logs';
+      case 'empty_trash': return 'emptied trash';
+      default: return action.replace('_', ' ');
     }
   };
 
@@ -297,7 +347,7 @@ export default function AdminDashboard() {
                   <div className="min-w-0">
                     <p className="text-white text-xs font-medium leading-tight mb-0.5 break-words">
                       <span className="text-purple-400">{log.user?.name || 'User'}</span>
-                      {' '}{log.action === 'upload' ? 'uploaded' : log.action === 'delete' ? 'deleted' : 'accessed'}
+                      {' '}{getActionText(log.action)}
                     </p>
                     <p className="text-gray-500 text-[10px] break-words">{log.details}</p>
                     <p className="text-[9px] text-gray-600 mt-0.5">{new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
