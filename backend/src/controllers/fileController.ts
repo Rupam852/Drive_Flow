@@ -10,6 +10,7 @@ import { User } from '../models/User';
 import { logActivity } from '../utils/logger';
 import { AuthRequest } from '../middleware/authMiddleware';
 import mongoose from 'mongoose';
+import { sendCustomEmail } from '../utils/mailer';
 
 const DRIVE_FOLDER_ID = process.env.GOOGLE_DRIVE_FOLDER_ID as string;
 
@@ -1010,6 +1011,54 @@ export const updateUserStatus = async (req: Request, res: Response) => {
       res.status(404).json({ message: 'User not found' });
       return;
     }
+
+    // Trigger email notification asynchronously so it doesn't block the API response
+    (async () => {
+      try {
+        const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
+        if (status === 'approved') {
+          const approvedHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
+              <h2 style="color: #10b981; text-align: center; margin-bottom: 20px;">🎉 Account Approved!</h2>
+              <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${user.name}</strong>,</p>
+              <p style="font-size: 16px; color: #333; line-height: 1.6;">Great news! Your <strong>DriveFlow</strong> account has been successfully approved by our administrator team.</p>
+              <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <p style="font-size: 15px; color: #065f46; margin: 0; font-weight: bold;">Status: Approved & Active</p>
+                <p style="font-size: 14px; color: #047857; margin: 5px 0 0 0;">You now have full access to upload, manage, search, and share your files!</p>
+              </div>
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${frontendUrl}/login" style="background-color: #10b981; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 10px rgba(16,185,129,0.25); display: inline-block;">Login to your Dashboard</a>
+              </div>
+              <p style="font-size: 14px; color: #555; line-height: 1.6;">If you have any questions or require support, please don't hesitate to reach out.</p>
+              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
+              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Operations Team</p>
+            </div>
+          `;
+          await sendCustomEmail(user.email, '[DriveFlow] Account Approved Successfully!', approvedHtml);
+        } else if (status === 'rejected') {
+          const rejectedHtml = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
+              <h2 style="color: #ef4444; text-align: center; margin-bottom: 20px;">Notice: Account Registration Declined</h2>
+              <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${user.name}</strong>,</p>
+              <p style="font-size: 16px; color: #333; line-height: 1.6;">Thank you for registering with <strong>DriveFlow</strong>. After careful review, our administrative team has declined your registration request at this time.</p>
+              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <p style="font-size: 15px; color: #991b1b; margin: 0; font-weight: bold;">Status: Registration Rejected</p>
+                <p style="font-size: 14px; color: #b91c1c; margin: 5px 0 0 0;">If you believe this is a misunderstanding, please contact our administrator support to resolve the issue.</p>
+              </div>
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="mailto:rupambairagya08@gmail.com?subject=Rejection%20Inquiry" style="background-color: #ef4444; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; display: inline-block;">Contact Administrator Support</a>
+              </div>
+              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
+              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+            </div>
+          `;
+          await sendCustomEmail(user.email, '[DriveFlow Notice] Registration Status Update', rejectedHtml);
+        }
+      } catch (err) {
+        console.error('Failed to send status update notification email:', err);
+      }
+    })();
+
     await logActivity((req as any).user?._id, 'update_user_status', `Updated user ${user.email} status to ${status}`);
     res.json(user);
   } catch (error) {
