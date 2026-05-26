@@ -7,7 +7,11 @@ export async function POST(request: Request) {
     const apiKey = request.headers.get('x-api-key');
 
     const serverApiKey = process.env.API_SECRET_KEY || 'default-secret-key-123';
-    if (apiKey !== serverApiKey) {
+    if (!process.env.API_SECRET_KEY) {
+      console.warn('[SECURITY WARNING] API_SECRET_KEY is not defined in environment variables! Using default fallback.');
+    }
+
+    if (!apiKey || apiKey !== serverApiKey) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 

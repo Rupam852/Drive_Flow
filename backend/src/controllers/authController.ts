@@ -30,7 +30,7 @@ export const registerUser = async (req: Request, res: Response) => {
       throw new Error('Password must be between 6 and 9 characters long');
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 999999).toString();
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     const salt = await bcrypt.genSalt(10);
@@ -205,7 +205,7 @@ export const resendOtp = async (req: Request, res: Response) => {
       return;
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = crypto.randomInt(100000, 999999).toString();
     user.emailVerificationOtp = otp;
     user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
@@ -224,7 +224,11 @@ export const seedAdmin = async () => {
     const adminExists = await User.findOne({ email: adminEmail });
     if (!adminExists) {
       const salt = await bcrypt.genSalt(10);
-      const passwordHash = await bcrypt.hash('Rupam@123', salt);
+      const adminPass = process.env.ADMIN_SEED_PASSWORD || 'Rupam@123';
+      if (!process.env.ADMIN_SEED_PASSWORD) {
+        console.warn('[SECURITY WARNING] ADMIN_SEED_PASSWORD is not defined in environment variables! Using default fallback.');
+      }
+      const passwordHash = await bcrypt.hash(adminPass, salt);
       await User.create({
         name: 'Admin',
         email: adminEmail,
@@ -233,7 +237,7 @@ export const seedAdmin = async () => {
         status: 'approved',
         isEmailVerified: true,
       });
-      console.log('Admin user seeded');
+      console.log('Admin user seeded successfully');
     }
   } catch (error) {
     console.error('Error seeding admin', error);

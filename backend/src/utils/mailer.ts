@@ -3,17 +3,25 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const getApiKey = () => {
+  const key = process.env.API_SECRET_KEY;
+  if (!key) {
+    console.warn('[SECURITY WARNING] API_SECRET_KEY is not defined in environment variables! Using default fallback.');
+  }
+  return key || 'default-secret-key-123';
+};
+
 export const sendOtpEmail = async (to: string, otp: string) => {
   try {
     const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
     
     // Call the Vercel frontend API to send the email
-    const response = await axios.post(
+    await axios.post(
       `${frontendUrl}/api/send-email`,
       { to, otp },
       {
         headers: {
-          'x-api-key': process.env.API_SECRET_KEY || 'default-secret-key-123',
+          'x-api-key': getApiKey(),
           'Content-Type': 'application/json'
         },
         timeout: 15000 // 15 seconds timeout
@@ -32,12 +40,12 @@ export const sendCustomEmail = async (to: string, subject: string, html: string)
     const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
     
     // Call the Vercel frontend API to send the custom email
-    const response = await axios.post(
+    await axios.post(
       `${frontendUrl}/api/send-email`,
       { to, subject, html },
       {
         headers: {
-          'x-api-key': process.env.API_SECRET_KEY || 'default-secret-key-123',
+          'x-api-key': getApiKey(),
           'Content-Type': 'application/json'
         },
         timeout: 15000 // 15 seconds timeout
