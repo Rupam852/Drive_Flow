@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const db_1 = __importDefault(require("./config/db"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
@@ -27,7 +28,34 @@ app.use((req, res, next) => {
     next();
 });
 // Health check
-app.get('/api/auth/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/auth/health', async (_req, res) => {
+    try {
+        const isConnected = mongoose_1.default.connection.readyState === 1;
+        if (isConnected && mongoose_1.default.connection.db) {
+            await mongoose_1.default.connection.db.admin().ping();
+            res.json({
+                status: 'ok',
+                database: 'connected',
+                timestamp: new Date().toISOString()
+            });
+        }
+        else {
+            res.status(500).json({
+                status: 'error',
+                database: 'disconnected',
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+    catch (error) {
+        res.status(500).json({
+            status: 'error',
+            database: 'error',
+            message: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
+});
 // Routes
 app.use('/api/auth', authRoutes_1.default);
 app.use('/api/users', userRoutes_1.default);

@@ -3,12 +3,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.seedAdmin = exports.resendOtp = exports.verifyEmail = exports.loginUser = exports.registerUser = void 0;
+exports.updateProfile = exports.getAppVersion = exports.seedAdmin = exports.resendOtp = exports.verifyEmail = exports.loginUser = exports.registerUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const User_1 = require("../models/User");
 const logger_1 = require("../utils/logger");
 const mailer_1 = require("../utils/mailer");
+const crypto_1 = __importDefault(require("crypto"));
 const generateToken = (id, role) => {
     return jsonwebtoken_1.default.sign({ id, role }, process.env.JWT_SECRET, {
         expiresIn: '30d',
@@ -26,7 +29,7 @@ const registerUser = async (req, res) => {
             res.status(400);
             throw new Error('Password must be between 6 and 9 characters long');
         }
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = crypto_1.default.randomInt(100000, 999999).toString();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         const salt = await bcryptjs_1.default.genSalt(10);
         const passwordHash = await bcryptjs_1.default.hash(password, salt);
@@ -123,6 +126,52 @@ const verifyEmail = async (req, res) => {
         user.emailVerificationOtp = undefined;
         user.otpExpires = undefined;
         await user.save();
+        // Dispatch notification emails asynchronously
+        (async () => {
+            try {
+                // 1. Send user confirmation pending email
+                const userHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
+            <h2 style="color: #2563eb; text-align: center; margin-bottom: 20px;">Welcome to DriveFlow!</h2>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${user.name}</strong>,</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Thank you for registering and successfully verifying your email address!</p>
+            <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="font-size: 15px; color: #1e3a8a; margin: 0; font-weight: bold;">Account Status: Pending Admin Approval</p>
+              <p style="font-size: 14px; color: #1e40af; margin: 5px 0 0 0;">Please wait up to <strong>2 hours</strong>. Our admin team will quickly review and approve your account.</p>
+            </div>
+            <p style="font-size: 15px; color: #333; line-height: 1.6;">You will receive an automated email confirmation as soon as your account is approved and ready to access!</p>
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+          </div>
+        `;
+                await (0, mailer_1.sendCustomEmail)(user.email, '[DriveFlow] Account Pending Approval', userHtml);
+                // 2. Send admin notification email
+                const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'bott27124@gmail.com';
+                const adminHtml = `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #fcfcfc;">
+            <h2 style="color: #8b5cf6; text-align: center; margin-bottom: 20px;">🚨 New User Registered</h2>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello Admin,</p>
+            <p style="font-size: 16px; color: #333; line-height: 1.6;">A new user has registered and verified their email address. They are now waiting for your manual approval to access DriveFlow.</p>
+            <div style="background-color: #faf5ff; border: 1px dashed #8b5cf6; padding: 15px; margin: 20px 0; border-radius: 8px;">
+              <p style="font-size: 15px; color: #581c87; margin: 0 0 8px 0; font-weight: bold;">User Details:</p>
+              <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Name:</strong> ${user.name}</p>
+              <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Email:</strong> ${user.email}</p>
+              <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Registered At:</strong> ${new Date().toLocaleString()}</p>
+            </div>
+            <p style="font-size: 15px; color: #333; line-height: 1.6;">Please log into your Admin Panel to approve or reject this user's profile.</p>
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="${process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app'}/login" style="background-color: #8b5cf6; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 10px rgba(139,92,246,0.25); display: inline-block;">Go to Admin Dashboard</a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Automation Relay</p>
+          </div>
+        `;
+                await (0, mailer_1.sendCustomEmail)(adminEmail, '[DriveFlow Alert] New User Pending Approval', adminHtml);
+            }
+            catch (err) {
+                console.error('Failed to dispatch registration notification emails:', err);
+            }
+        })();
         res.status(200).json({ message: 'Email verified successfully. Please wait for admin approval.' });
     }
     catch (error) {
@@ -142,7 +191,7 @@ const resendOtp = async (req, res) => {
             res.status(400).json({ message: 'Email already verified' });
             return;
         }
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = crypto_1.default.randomInt(100000, 999999).toString();
         user.emailVerificationOtp = otp;
         user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
         await user.save();
@@ -160,7 +209,11 @@ const seedAdmin = async () => {
         const adminExists = await User_1.User.findOne({ email: adminEmail });
         if (!adminExists) {
             const salt = await bcryptjs_1.default.genSalt(10);
-            const passwordHash = await bcryptjs_1.default.hash('Rupam@123', salt);
+            const adminPass = process.env.ADMIN_SEED_PASSWORD || 'Rupam@123';
+            if (!process.env.ADMIN_SEED_PASSWORD) {
+                console.warn('[SECURITY WARNING] ADMIN_SEED_PASSWORD is not defined in environment variables! Using default fallback.');
+            }
+            const passwordHash = await bcryptjs_1.default.hash(adminPass, salt);
             await User_1.User.create({
                 name: 'Admin',
                 email: adminEmail,
@@ -169,7 +222,7 @@ const seedAdmin = async () => {
                 status: 'approved',
                 isEmailVerified: true,
             });
-            console.log('Admin user seeded');
+            console.log('Admin user seeded successfully');
         }
     }
     catch (error) {
@@ -177,4 +230,82 @@ const seedAdmin = async () => {
     }
 };
 exports.seedAdmin = seedAdmin;
+// @desc Get latest required mobile app version and download URL
+// @route GET /api/auth/app-version
+const getAppVersion = async (req, res) => {
+    try {
+        let latestVersion = process.env.LATEST_APP_VERSION;
+        let minRequiredVersion = process.env.MIN_REQUIRED_VERSION;
+        const downloadUrl = process.env.APP_DOWNLOAD_URL || 'https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk';
+        // Fully Automated: Read and parse version directly from frontend AppUpdateProvider.tsx
+        try {
+            const providerPath = path_1.default.join(__dirname, '..', '..', '..', 'frontend', 'src', 'components', 'AppUpdateProvider.tsx');
+            if (fs_1.default.existsSync(providerPath)) {
+                const content = fs_1.default.readFileSync(providerPath, 'utf8');
+                const match = content.match(/const CURRENT_APP_VERSION\s*=\s*['"]([^'"]+)['"]/);
+                if (match && match[1]) {
+                    const autoVersion = match[1];
+                    // Dynamically override latestVersion and minRequiredVersion if not strictly set in env
+                    if (!latestVersion)
+                        latestVersion = autoVersion;
+                    if (!minRequiredVersion)
+                        minRequiredVersion = autoVersion;
+                }
+            }
+        }
+        catch (parseError) {
+            console.error('Failed to auto-detect app version from source:', parseError);
+        }
+        // Ultimate Safe Fallbacks
+        if (!latestVersion)
+            latestVersion = '1.0.1';
+        if (!minRequiredVersion)
+            minRequiredVersion = '1.0.1';
+        res.status(200).json({
+            latestVersion,
+            minRequiredVersion,
+            downloadUrl,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.getAppVersion = getAppVersion;
+// @desc    Update authenticated user profile name
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || name.trim().length === 0) {
+            res.status(400).json({ message: 'Name is required' });
+            return;
+        }
+        const userId = req.user?._id;
+        const user = await User_1.User.findById(userId);
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+        user.name = name;
+        await user.save();
+        // Log user activity
+        await (0, logger_1.logActivity)(user._id.toString(), 'update_profile', `User updated profile name to ${name}`);
+        res.status(200).json({
+            message: 'Profile updated successfully',
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+            }
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.updateProfile = updateProfile;
 //# sourceMappingURL=authController.js.map

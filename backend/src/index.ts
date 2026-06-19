@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
@@ -28,7 +29,32 @@ app.use((req, res, next) => {
 });
 
 // Health check
-app.get('/api/auth/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/auth/health', async (_req, res) => {
+  try {
+    const isConnected = mongoose.connection.readyState === 1;
+    if (isConnected && mongoose.connection.db) {
+      await mongoose.connection.db.admin().ping();
+      res.json({ 
+        status: 'ok', 
+        database: 'connected',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.status(500).json({ 
+        status: 'error', 
+        database: 'disconnected',
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'error', 
+      database: 'error',
+      message: (error as Error).message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
