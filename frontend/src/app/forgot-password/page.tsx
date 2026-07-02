@@ -84,10 +84,10 @@ export default function ForgotPasswordPage() {
               <CheckCircle2 className="w-10 h-10 text-green-400" />
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Check Your Email</h2>
-            <p className="text-gray-300 mb-8">A password reset link has been sent to <span className="text-white font-medium">{email}</span>. Please check your inbox within <span className="text-purple-400 font-semibold">10 minutes</span>.</p>
+            <p className="text-gray-300 mb-8">A password reset link has been sent to <span className="text-white font-medium">{email}</span>. Please check your inbox within <span className="text-blue-400 font-semibold">10 minutes</span>.</p>
             <Link
               href="/login"
-              className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-semibold hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-purple-500/20"
+              className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-semibold hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
             >
               <ArrowLeft className="w-4 h-4" />
               Go to Login Page
@@ -96,7 +96,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <>
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <Mail className="text-white w-8 h-8" />
               </div>
               <h1 className="text-3xl font-bold text-white">Reset Password</h1>

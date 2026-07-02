@@ -43,14 +43,14 @@ function ResetPasswordForm() {
             <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
             <h2 className="text-2xl font-bold text-white mb-2">Password Reset!</h2>
             <p className="text-gray-300 mb-6">Your password has been updated successfully.</p>
-            <Link href="/login" className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-xl hover:bg-purple-500 transition-colors inline-block">
+            <Link href="/login" className="px-6 py-3 bg-[var(--color-primary)] text-white rounded-xl hover:bg-blue-600 transition-colors inline-block">
               Back to Login
             </Link>
           </div>
         ) : (
           <>
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <Lock className="text-white w-8 h-8" />
               </div>
               <h1 className="text-3xl font-bold text-white">New Password</h1>

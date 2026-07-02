@@ -100,7 +100,7 @@ export default function LoginPage() {
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/30"
+            className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30"
           >
             <Lock className="text-white w-8 h-8" />
           </motion.div>
@@ -162,7 +162,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex items-center justify-end">
-            <Link href="/forgot-password" className="text-sm text-[var(--color-primary)] hover:text-purple-300 transition-colors">
+            <Link href="/forgot-password" className="text-sm text-[var(--color-primary)] hover:text-blue-300 transition-colors">
               Forgot password?
             </Link>
           </div>
@@ -172,7 +172,7 @@ export default function LoginPage() {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3.5 px-4 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] hover:from-[var(--color-primary-dark)] hover:to-pink-600 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+            className="w-full py-3.5 px-4 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] hover:from-[var(--color-primary-dark)] hover:to-sky-600 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
           >
             {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
           </motion.button>
@@ -196,23 +196,23 @@ export default function LoginPage() {
           transition={{ delay: 0.4, duration: 0.5 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:shadow-[0_0_30px_rgba(59,130,246,0.25)]"
+          className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
         >
           {/* Pulsing dot */}
           <span className="absolute top-3 right-3 flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shrink-0">
-            <Smartphone className="w-5 h-5 text-blue-400" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+            <Smartphone className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-blue-300 font-semibold text-sm">Android App Available</p>
-            <p className="text-blue-400/80 text-xs mt-0.5">Please download this app for better experience</p>
+            <p className="text-emerald-300 font-semibold text-sm">Android App Available</p>
+            <p className="text-emerald-500/80 text-xs mt-0.5">Please download this app for better experience</p>
           </div>
-          <div className="flex items-center gap-1 shrink-0 bg-blue-500/20 border border-blue-500/30 px-3 py-1.5 rounded-xl">
-            <Download className="w-3.5 h-3.5 text-blue-400" />
-            <span className="text-blue-300 text-xs font-bold">Download</span>
+          <div className="flex items-center gap-1 shrink-0 bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-emerald-300 text-xs font-bold">Download</span>
           </div>
         </motion.a>
       )}
@@ -246,14 +246,14 @@ export default function LoginPage() {
                       alert(err.response?.data?.message || 'Failed to resend OTP');
                     }
                   }}
-                  className="px-4 py-2 rounded-lg bg-[var(--color-secondary)] text-white hover:bg-pink-600 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-[var(--color-secondary)] text-white hover:bg-sky-600 transition-colors"
                 >
                   Verify Email
                 </button>
               )}
               <a 
                 href={`mailto:rupambairagya08@gmail.com?subject=${showPopup.message.includes('rejected') ? 'Rejected Profile Inquiry' : 'Approval Request'}`}
-                className="px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white hover:bg-purple-500 transition-colors"
+                className="px-4 py-2 rounded-lg bg-[var(--color-primary)] text-white hover:bg-blue-600 transition-colors"
               >
                 Contact Admin
               </a>
