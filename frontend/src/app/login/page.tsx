@@ -189,8 +189,7 @@ export default function LoginPage() {
       {/* Android App Download Banner — only on web, hidden inside the app */}
       {!isNativeApp && (
         <motion.a
-          href="https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk"
-          target="_blank"
+          href="https://neo-files-transfer.pages.dev/download/723586892fd0"
           rel="noopener noreferrer"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
