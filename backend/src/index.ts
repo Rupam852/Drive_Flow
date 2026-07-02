@@ -31,9 +31,27 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Middleware - CORS open for all origins to allow Capacitor Android app access
+// Middleware - CORS configuration supporting Vercel frontend + Capacitor Android/iOS mobile app
+const allowedOrigins = [
+  process.env.FRONTEND_URL,          // https://driveflowrupam.vercel.app
+  'http://localhost',                 // Capacitor Android WebView
+  'http://localhost:3000',            // Local development
+  'https://localhost',                // Capacitor HTTPS variant
+  'capacitor://localhost',            // Capacitor iOS
+  'ionic://localhost',                // Ionic fallback
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow any localhost port (e.g. http://localhost:8080)
+    if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Log blocked origin for debugging
+    console.warn(`[CORS] Blocked origin: ${origin}`);
+    return callback(new Error(`CORS: origin '${origin}' not allowed`));
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '50mb' }));
