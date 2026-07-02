@@ -19,10 +19,13 @@ connectDB().then(() => {
 
 const app = express();
 
+// Enable trust proxy for rate limiting behind Render load balancer
+app.set('trust proxy', 1);
+
 // Rate limiting for auth endpoints to prevent brute-forcing
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // Limit each IP to 30 requests per windowMs
+  max: 100, // Limit each IP to 100 requests per windowMs
   message: { message: 'Too many requests from this IP, please try again after 15 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
