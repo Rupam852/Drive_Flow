@@ -30,28 +30,15 @@ const authLimiter = (0, express_rate_limit_1.default)({
     standardHeaders: true,
     legacyHeaders: false,
 });
-// Middleware
-const allowedOrigins = [
-    process.env.FRONTEND_URL,
-    'http://localhost:3000',
-    'http://localhost',
-    'capacitor://localhost'
-].filter(Boolean);
+// Middleware - CORS open for all origins to allow Capacitor Android app access
 app.use((0, cors_1.default)({
-    origin: (origin, callback) => {
-        if (!origin)
-            return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-            return callback(null, true);
-        }
-        return callback(new Error('Not allowed by CORS'));
-    },
+    origin: true,
     credentials: true,
 }));
 app.use(express_1.default.json({ limit: '50mb' }));
 app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} | Origin: ${req.headers.origin || 'none'}`);
     next();
 });
 // Health check
