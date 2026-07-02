@@ -196,23 +196,23 @@ export default function LoginPage() {
           transition={{ delay: 0.4, duration: 0.5 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
-          className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+          className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(168,85,247,0.15)] hover:shadow-[0_0_30px_rgba(168,85,247,0.25)]"
         >
           {/* Pulsing dot */}
           <span className="absolute top-3 right-3 flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
           </span>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-            <Smartphone className="w-5 h-5 text-emerald-400" />
+          <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0">
+            <Smartphone className="w-5 h-5 text-purple-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-emerald-300 font-semibold text-sm">Android App Available</p>
-            <p className="text-emerald-500/80 text-xs mt-0.5">Please download this app for better experience</p>
+            <p className="text-purple-300 font-semibold text-sm">Android App Available</p>
+            <p className="text-purple-400/80 text-xs mt-0.5">Please download this app for better experience</p>
           </div>
-          <div className="flex items-center gap-1 shrink-0 bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-emerald-300 text-xs font-bold">Download</span>
+          <div className="flex items-center gap-1 shrink-0 bg-purple-500/20 border border-purple-500/30 px-3 py-1.5 rounded-xl">
+            <Download className="w-3.5 h-3.5 text-purple-400" />
+            <span className="text-purple-300 text-xs font-bold">Download</span>
           </div>
         </motion.a>
       )}
