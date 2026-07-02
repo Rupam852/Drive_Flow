@@ -50,7 +50,7 @@ function ResetPasswordForm() {
         ) : (
           <>
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl mx-auto mb-4 flex items-center justify-center">
                 <Lock className="text-white w-8 h-8" />
               </div>
               <h1 className="text-3xl font-bold text-white">New Password</h1>
@@ -90,7 +90,7 @@ function ResetPasswordForm() {
                 </div>
               ))}
               <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} type="submit" disabled={status === 'loading'}
-                className="w-full py-3.5 mt-2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-medium flex items-center justify-center">
+                className="w-full py-3.5 mt-2 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-medium flex items-center justify-center">
                 {status === 'loading' ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Reset Password'}
               </motion.button>
             </form>

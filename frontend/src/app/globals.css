@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-secondary: #0ea5e9;
+  --color-primary: #1d4ed8;
+  --color-primary-dark: #1e3a8a;
+  --color-secondary: #1d4ed8;
   --color-background: #0f172a;
   --color-surface: rgba(30, 41, 59, 0.7);
   --color-surface-hover: rgba(51, 65, 85, 0.8);

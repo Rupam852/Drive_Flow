@@ -87,7 +87,7 @@ export default function ForgotPasswordPage() {
             <p className="text-gray-300 mb-8">A password reset link has been sent to <span className="text-white font-medium">{email}</span>. Please check your inbox within <span className="text-blue-400 font-semibold">10 minutes</span>.</p>
             <Link
               href="/login"
-              className="flex items-center justify-center gap-2 w-full py-3.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-semibold hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-blue-500/20"
+              className="flex items-center justify-center gap-2 w-full py-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-semibold active:scale-95 transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
               Go to Login Page
@@ -96,7 +96,7 @@ export default function ForgotPasswordPage() {
         ) : (
           <>
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-secondary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl mx-auto mb-4 flex items-center justify-center">
                 <Mail className="text-white w-8 h-8" />
               </div>
               <h1 className="text-3xl font-bold text-white">Reset Password</h1>
@@ -132,7 +132,7 @@ export default function ForgotPasswordPage() {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={status === 'loading'}
-                className="w-full py-3.5 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-secondary)] text-white rounded-xl font-medium flex items-center justify-center gap-2"
+                className="w-full py-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-medium flex items-center justify-center gap-2"
               >
                 {status === 'loading' ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Send Reset Link'}
               </motion.button>
