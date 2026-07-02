@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const db_1 = __importDefault(require("./config/db"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
@@ -19,8 +20,19 @@ dotenv_1.default.config();
     (0, authController_1.seedAdmin)();
 });
 const app = (0, express_1.default)();
+// Rate limiting for auth endpoints to prevent brute-forcing
+const authLimiter = (0, express_rate_limit_1.default)({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 30, // Limit each IP to 30 requests per windowMs
+    message: { message: 'Too many requests from this IP, please try again after 15 minutes' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 // Middleware
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true,
+}));
 app.use(express_1.default.json({ limit: '50mb' }));
 app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));
 app.use((req, res, next) => {
@@ -57,7 +69,7 @@ app.get('/api/auth/health', async (_req, res) => {
     }
 });
 // Routes
-app.use('/api/auth', authRoutes_1.default);
+app.use('/api/auth', authLimiter, authRoutes_1.default);
 app.use('/api/users', userRoutes_1.default);
 app.use('/api/files', fileRoutes_1.default);
 // Error Middleware

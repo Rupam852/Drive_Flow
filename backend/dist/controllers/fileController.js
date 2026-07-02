@@ -25,6 +25,26 @@ const bufferToStream = (buffer) => {
     readable.push(null);
     return readable;
 };
+/**
+ * Helper to verify that a file/folder exists in the DB, and prevents non-admins
+ * from accessing/downloading/manipulating hidden files (isHidden = true).
+ * Returns the file metadata document if allowed, or throws a detailed error.
+ */
+const verifyFileAccess = async (fileId, req) => {
+    // Failsafe for Root folder
+    if (fileId === DRIVE_FOLDER_ID || fileId === 'ROOT') {
+        return { fileId: DRIVE_FOLDER_ID, name: 'Root', type: 'application/vnd.google-apps.folder', isHidden: false };
+    }
+    const meta = await FileMetadata_1.FileMetadata.findOne({ fileId, status: 'active' });
+    if (!meta) {
+        throw new Error('File not found or unauthorized access');
+    }
+    const isAdmin = req.user?.role === 'admin';
+    if (meta.isHidden && !isAdmin) {
+        throw new Error('Access denied: File is hidden by administrator');
+    }
+    return meta;
+};
 // Helper to calculate folder sizes in O(N) memory without lagging
 const createFolderSizeCalculator = async () => {
     const allFiles = await FileMetadata_1.FileMetadata.find({ status: 'active' }, 'fileId parentId size type').lean();
@@ -144,6 +164,8 @@ const uploadFile = async (req, res) => {
         let parentId = req.body.parentId || DRIVE_FOLDER_ID;
         if (parentId === 'ROOT')
             parentId = DRIVE_FOLDER_ID;
+        // Verify parent folder access
+        await verifyFileAccess(parentId, req);
         const response = await googleDrive_1.default.files.create({
             requestBody: {
                 name: req.file.originalname,
@@ -182,6 +204,8 @@ const createFolder = async (req, res) => {
         let parent = parentId || DRIVE_FOLDER_ID;
         if (parent === 'ROOT')
             parent = DRIVE_FOLDER_ID;
+        // Verify parent folder access
+        await verifyFileAccess(parent, req);
         const response = await googleDrive_1.default.files.create({
             requestBody: {
                 name,
@@ -215,6 +239,8 @@ const createDoc = async (req, res) => {
         let parent = parentId || DRIVE_FOLDER_ID;
         if (parent === 'ROOT')
             parent = DRIVE_FOLDER_ID;
+        // Verify parent folder access
+        await verifyFileAccess(parent, req);
         const response = await googleDrive_1.default.files.create({
             requestBody: {
                 name,
@@ -247,8 +273,9 @@ const renameFile = async (req, res) => {
     try {
         const { name } = req.body;
         const fileId = req.params['id'];
-        const oldMeta = await FileMetadata_1.FileMetadata.findOne({ fileId }, 'name');
-        const oldName = oldMeta ? oldMeta.name : 'Untitled';
+        // Verify file exists in DB and user is authorized (not hidden if non-admin)
+        const oldMeta = await verifyFileAccess(fileId, req);
+        const oldName = oldMeta.name;
         const response = await googleDrive_1.default.files.update({
             fileId,
             requestBody: { name },
@@ -273,8 +300,12 @@ const moveFiles = async (req, res) => {
         if (!targetId || targetId === 'ROOT' || targetId === 'root' || targetId === 'null' || targetId === 'undefined') {
             targetId = DRIVE_FOLDER_ID;
         }
+        // Verify target parent folder access
+        await verifyFileAccess(targetId, req);
         const results = [];
         for (const fileId of fileIds) {
+            // Verify source file access
+            await verifyFileAccess(fileId, req);
             const fileData = await googleDrive_1.default.files.get({ fileId, fields: 'parents' });
             const previousParents = (fileData.data.parents || []).join(',');
             const response = await googleDrive_1.default.files.update({
@@ -323,6 +354,10 @@ const trashFiles = async (req, res) => {
             res.status(400).json({ message: 'Invalid request' });
             return;
         }
+        // Verify file access for each requested ID
+        for (const id of fileIds) {
+            await verifyFileAccess(id, req);
+        }
         // Get all children recursively if any of these are folders
         const allNestedIds = await getAllChildIds(fileIds);
         const idsToUpdate = [...fileIds, ...allNestedIds];
@@ -346,6 +381,8 @@ exports.trashFiles = trashFiles;
 const downloadFile = async (req, res) => {
     try {
         const fileId = req.params['id'];
+        // Verify file exists and is authorized for this user
+        await verifyFileAccess(fileId, req);
         const meta = await googleDrive_1.default.files.get({ fileId, fields: 'id, name, mimeType' });
         await (0, logger_1.logActivity)(req.user?._id, 'download', `Downloaded ${meta.data.mimeType === 'application/vnd.google-apps.folder' ? 'Folder ZIP' : 'File'}: ${meta.data.name}`);
         if (meta.data.mimeType === 'application/vnd.google-apps.folder') {
@@ -622,6 +659,10 @@ const bulkDownload = async (req, res) => {
         if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
             res.status(400).json({ message: 'No file IDs provided' });
             return;
+        }
+        // Verify file access for each requested ID
+        for (const id of fileIds) {
+            await verifyFileAccess(id, req);
         }
         const archive = zipLib('zip', { zlib: { level: 9 } });
         const zipName = req.query.fileName
@@ -1102,6 +1143,8 @@ exports.finalizeUpload = finalizeUpload;
 const getDownloadLink = async (req, res) => {
     try {
         const fileId = req.params['id'];
+        // Verify file access and presence in DB
+        await verifyFileAccess(fileId, req);
         // Set permission to anyone with link can view (needed for direct download)
         try {
             await googleDrive_1.default.permissions.create({
@@ -1145,17 +1188,8 @@ const getFileMetadata = async (req, res) => {
         let fileId = id;
         if (fileId === 'ROOT')
             fileId = DRIVE_FOLDER_ID;
-        // Try DB first
-        let meta = await FileMetadata_1.FileMetadata.findOne({ fileId });
-        if (!meta) {
-            // Fallback to Drive if not in DB
-            const driveMeta = await googleDrive_1.default.files.get({ fileId, fields: 'id, name, mimeType' });
-            meta = {
-                fileId: driveMeta.data.id,
-                name: driveMeta.data.name,
-                mimeType: driveMeta.data.mimeType
-            };
-        }
+        // Verify file access and presence in DB
+        const meta = await verifyFileAccess(fileId, req);
         res.json(meta);
     }
     catch (error) {

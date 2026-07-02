@@ -25,6 +25,30 @@ const bufferToStream = (buffer: Buffer) => {
   return readable;
 };
 
+/**
+ * Helper to verify that a file/folder exists in the DB, and prevents non-admins
+ * from accessing/downloading/manipulating hidden files (isHidden = true).
+ * Returns the file metadata document if allowed, or throws a detailed error.
+ */
+const verifyFileAccess = async (fileId: string, req: Request): Promise<any> => {
+  // Failsafe for Root folder
+  if (fileId === DRIVE_FOLDER_ID || fileId === 'ROOT') {
+    return { fileId: DRIVE_FOLDER_ID, name: 'Root', type: 'application/vnd.google-apps.folder', isHidden: false };
+  }
+
+  const meta = await FileMetadata.findOne({ fileId, status: 'active' });
+  if (!meta) {
+    throw new Error('File not found or unauthorized access');
+  }
+
+  const isAdmin = (req as any).user?.role === 'admin';
+  if (meta.isHidden && !isAdmin) {
+    throw new Error('Access denied: File is hidden by administrator');
+  }
+
+  return meta;
+};
+
 // Helper to calculate folder sizes in O(N) memory without lagging
 const createFolderSizeCalculator = async () => {
   const allFiles = await FileMetadata.find({ status: 'active' }, 'fileId parentId size type').lean();
@@ -153,6 +177,9 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
     let parentId = (req.body.parentId as string) || DRIVE_FOLDER_ID;
     if (parentId === 'ROOT') parentId = DRIVE_FOLDER_ID;
 
+    // Verify parent folder access
+    await verifyFileAccess(parentId, req);
+
     const response = await drive.files.create({
       requestBody: {
         name: req.file.originalname,
@@ -193,6 +220,9 @@ export const createFolder = async (req: AuthRequest, res: Response) => {
     let parent = parentId || DRIVE_FOLDER_ID;
     if (parent === 'ROOT') parent = DRIVE_FOLDER_ID;
 
+    // Verify parent folder access
+    await verifyFileAccess(parent, req);
+
     const response = await drive.files.create({
       requestBody: {
         name,
@@ -228,6 +258,9 @@ export const createDoc = async (req: AuthRequest, res: Response) => {
     let parent = parentId || DRIVE_FOLDER_ID;
     if (parent === 'ROOT') parent = DRIVE_FOLDER_ID;
 
+    // Verify parent folder access
+    await verifyFileAccess(parent, req);
+
     const response = await drive.files.create({
       requestBody: {
         name,
@@ -262,8 +295,11 @@ export const renameFile = async (req: Request, res: Response) => {
   try {
     const { name } = req.body;
     const fileId = req.params['id'] as string;
-    const oldMeta = await FileMetadata.findOne({ fileId }, 'name');
-    const oldName = oldMeta ? oldMeta.name : 'Untitled';
+    
+    // Verify file exists in DB and user is authorized (not hidden if non-admin)
+    const oldMeta = await verifyFileAccess(fileId, req);
+    const oldName = oldMeta.name;
+
     const response = await (drive.files.update as any)({
       fileId,
       requestBody: { name },
@@ -289,9 +325,15 @@ export const moveFiles = async (req: Request, res: Response) => {
       targetId = DRIVE_FOLDER_ID;
     }
 
+    // Verify target parent folder access
+    await verifyFileAccess(targetId, req);
+
     const results = [];
 
     for (const fileId of fileIds as string[]) {
+      // Verify source file access
+      await verifyFileAccess(fileId, req);
+
       const fileData = await (drive.files.get as any)({ fileId, fields: 'parents' });
       const previousParents = ((fileData.data.parents as string[]) || []).join(',');
 
@@ -346,6 +388,11 @@ export const trashFiles = async (req: Request, res: Response) => {
       return;
     }
 
+    // Verify file access for each requested ID
+    for (const id of fileIds) {
+      await verifyFileAccess(id, req);
+    }
+
     // Get all children recursively if any of these are folders
     const allNestedIds = await getAllChildIds(fileIds);
     const idsToUpdate = [...fileIds, ...allNestedIds];
@@ -375,6 +422,10 @@ export const trashFiles = async (req: Request, res: Response) => {
 export const downloadFile = async (req: Request, res: Response) => {
   try {
     const fileId = req.params['id'] as string;
+    
+    // Verify file exists and is authorized for this user
+    await verifyFileAccess(fileId, req);
+
     const meta = await drive.files.get({ fileId, fields: 'id, name, mimeType' });
 
     await logActivity((req as any).user?._id, 'download', `Downloaded ${meta.data.mimeType === 'application/vnd.google-apps.folder' ? 'Folder ZIP' : 'File'}: ${meta.data.name}`);
@@ -708,6 +759,11 @@ export const bulkDownload = async (req: Request, res: Response) => {
     if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
       res.status(400).json({ message: 'No file IDs provided' });
       return;
+    }
+
+    // Verify file access for each requested ID
+    for (const id of fileIds) {
+      await verifyFileAccess(id, req);
     }
 
     const archive = zipLib('zip', { zlib: { level: 9 } });
@@ -1204,6 +1260,9 @@ export const getDownloadLink = async (req: Request, res: Response) => {
   try {
     const fileId = req.params['id'] as string;
     
+    // Verify file access and presence in DB
+    await verifyFileAccess(fileId, req);
+    
     // Set permission to anyone with link can view (needed for direct download)
     try {
       await drive.permissions.create({
@@ -1246,17 +1305,8 @@ export const getFileMetadata = async (req: Request, res: Response) => {
     let fileId = id as string;
     if (fileId === 'ROOT') fileId = DRIVE_FOLDER_ID;
 
-    // Try DB first
-    let meta = await FileMetadata.findOne({ fileId });
-    if (!meta) {
-      // Fallback to Drive if not in DB
-      const driveMeta = await drive.files.get({ fileId, fields: 'id, name, mimeType' });
-      meta = {
-        fileId: driveMeta.data.id,
-        name: driveMeta.data.name,
-        mimeType: driveMeta.data.mimeType
-      } as any;
-    }
+    // Verify file access and presence in DB
+    const meta = await verifyFileAccess(fileId, req);
     res.json(meta);
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
