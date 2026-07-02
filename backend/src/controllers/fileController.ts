@@ -72,13 +72,27 @@ export const listFiles = async (req: Request, res: Response) => {
     parentId = parentId.replace(/['"]/g, '').trim();
 
     console.log(`[listFiles] Requesting files for parentId: ${parentId}`);
-    const driveRes = await drive.files.list({
-      q: `'${parentId}' in parents and trashed = false`,
-      fields: 'files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink)',
-      orderBy: 'folder,name',
-    });
-
-    const files = driveRes.data.files || [];
+    let files: any[] = [];
+    try {
+      const driveRes = await drive.files.list({
+        q: `'${parentId}' in parents and trashed = false`,
+        fields: 'files(id, name, mimeType, size, createdTime, modifiedTime, webViewLink)',
+        orderBy: 'folder,name',
+      });
+      files = driveRes.data.files || [];
+    } catch (driveError) {
+      console.error('[listFiles] Google Drive list failed, falling back to local DB cache:', (driveError as Error).message);
+      // Fallback: Query MongoDB FileMetadata!
+      const dbFiles = await FileMetadata.find({ parentId: parentId, status: 'active' }).lean();
+      files = dbFiles.map(f => ({
+        id: f.fileId,
+        name: f.name,
+        mimeType: f.type,
+        size: f.size?.toString() || '0',
+        modifiedTime: f.updatedAt ? f.updatedAt.toISOString() : f.createdAt ? f.createdAt.toISOString() : new Date().toISOString(),
+        webViewLink: f.webViewLink || '',
+      }));
+    }
 
     // Sort: Folders first, then Natural Sort by name
     files.sort((a, b) => {
