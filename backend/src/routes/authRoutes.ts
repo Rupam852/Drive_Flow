@@ -5,6 +5,7 @@ import { protect } from '../middleware/authMiddleware';
 
 const router = express.Router();
 
+router.get('/ping', (req, res) => { res.json({ status: 'ok' }); });
 router.get('/app-version', getAppVersion);
 router.post('/register', registerUser);
 router.post('/login', loginUser);

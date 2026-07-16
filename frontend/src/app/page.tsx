@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import LoadingScreen from '@/components/LoadingScreen';
+import api from '@/lib/api';
 
 export default function Home() {
   const router = useRouter();
+  const [showLoading, setShowLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -17,26 +19,57 @@ export default function Home() {
     // Pre-fetch target to speed up transition
     router.prefetch(targetPath);
 
-    // Run a smooth progressive loader timer for high-fidelity transition feel (1000ms duration)
-    const duration = 1000;
-    const intervalTime = 16;
-    const step = 100 / (duration / intervalTime);
+    let isMounted = true;
+    let progressTimer: NodeJS.Timeout;
 
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer);
+    // Start a 250ms timeout. If server hasn't responded by then, show the loading screen.
+    const delayTimer = setTimeout(() => {
+      if (isMounted) {
+        setShowLoading(true);
+        // Start showing progressive load
+        progressTimer = setInterval(() => {
+          setProgress((prev) => {
+            if (prev >= 95) return 95; // Hold at 95% until server actually responds
+            return prev + Math.random() * 8;
+          });
+        }, 300);
+      }
+    }, 250);
+
+    // Call the server ping to verify availability
+    api.get('/auth/ping')
+      .then(() => {
+        clearTimeout(delayTimer);
+        if (progressTimer) clearInterval(progressTimer);
+        
+        if (isMounted) {
+          setProgress(100);
           setTimeout(() => {
             router.replace(targetPath);
-          }, 150);
-          return 100;
+          }, 100);
         }
-        return prev + step;
+      })
+      .catch(() => {
+        // Fallback: even if ping fails, attempt to route to target
+        clearTimeout(delayTimer);
+        if (progressTimer) clearInterval(progressTimer);
+        if (isMounted) {
+          router.replace(targetPath);
+        }
       });
-    }, intervalTime);
 
-    return () => clearInterval(timer);
+    return () => {
+      isMounted = false;
+      clearTimeout(delayTimer);
+      if (progressTimer) clearInterval(progressTimer);
+    };
   }, [router]);
 
-  return <LoadingScreen message="Launching DriveFlow..." progress={progress} showSubtext={false} />;
+  if (!showLoading) {
+    // If the server responded instantly (under 250ms), render nothing and redirect immediately!
+    return null;
+  }
+
+  // Show loading screen only if server was asleep (>250ms)
+  return <LoadingScreen message="Connecting to Server..." progress={progress} showSubtext={true} />;
 }
