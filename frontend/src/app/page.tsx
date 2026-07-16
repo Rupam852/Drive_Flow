@@ -22,7 +22,7 @@ export default function Home() {
     let isMounted = true;
     let progressTimer: NodeJS.Timeout;
 
-    // Start a 250ms timeout. If server hasn't responded by then, show the loading screen.
+    // Start a 800ms timeout. If server hasn't responded by then, show the loading screen.
     const delayTimer = setTimeout(() => {
       if (isMounted) {
         setShowLoading(true);
@@ -34,7 +34,7 @@ export default function Home() {
           });
         }, 300);
       }
-    }, 250);
+    }, 800);
 
     // Call the server ping to verify availability
     api.get('/auth/ping')
