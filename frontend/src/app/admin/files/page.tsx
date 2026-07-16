@@ -1538,7 +1538,9 @@ function AdminFilesContent() {
                     </button>
                   </th>
                   {['Name', 'Size', 'Modified', 'Actions'].map(h => (
-                    <th key={h} className={`px-2 sm:px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider ${h === 'Modified' ? 'hidden md:table-cell' : ''}`}>{h}</th>
+                    <th key={h} className={`px-2 sm:px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider ${
+                      h === 'Name' ? 'w-full' : ''
+                    } ${h === 'Modified' ? 'hidden md:table-cell' : ''}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1561,9 +1563,9 @@ function AdminFilesContent() {
                         {file.isHidden && <span title="Hidden from users"><EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /></span>}
                       </div>
                     </td>
-                    <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm whitespace-nowrap w-20 sm:w-28">{fmt(file.size, isFolder(file))}</td>
-                    <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm hidden md:table-cell whitespace-nowrap w-24 sm:w-36">{new Date(file.modifiedTime).toLocaleDateString()}</td>
-                    <td className="px-2 sm:px-4 py-3 w-32 sm:w-48">
+                    <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm">{fmt(file.size, isFolder(file))}</td>
+                    <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm hidden md:table-cell whitespace-nowrap">{new Date(file.modifiedTime).toLocaleDateString()}</td>
+                    <td className="px-2 sm:px-4 py-3">
                       <div className="flex items-center gap-1 transition-opacity">
                         <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }} title="Download"
                           className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">

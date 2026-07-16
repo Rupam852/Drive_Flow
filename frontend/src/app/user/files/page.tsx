@@ -608,9 +608,9 @@ export default function UserFilesPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
-                  <th className="px-3 sm:px-6 py-4 font-semibold">Name</th>
-                  <th className="px-3 sm:px-6 py-4 font-semibold">Size</th>
-                  <th className="px-3 sm:px-6 py-4 font-semibold text-right">Action</th>
+                  <th className="px-3 sm:px-6 py-4 font-semibold w-full">Name</th>
+                  <th className="px-6 py-4 font-semibold">Size</th>
+                  <th className="px-6 py-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -639,8 +639,8 @@ export default function UserFilesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-2 sm:px-6 py-3 sm:py-4 text-gray-400 text-sm font-medium whitespace-nowrap w-24 sm:w-32">{fmt(file.size, isFolder(file))}</td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right w-16 sm:w-24">
+                    <td className="px-4 py-3 text-gray-400 text-sm font-medium">{fmt(file.size, isFolder(file))}</td>
+                    <td className="px-6 py-4 text-right">
                       <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }}
                         onPointerDown={(e) => e.stopPropagation()}
                         className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
