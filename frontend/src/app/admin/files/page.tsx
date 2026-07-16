@@ -1566,7 +1566,7 @@ function AdminFilesContent() {
                     <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm">{fmt(file.size, isFolder(file))}</td>
                     <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm hidden md:table-cell whitespace-nowrap">{new Date(file.modifiedTime).toLocaleDateString()}</td>
                     <td className="px-2 sm:px-4 py-3">
-                      <div className="flex items-center gap-1 transition-opacity">
+                      <div className="flex items-center gap-2 sm:gap-3 transition-opacity">
                         <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }} title="Download"
                           className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                           <Download className="w-4 h-4" />
