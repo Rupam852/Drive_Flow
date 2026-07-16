@@ -31,6 +31,7 @@ import {
   findDuplicates,
   uploadProxy,
   toggleHideFile,
+  getDownloadToken,
 } from '../controllers/fileController';
 import { protect, admin, approved } from '../middleware/authMiddleware';
 
@@ -65,6 +66,7 @@ router.post('/doc', protect, approved, createDoc);
 router.put('/move', protect, approved, moveFiles);
 router.put('/:id/rename', protect, approved, renameFile);
 router.delete('/', protect, approved, trashFiles);
+router.post('/download-token', protect, approved, getDownloadToken);
 router.get('/:id/download', protect, approved, downloadFile);
 router.get('/:id/direct-download', protect, approved, getDownloadLink);
 router.post('/upload-session', protect, approved, getUploadSession);

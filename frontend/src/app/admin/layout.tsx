@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
+import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import CloudLogo from '@/components/CloudLogo';
 
 
@@ -79,6 +80,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
     router.push('/login');
   };
+
+  useInactivityTimeout('admin', handleLogout);
 
   // While mounting or verifying, show a stable loading screen
   if (!mounted || !authorized) {

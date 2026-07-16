@@ -196,6 +196,7 @@ function AdminFilesContent() {
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
+  const [previewToken, setPreviewToken] = useState<string>('');
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [fakeProgress, setFakeProgress] = useState(0);
@@ -367,7 +368,7 @@ function AdminFilesContent() {
       const modalOpen = previewFile || renaming || showLogs || showTrash || showUsers || showMoveModal || showDownloadModal || showNewFolderModal || confirmModal.show;
       
       if (modalOpen) {
-        setPreviewFile(null); setRenaming(null); setShowLogs(false); setShowTrash(false); setShowUsers(false); setShowMoveModal(false); setShowDownloadModal(false); setShowNewFolderModal(false); setConfirmModal(c => ({ ...c, show: false }));
+        setPreviewFile(null); setPreviewToken(''); setRenaming(null); setShowLogs(false); setShowTrash(false); setShowUsers(false); setShowMoveModal(false); setShowDownloadModal(false); setShowNewFolderModal(false); setConfirmModal(c => ({ ...c, show: false }));
         return;
       }
 
@@ -471,14 +472,20 @@ function AdminFilesContent() {
     fetchStats();
   }, [currentFolder.id]);
 
-  const handleItemClick = (file: DriveFile) => {
+  const handleItemClick = async (file: DriveFile) => {
     if (selected.size > 0) {
       toggleSelect(file.id);
     } else if (isFolder(file)) {
       navigateToFolder({ id: file.id, name: file.name });
     } else {
-      setPreviewFile(file);
-      window.history.pushState({ modal: 'preview' }, '');
+      try {
+        const res = await api.post('/files/download-token', { fileId: file.id });
+        setPreviewToken(res.data.downloadToken);
+        setPreviewFile(file);
+        window.history.pushState({ modal: 'preview' }, '');
+      } catch (e) {
+        addToast('Failed to load preview', 'error');
+      }
     }
   };
 
@@ -1106,12 +1113,22 @@ function AdminFilesContent() {
     setDownloadProgress(-1);
 
     try {
-      const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
       const ids = Array.from(selected).join(',');
-      const name = encodeURIComponent((customName || 'DriveFlow_Export') + '.zip');
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&token=${token}&fileName=${name}`;
-      
       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      let dlToken = '';
+      if (isNative) {
+        try {
+          const res = await api.post('/files/download-token', { fileIds: ids });
+          dlToken = res.data.downloadToken;
+        } catch (e) {
+          addToast('Download failed to start', 'error');
+          setDownloadProgress(null);
+          return;
+        }
+      }
+      const name = encodeURIComponent((customName || 'DriveFlow_Export') + '.zip');
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&downloadToken=${dlToken}&fileName=${name}`;
+      
       if (isNative) {
         triggerDownload(url);
         setTimeout(() => setDownloadProgress(null), 3000);
@@ -1146,9 +1163,19 @@ function AdminFilesContent() {
       setShowDownloadModal(true);
       return;
     }
+
+    // Get a temporary download token
+    let dlToken = '';
+    try {
+      const res = await api.post('/files/download-token', { fileId: file.id });
+      dlToken = res.data.downloadToken;
+    } catch (e) {
+      addToast('Download failed to start', 'error');
+      return;
+    }
+
     if (format) {
-      const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}&format=${format}`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?downloadToken=${dlToken}&format=${format}`;
       triggerDownload(url);
       setShowDownloadModal(false);
       return;
@@ -1157,9 +1184,8 @@ function AdminFilesContent() {
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
       setDownloadProgress(-1);
-      const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
       const name = encodeURIComponent(file.name + '.zip');
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&token=${token}&fileName=${name}`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&downloadToken=${dlToken}&fileName=${name}`;
       
       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
       if (isNative) {
@@ -1195,8 +1221,7 @@ function AdminFilesContent() {
     addToast('Starting download...');
     setDownloadProgress(-1);
     try {
-      const token = localStorage.getItem('token_admin') || localStorage.getItem('token') || '';
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?token=${token}`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?downloadToken=${dlToken}`;
       
       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
       if (isNative) {
@@ -1245,7 +1270,7 @@ function AdminFilesContent() {
   useAndroidBack(() => {
     if (selected.size > 0)           { setSelected(new Set()); return true; }
     if (confirmModal.show)           { setConfirmModal(prev => ({ ...prev, show: false })); return true; }
-    if (previewFile)                 { setPreviewFile(null); return true; }
+    if (previewFile)                 { setPreviewFile(null); setPreviewToken(''); return true; }
     if (renaming)                    { setRenaming(null); return true; }
     if (showDownloadModal)           { setShowDownloadModal(false); return true; }
     if (showZipModal)                { setShowZipModal(false); return true; }
@@ -1331,7 +1356,7 @@ function AdminFilesContent() {
             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: `${Math.max(Number(stats.used) > 0 ? 1 : 0, (Number(stats.used) / (Number(stats.limit) || 10 * 1024 * 1024 * 1024)) * 100)}%` }}
+                animate={{ width: `${Math.max(Number(stats.used) > 0 ? 1 : 0, (Number(stats.used) / (Number(stats.limit) || 5 * 1024 * 1024 * 1024)) * 100)}%` }}
                 className="h-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]"
               />
             </div>
@@ -1520,22 +1545,21 @@ function AdminFilesContent() {
               <tbody>
                 {filteredFiles.map((file, i) => (
                   <motion.tr key={file.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.01 }}
-                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${
+                    onClick={() => handleItemClick(file)}
+                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${
                       file.isHidden ? 'opacity-50 bg-amber-500/5 border-amber-500/10' : selected.has(file.id) ? 'bg-purple-500/10' : ''
                     }`}>
                     <td className="px-4 py-3 text-center">
-                      <button onClick={() => toggleSelect(file.id)}>
+                      <button onClick={(e) => { e.stopPropagation(); toggleSelect(file.id); }}>
                         {selected.has(file.id) ? <CheckSquare className="w-4 h-4 text-purple-400" /> : <Square className="w-4 h-4 text-gray-500 hover:text-gray-300" />}
                       </button>
                     </td>
                     <td className="px-4 py-3">
-                      <button
-                        onClick={() => handleItemClick(file)}
-                        className="flex items-center gap-3 text-white hover:text-purple-300 transition-colors w-full text-left">
+                      <div className="flex items-center gap-3 text-white group-hover:text-purple-300 transition-colors w-full text-left">
                         <FileIcon file={file} />
                         <span className="text-sm font-medium break-words">{file.name}</span>
                         {file.isHidden && <span title="Hidden from users"><EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /></span>}
-                      </button>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-sm">{fmt(file.size, isFolder(file))}</td>
                     <td className="px-4 py-3 text-gray-400 text-sm whitespace-nowrap">{new Date(file.modifiedTime).toLocaleDateString()}</td>
@@ -1743,8 +1767,16 @@ function AdminFilesContent() {
                     </button>
                   )}
                   {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
-                    <button onClick={() => {
-                      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`;
+                    <button onClick={async () => {
+                      let dlToken = '';
+                      try {
+                        const res = await api.post('/files/download-token', { fileId: previewFile.id });
+                        dlToken = res.data.downloadToken;
+                      } catch (e) {
+                        addToast('Failed to open file', 'error');
+                        return;
+                      }
+                      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${dlToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`;
                       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
                       if (isNative) {
                         window.open(url, '_system');
@@ -1766,7 +1798,7 @@ function AdminFilesContent() {
                     className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
                     <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <button onClick={() => setPreviewFile(null)}
+                  <button onClick={() => { setPreviewFile(null); setPreviewToken(''); }}
                     className="p-2 sm:p-3 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-xl transition-all active:scale-90">
                     <X className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
@@ -1781,7 +1813,7 @@ function AdminFilesContent() {
 
                 {isImage(previewFile) ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true`}
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`}
                     alt={previewFile.name}
                     className="max-h-full max-w-full object-contain shadow-2xl relative z-10" />
                 ) : isVideo(previewFile) ? (
@@ -1789,10 +1821,10 @@ function AdminFilesContent() {
                     controls
                     autoPlay
                     className="max-h-full w-full relative z-10 shadow-2xl"
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true`} />
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`} />
                 ) : (previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) ? (
                   <iframe
-                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${localStorage.getItem('token_admin') || localStorage.getItem('token')}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
                     className="w-full h-full border-none relative z-10 bg-white" />
                 ) : (
                   <div className="flex flex-col items-center gap-6 text-gray-500 relative z-10">

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, FolderOpen, LogOut, Menu, X, HardDrive, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
+import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import CloudLogo from '@/components/CloudLogo';
 
 const navItems = [
@@ -73,6 +74,8 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     }
     router.push('/login');
   };
+
+  useInactivityTimeout('user', handleLogout);
 
   // While mounting or verifying, show a stable loading screen
   if (!mounted || !authorized) {

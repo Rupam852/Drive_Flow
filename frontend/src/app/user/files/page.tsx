@@ -54,6 +54,7 @@ export default function UserFilesPage() {
   const [loading, setLoading] = useState(true);
   const [path, setPath] = useState<{ id: string; name: string }[]>([{ id: ROOT_ID, name: 'Root' }]);
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
+  const [previewToken, setPreviewToken] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -141,7 +142,7 @@ export default function UserFilesPage() {
 
     const handlePopState = (e: PopStateEvent) => {
       // If a modal is open, close it and stay on the page
-      if (previewFile)       { setPreviewFile(null);        return; }
+      if (previewFile)       { setPreviewFile(null); setPreviewToken(''); return; }
       if (showDownloadModal) { setShowDownloadModal(false); return; }
       if (showMoveModal)     { setShowMoveModal(false);     return; }
 
@@ -242,9 +243,19 @@ export default function UserFilesPage() {
       return;
     }
 
+    // Get a temporary download token
+    let dlToken = '';
+    try {
+      const res = await api.post('/files/download-token', { fileId: file.id });
+      dlToken = res.data.downloadToken;
+    } catch (e) {
+      addToast('Download failed to start', 'error');
+      return;
+    }
+
     if (format) {
       const ext = format === 'pdf' ? '.pdf' : '.docx';
-      const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}&format=${format}`;
+      const url = `${getApiBase()}/files/${file.id}/download?downloadToken=${dlToken}&format=${format}`;
       triggerDownload(url, file.name.replace(/\.[^.]+$/, '') + ext);
       setShowDownloadModal(false);
       return;
@@ -255,7 +266,7 @@ export default function UserFilesPage() {
       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
       const zipFileName = file.name + '.zip';
       const name = encodeURIComponent(zipFileName);
-      const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&token=${getToken()}&fileName=${name}`;
+      const url = `${getApiBase()}/files/bulk-download?fileIds=${file.id}&downloadToken=${dlToken}&fileName=${name}`;
       if (isNative) {
         // Android: no fake progress, direct trigger
         triggerDownload(url, zipFileName);
@@ -289,7 +300,7 @@ export default function UserFilesPage() {
 
     // Single file download
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-    const url = `${getApiBase()}/files/${file.id}/download?token=${getToken()}`;
+    const url = `${getApiBase()}/files/${file.id}/download?downloadToken=${dlToken}`;
     if (isNative) {
       triggerDownload(url, file.name);
     } else {
@@ -334,8 +345,16 @@ export default function UserFilesPage() {
     if (isNative) {
       // Android: no fake progress animation — direct system download
       const ids = Array.from(selected).join(',');
+      let dlToken = '';
+      try {
+        const res = await api.post('/files/download-token', { fileIds: ids });
+        dlToken = res.data.downloadToken;
+      } catch (e) {
+        addToast('Download failed to start', 'error');
+        return;
+      }
       const name = encodeURIComponent(finalName + '.zip');
-      const url = `${getApiBase()}/files/bulk-download?fileIds=${ids}&token=${getToken()}&fileName=${name}`;
+      const url = `${getApiBase()}/files/bulk-download?fileIds=${ids}&downloadToken=${dlToken}&fileName=${name}`;
       triggerDownload(url, finalName + '.zip');
       setSelected(new Set());
       return;
@@ -435,19 +454,28 @@ export default function UserFilesPage() {
     }
   };
 
-  const handleItemClick = (file: DriveFile) => {
+  const handleItemClick = async (file: DriveFile) => {
     if (selected.size > 0) {
       toggleSelect(file.id);
     } else {
-      if (isFolder(file)) navigate(file);
-      else setPreviewFile(file);
+      if (isFolder(file)) {
+        navigate(file);
+      } else {
+        try {
+          const res = await api.post('/files/download-token', { fileId: file.id });
+          setPreviewToken(res.data.downloadToken);
+          setPreviewFile(file);
+        } catch (e) {
+          addToast('Failed to load preview', 'error');
+        }
+      }
     }
   };
 
   // Android back gesture — priority 10
   useAndroidBack(() => {
     if (selected.size > 0)      { setSelected(new Set()); return true; }
-    if (previewFile)            { setPreviewFile(null); return true; }
+    if (previewFile)            { setPreviewFile(null); setPreviewToken(''); return true; }
     if (showDownloadModal)      { setShowDownloadModal(false); return true; }
     if (showMoveModal)          { setShowMoveModal(false); return true; }
     if (zipNameModal)           { setZipNameModal(false); return true; }
@@ -510,7 +538,7 @@ export default function UserFilesPage() {
                 <span>{fmt(stats.used)} / {fmt(stats.limit)}</span>
               </div>
               <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(Number(stats.used) > 0 ? 1 : 0, (Number(stats.used) / (Number(stats.limit) || 10 * 1024 * 1024 * 1024)) * 100)}%` }}
+                <motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(Number(stats.used) > 0 ? 1 : 0, (Number(stats.used) / (Number(stats.limit) || 5 * 1024 * 1024 * 1024)) * 100)}%` }}
                   className="h-full bg-gradient-to-r from-purple-500 to-pink-500" />
               </div>
             </div>
@@ -588,30 +616,33 @@ export default function UserFilesPage() {
               <tbody>
                 {filteredFiles.map((file, i) => (
                   <motion.tr key={file.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
-                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group ${selected.has(file.id) ? 'bg-purple-500/10' : ''}`}>
+                    onClick={() => handleItemClick(file)}
+                    onPointerDown={(e) => handleItemPointerDown(file.id, e)}
+                    onPointerMove={handleItemPointerMove}
+                    onPointerUp={handleItemPointerUp}
+                    onPointerCancel={handleItemPointerUp}
+                    onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
+                    className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${selected.has(file.id) ? 'bg-purple-500/10' : ''}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(file.id); }} className="mr-2">
+                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(file.id); }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          className="mr-2">
                           {selected.has(file.id) 
                             ? <Check className="w-4 h-4 text-purple-400" /> 
                             : <div className="w-4 h-4 border border-white/20 rounded group-hover:border-white/40" />
                           }
                         </button>
-                        <button onClick={() => handleItemClick(file)}
-                          onPointerDown={(e) => handleItemPointerDown(file.id, e)}
-                          onPointerMove={handleItemPointerMove}
-                          onPointerUp={handleItemPointerUp}
-                          onPointerCancel={handleItemPointerUp}
-                          onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
-                          className="no-long-press flex items-center gap-3 text-white hover:text-purple-300 transition-colors text-left flex-1">
+                        <div className="no-long-press flex items-center gap-3 text-white group-hover:text-purple-300 transition-colors text-left flex-1">
                           <FileIcon file={file} />
                           <span className="text-sm font-medium break-words">{file.name}</span>
-                        </button>
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-sm font-medium">{fmt(file.size, isFolder(file))}</td>
                     <td className="px-6 py-4 text-right">
                       <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }}
+                        onPointerDown={(e) => e.stopPropagation()}
                         className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                         <Download className="w-5 h-5" />
                       </button>
@@ -712,8 +743,16 @@ export default function UserFilesPage() {
                 </div>
                 <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                   {(previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) && (
-                    <button onClick={() => {
-                      const url = `${getApiBase()}/files/${previewFile.id}/download?token=${getToken()}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`;
+                    <button onClick={async () => {
+                      let dlToken = '';
+                      try {
+                        const res = await api.post('/files/download-token', { fileId: previewFile.id });
+                        dlToken = res.data.downloadToken;
+                      } catch (e) {
+                        addToast('Failed to open file', 'error');
+                        return;
+                      }
+                      const url = `${getApiBase()}/files/${previewFile.id}/download?downloadToken=${dlToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`;
                       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
                       if (isNative) {
                         window.open(url, '_system');
@@ -735,13 +774,13 @@ export default function UserFilesPage() {
                     className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all active:scale-90" title="Download">
                     <Download className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <button onClick={() => setPreviewFile(null)}
+                  <button onClick={() => { setPreviewFile(null); setPreviewToken(''); }}
                     className="p-2 sm:p-3 bg-white/5 hover:bg-red-500/20 text-gray-400 hover:text-red-400 rounded-xl transition-all active:scale-90">
                     <X className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 </div>
               </div>
-
+ 
               {/* Media Content */}
               <div className="flex-1 relative flex items-center justify-center bg-black/20 overflow-hidden group">
                 <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none">
@@ -750,7 +789,7 @@ export default function UserFilesPage() {
                 
                 {isImage(previewFile) ? (
                   <img 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${getToken()}`}
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`}
                     alt={previewFile.name} 
                     className="max-h-full max-w-full object-contain shadow-2xl relative z-10" />
                 ) : isVideo(previewFile) ? (
@@ -758,10 +797,10 @@ export default function UserFilesPage() {
                     controls 
                     autoPlay 
                     className="max-h-full w-full relative z-10 shadow-2xl" 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${getToken()}`} />
+                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`} />
                 ) : (previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) ? (
                   <iframe
-                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?token=${getToken()}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
                     className="w-full h-full border-none relative z-10 bg-white" />
                 ) : (
                   <div className="flex flex-col items-center gap-6 text-gray-500 relative z-10">

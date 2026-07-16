@@ -696,8 +696,8 @@ export const getDriveStats = async (req: Request, res: Response) => {
     ]);
     const usedBytes = statsResult.length > 0 ? statsResult[0].totalSize : 0;
 
-    // Set a VIRTUAL storage limit of exactly 10GB for our app
-    const limitBytes = 10737418240; // 10 GB in bytes (10 * 1024 * 1024 * 1024)
+    // Set a VIRTUAL storage limit of exactly 5GB for our app
+    const limitBytes = 5368709120; // 5 GB in bytes (5 * 1024 * 1024 * 1024)
 
     // Count ALL Active Files recursively (Strictly excluding folders)
     const fileCountQuery: any = { 
@@ -1411,3 +1411,42 @@ export const toggleHideFile = async (req: Request, res: Response) => {
     res.status(500).json({ message: (error as Error).message });
   }
 };
+
+// @desc  Generate a short-lived download token
+// @route POST /api/files/download-token
+export const getDownloadToken = async (req: Request, res: Response) => {
+  try {
+    const { fileId, fileIds } = req.body;
+    const jwt = require('jsonwebtoken');
+
+    let payload: any = {
+      id: (req as any).user?._id,
+      purpose: 'download'
+    };
+
+    if (fileId) {
+      await verifyFileAccess(fileId, req);
+      payload.fileId = fileId;
+    } else if (fileIds) {
+      const ids = fileIds.split(',');
+      for (const id of ids) {
+        await verifyFileAccess(id, req);
+      }
+      payload.fileIds = fileIds;
+    } else {
+      res.status(400).json({ message: 'fileId or fileIds is required' });
+      return;
+    }
+
+    const downloadToken = jwt.sign(
+      payload,
+      process.env.JWT_SECRET as string,
+      { expiresIn: '60s' }
+    );
+
+    res.json({ downloadToken });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
