@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Folder, File, Download, Eye, X, ChevronRight, Home, Image, FileText, Film, MoreVertical, Check, Square, Search, ExternalLink } from 'lucide-react';
+import { Folder, File, Download, Eye, X, ChevronRight, Home, Image, FileText, Film, MoreVertical, Check, Square, Search, ExternalLink, ArrowDown, Loader2 } from 'lucide-react';
 import api from '@/lib/api';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 
 interface DriveFile {
@@ -74,6 +75,16 @@ export default function UserFilesPage() {
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
   const [downloadStatus, setDownloadStatus] = useState<{ show: boolean; fileName: string; status: 'loading' | 'success' | 'error' }>({
     show: false, fileName: '', status: 'loading'
+  });
+
+  const { pullDistance, isRefreshing, isPulling } = usePullToRefresh(async () => {
+    if (!searchQuery) {
+      await loadFiles(currentFolder.id);
+    } else {
+      const res = await api.get(`/files/search?q=${encodeURIComponent(searchQuery)}`);
+      setFiles(res.data);
+    }
+    await fetchStats();
   });
 
   // Animate fake counter 1→99 during indeterminate download phase
@@ -489,9 +500,27 @@ export default function UserFilesPage() {
   }, 10, [selected, previewFile, showDownloadModal, showMoveModal, zipNameModal, path]);
 
   return (
+    <>
+      <AnimatePresence>
+        {isPulling && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: pullDistance - 40 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ type: 'spring', damping: 15 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-purple-600/80 backdrop-blur-md border border-white/10 p-2.5 rounded-full shadow-2xl flex items-center justify-center text-white"
+          >
+            {isRefreshing ? (
+              <Loader2 className="w-5 h-5 animate-spin text-purple-200" />
+            ) : (
+              <ArrowDown className="w-5 h-5 text-purple-200 transition-transform duration-200" style={{ transform: `rotate(${Math.min(180, (pullDistance / 50) * 180)}deg)` }} />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-    <motion.div 
-      className="space-y-4"
+      <motion.div 
+        className="space-y-4"
       onPanEnd={(_, info) => {
         if (info.offset.x > 100 && Math.abs(info.offset.y) < 50 && path.length > 1) {
           breadcrumbNav(path.length - 2);
@@ -1130,5 +1159,6 @@ export default function UserFilesPage() {
       </AnimatePresence>
 
     </motion.div>
+    </>
   );
 }

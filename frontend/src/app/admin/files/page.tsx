@@ -7,11 +7,12 @@ import {
   Trash2, Move, X, ChevronRight, Home, Image, FileText, Film,
   MoreVertical, Check, Users, Clock, Square, CheckSquare, Search, ExternalLink,
   Music, Archive, FileSpreadsheet, Monitor, Package, Smartphone, Minus, Maximize2, Loader2, Plus, RefreshCw,
-  CheckCircle, AlertCircle, AlertTriangle, Info, Eye, EyeOff
+  CheckCircle, AlertCircle, AlertTriangle, Info, Eye, EyeOff, ArrowDown
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 
 
 interface DriveFile {
@@ -200,6 +201,16 @@ function AdminFilesContent() {
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [fakeProgress, setFakeProgress] = useState(0);
+
+  const { pullDistance, isRefreshing, isPulling } = usePullToRefresh(async () => {
+    if (!searchQuery) {
+      await loadFiles(currentFolder.id);
+    } else {
+      const res = await api.get(`/files/search?q=${encodeURIComponent(searchQuery)}`);
+      setFiles(res.data);
+    }
+    await fetchStats();
+  });
 
   // Animate a fake counter 1→99 during indeterminate download phase
   useEffect(() => {
@@ -1289,9 +1300,27 @@ function AdminFilesContent() {
       showNewFolderModal, showMoveModal, showLogs, showTrash, showUsers, showDuplicates, path]);
 
   return (
+    <>
+      <AnimatePresence>
+        {isPulling && (
+          <motion.div 
+            initial={{ opacity: 0, y: -50 }}
+            animate={{ opacity: 1, y: pullDistance - 40 }}
+            exit={{ opacity: 0, y: -50 }}
+            transition={{ type: 'spring', damping: 15 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-purple-600/80 backdrop-blur-md border border-white/10 p-2.5 rounded-full shadow-2xl flex items-center justify-center text-white"
+          >
+            {isRefreshing ? (
+              <Loader2 className="w-5 h-5 animate-spin text-purple-200" />
+            ) : (
+              <ArrowDown className="w-5 h-5 text-purple-200 transition-transform duration-200" style={{ transform: `rotate(${Math.min(180, (pullDistance / 50) * 180)}deg)` }} />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-    <motion.div
-      className="space-y-4"
+      <motion.div
+        className="space-y-4"
       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
       onDrop={async (e) => {
         e.preventDefault();
@@ -2629,6 +2658,7 @@ function AdminFilesContent() {
         )}
       </AnimatePresence>
     </motion.div>
+    </>
   );
 }
 
