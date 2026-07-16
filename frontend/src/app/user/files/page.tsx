@@ -31,11 +31,11 @@ const isConvertible = (f: DriveFile) => {
 const isDoc = (f: DriveFile) => isConvertible(f) || f.mimeType.includes('pdf') || f.mimeType.includes('text');
 
 const FileIcon = ({ file }: { file: DriveFile }) => {
-  if (isFolder(file)) return <Folder className="w-5 h-5 text-yellow-400" />;
-  if (isImage(file)) return <Image className="w-5 h-5 text-blue-400" />;
-  if (file.mimeType === 'application/vnd.google-apps.document') return <FileText className="w-5 h-5 text-blue-300" />;
-  if (file.mimeType.startsWith('video/')) return <Film className="w-5 h-5 text-purple-400" />;
-  return <File className="w-5 h-5 text-gray-400" />;
+  if (isFolder(file)) return <Folder className="w-5 h-5 text-yellow-400 shrink-0" />;
+  if (isImage(file)) return <Image className="w-5 h-5 text-blue-400 shrink-0" />;
+  if (file.mimeType === 'application/vnd.google-apps.document') return <FileText className="w-5 h-5 text-blue-300 shrink-0" />;
+  if (file.mimeType.startsWith('video/')) return <Film className="w-5 h-5 text-purple-400 shrink-0" />;
+  return <File className="w-5 h-5 text-gray-400 shrink-0" />;
 };
 
 const fmt = (bytes?: string, isFolder?: boolean) => {
@@ -608,9 +608,9 @@ export default function UserFilesPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-white/10 text-gray-400 text-xs uppercase tracking-wider">
-                  <th className="px-6 py-4 font-semibold">Name</th>
-                  <th className="px-6 py-4 font-semibold">Size</th>
-                  <th className="px-6 py-4 font-semibold text-right">Action</th>
+                  <th className="px-3 sm:px-6 py-4 font-semibold">Name</th>
+                  <th className="px-3 sm:px-6 py-4 font-semibold">Size</th>
+                  <th className="px-3 sm:px-6 py-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -623,24 +623,24 @@ export default function UserFilesPage() {
                     onPointerCancel={handleItemPointerUp}
                     onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
                     className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${selected.has(file.id) ? 'bg-purple-500/10' : ''}`}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 w-full">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                         <button onClick={(e) => { e.stopPropagation(); toggleSelect(file.id); }}
                           onPointerDown={(e) => e.stopPropagation()}
-                          className="mr-2">
+                          className="mr-1 sm:mr-2 shrink-0">
                           {selected.has(file.id) 
                             ? <Check className="w-4 h-4 text-purple-400" /> 
                             : <div className="w-4 h-4 border border-white/20 rounded group-hover:border-white/40" />
                           }
                         </button>
-                        <div className="no-long-press flex items-center gap-3 text-white group-hover:text-purple-300 transition-colors text-left flex-1">
+                        <div className="no-long-press flex items-center gap-2 sm:gap-3 text-white group-hover:text-purple-300 transition-colors text-left flex-1 min-w-0">
                           <FileIcon file={file} />
-                          <span className="text-sm font-medium break-words">{file.name}</span>
+                          <span className="text-sm font-medium break-words flex-1 min-w-0">{file.name}</span>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-sm font-medium">{fmt(file.size, isFolder(file))}</td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-2 sm:px-6 py-3 sm:py-4 text-gray-400 text-sm font-medium whitespace-nowrap w-24 sm:w-32">{fmt(file.size, isFolder(file))}</td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-right w-16 sm:w-24">
                       <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }}
                         onPointerDown={(e) => e.stopPropagation()}
                         className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">

@@ -53,39 +53,39 @@ const isDoc = (f: DriveFile) => isConvertible(f) || f.mimeType.includes('pdf') |
 const FileIcon = ({ file }: { file: DriveFile }) => {
   const mime = file.mimeType.toLowerCase();
   
-  if (isFolder(file)) return <Folder className="w-5 h-5 text-yellow-400 fill-yellow-400/10" />;
+  if (isFolder(file)) return <Folder className="w-5 h-5 text-yellow-400 fill-yellow-400/10 shrink-0" />;
   
   // Images
-  if (isImage(file)) return <Image className="w-5 h-5 text-emerald-400" />;
+  if (isImage(file)) return <Image className="w-5 h-5 text-emerald-400 shrink-0" />;
   
   // Videos
-  if (isVideo(file)) return <Film className="w-5 h-5 text-purple-400" />;
+  if (isVideo(file)) return <Film className="w-5 h-5 text-purple-400 shrink-0" />;
   
   // Audio
-  if (mime.startsWith('audio/')) return <Music className="w-5 h-5 text-pink-400" />;
+  if (mime.startsWith('audio/')) return <Music className="w-5 h-5 text-pink-400 shrink-0" />;
   
   // PDFs
-  if (mime === 'application/pdf') return <FileText className="w-5 h-5 text-red-500" />;
+  if (mime === 'application/pdf') return <FileText className="w-5 h-5 text-red-500 shrink-0" />;
   
   // Documents / Word
-  if (mime.includes('document') || mime.includes('msword')) return <FileText className="w-5 h-5 text-blue-500" />;
+  if (mime.includes('document') || mime.includes('msword')) return <FileText className="w-5 h-5 text-blue-500 shrink-0" />;
   
   // Spreadsheets / Excel
-  if (mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('sheet')) return <FileSpreadsheet className="w-5 h-5 text-green-500" />;
+  if (mime.includes('spreadsheet') || mime.includes('excel') || mime.includes('sheet')) return <FileSpreadsheet className="w-5 h-5 text-green-500 shrink-0" />;
   
   // Presentations / PPT
-  if (mime.includes('presentation') || mime.includes('powerpoint')) return <Monitor className="w-5 h-5 text-orange-500" />;
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return <Monitor className="w-5 h-5 text-orange-500 shrink-0" />;
   
   // Archives / ZIP
-  if (mime.includes('zip') || mime.includes('rar') || mime.includes('tar') || mime.includes('7z')) return <Archive className="w-5 h-5 text-amber-500" />;
+  if (mime.includes('zip') || mime.includes('rar') || mime.includes('tar') || mime.includes('7z')) return <Archive className="w-5 h-5 text-amber-500 shrink-0" />;
   
   // APKs / Apps
-  if (mime.includes('android.package-archive') || file.name.toLowerCase().endsWith('.apk')) return <Smartphone className="w-5 h-5 text-teal-400" />;
+  if (mime.includes('android.package-archive') || file.name.toLowerCase().endsWith('.apk')) return <Smartphone className="w-5 h-5 text-teal-400 shrink-0" />;
   
   // Scripts / Code
-  if (mime.includes('javascript') || mime.includes('json') || mime.includes('html') || mime.includes('css')) return <Package className="w-5 h-5 text-indigo-400" />;
+  if (mime.includes('javascript') || mime.includes('json') || mime.includes('html') || mime.includes('css')) return <Package className="w-5 h-5 text-indigo-400 shrink-0" />;
 
-  return <File className="w-5 h-5 text-gray-400" />;
+  return <File className="w-5 h-5 text-gray-400 shrink-0" />;
 };
 
 const fmt = (bytes?: string, isFolder?: boolean) => {
@@ -1530,7 +1530,7 @@ function AdminFilesContent() {
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="w-10 px-4 py-3 text-center">
+                  <th className="w-10 px-2 sm:px-4 py-3 text-center">
                     <button onClick={() => selected.size === filteredFiles.length ? setSelected(new Set()) : setSelected(new Set(filteredFiles.map(f => f.id)))}>
                       {selected.size === filteredFiles.length && filteredFiles.length > 0
                         ? <CheckSquare className="w-4 h-4 text-purple-400" />
@@ -1538,7 +1538,7 @@ function AdminFilesContent() {
                     </button>
                   </th>
                   {['Name', 'Size', 'Modified', 'Actions'].map(h => (
-                    <th key={h} className="px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{h}</th>
+                    <th key={h} className={`px-2 sm:px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider ${h === 'Modified' ? 'hidden md:table-cell' : ''}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1549,21 +1549,21 @@ function AdminFilesContent() {
                     className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${
                       file.isHidden ? 'opacity-50 bg-amber-500/5 border-amber-500/10' : selected.has(file.id) ? 'bg-purple-500/10' : ''
                     }`}>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-2 sm:px-4 py-3 text-center">
                       <button onClick={(e) => { e.stopPropagation(); toggleSelect(file.id); }}>
                         {selected.has(file.id) ? <CheckSquare className="w-4 h-4 text-purple-400" /> : <Square className="w-4 h-4 text-gray-500 hover:text-gray-300" />}
                       </button>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3 text-white group-hover:text-purple-300 transition-colors w-full text-left">
+                    <td className="px-2 sm:px-4 py-3 w-full">
+                      <div className="flex items-center gap-2 sm:gap-3 text-white group-hover:text-purple-300 transition-colors w-full text-left flex-1 min-w-0">
                         <FileIcon file={file} />
-                        <span className="text-sm font-medium break-words">{file.name}</span>
+                        <span className="text-sm font-medium break-words flex-1 min-w-0">{file.name}</span>
                         {file.isHidden && <span title="Hidden from users"><EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /></span>}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-sm">{fmt(file.size, isFolder(file))}</td>
-                    <td className="px-4 py-3 text-gray-400 text-sm whitespace-nowrap">{new Date(file.modifiedTime).toLocaleDateString()}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm whitespace-nowrap w-20 sm:w-28">{fmt(file.size, isFolder(file))}</td>
+                    <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm hidden md:table-cell whitespace-nowrap w-24 sm:w-36">{new Date(file.modifiedTime).toLocaleDateString()}</td>
+                    <td className="px-2 sm:px-4 py-3 w-32 sm:w-48">
                       <div className="flex items-center gap-1 transition-opacity">
                         <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }} title="Download"
                           className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
