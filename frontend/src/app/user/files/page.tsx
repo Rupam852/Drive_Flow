@@ -635,7 +635,7 @@ export default function UserFilesPage() {
                         </button>
                         <div className="no-long-press flex items-center gap-2 sm:gap-3 text-white group-hover:text-purple-300 transition-colors text-left flex-1 min-w-0">
                           <FileIcon file={file} />
-                          <span className="text-sm font-medium break-words flex-1 min-w-0">{file.name}</span>
+                          <span className="text-sm font-medium truncate flex-1 min-w-0" title={file.name}>{file.name}</span>
                         </div>
                       </div>
                     </td>

@@ -1559,7 +1559,7 @@ function AdminFilesContent() {
                     <td className="px-2 sm:px-4 py-3 w-full">
                       <div className="flex items-center gap-2 sm:gap-3 text-white group-hover:text-purple-300 transition-colors w-full text-left flex-1 min-w-0">
                         <FileIcon file={file} />
-                        <span className="text-sm font-medium break-words flex-1 min-w-0">{file.name}</span>
+                        <span className="text-sm font-medium truncate flex-1 min-w-0" title={file.name}>{file.name}</span>
                         {file.isHidden && <span title="Hidden from users"><EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /></span>}
                       </div>
                     </td>
