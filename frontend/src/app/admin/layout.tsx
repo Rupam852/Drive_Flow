@@ -86,10 +86,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // While mounting or verifying, show a stable loading screen
   if (!mounted || !authorized) {
     return (
-      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white">
-        <div className="flex flex-col items-center gap-4">
+      <div className="min-h-screen bg-[#080711] flex flex-col items-center justify-center text-white">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
           <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-sm font-medium animate-pulse">Checking Permissions...</p>
+          <p className="text-sm text-gray-400 font-medium tracking-wide">Connecting...</p>
         </div>
       </div>
     );

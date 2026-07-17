@@ -1554,7 +1554,18 @@ function AdminFilesContent() {
         animate={{ opacity: 1 }}
         key={currentFolder.id}
       >
-        {viewMode === 'list' ? (
+        {loading ? (
+          <div className={`p-6 ${viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4' : 'space-y-3'}`}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className={`bg-white/5 animate-pulse rounded-xl ${viewMode === 'grid' ? 'h-32' : 'h-12'}`} />
+            ))}
+          </div>
+        ) : filteredFiles.length === 0 ? (
+          <div className="py-20 text-center text-gray-500 flex flex-col items-center gap-3">
+            <Folder className="w-12 h-12 opacity-20" />
+            <p>{searchQuery ? 'No matches found' : 'This folder is empty'}</p>
+          </div>
+        ) : viewMode === 'list' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
