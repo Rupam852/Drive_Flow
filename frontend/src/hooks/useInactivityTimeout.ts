@@ -11,24 +11,42 @@ export function useInactivityTimeout(role: 'user' | 'admin', handleLogout: () =>
 
     const checkTimeout = () => {
       const token = localStorage.getItem(tokenKey);
-      if (!token) return;
+      if (!token) return false;
 
       const lastActive = localStorage.getItem('lastActiveTime');
       if (lastActive) {
         const diff = Date.now() - parseInt(lastActive);
         if (diff > timeoutLimit) {
+          localStorage.removeItem('lastActiveTime');
           handleLogout();
+          return true;
         }
       } else {
         localStorage.setItem('lastActiveTime', Date.now().toString());
       }
+      return false;
     };
 
     // Run check immediately on mount/load
     checkTimeout();
 
     const updateActivity = () => {
+      const token = localStorage.getItem(tokenKey);
+      if (!token) return;
+
+      const lastActive = localStorage.getItem('lastActiveTime');
+      if (lastActive) {
+        const diff = Date.now() - parseInt(lastActive);
+        if (diff > timeoutLimit) {
+          checkTimeout();
+          return;
+        }
+      }
       localStorage.setItem('lastActiveTime', Date.now().toString());
+    };
+
+    const handleVisibilityOrFocus = () => {
+      checkTimeout();
     };
 
     // Listen to user interactions
@@ -37,6 +55,9 @@ export function useInactivityTimeout(role: 'user' | 'admin', handleLogout: () =>
       window.addEventListener(event, updateActivity);
     });
 
+    window.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+
     // Periodically check inactivity (every 10 seconds)
     const interval = setInterval(checkTimeout, 10000);
 
@@ -44,6 +65,8 @@ export function useInactivityTimeout(role: 'user' | 'admin', handleLogout: () =>
       events.forEach(event => {
         window.removeEventListener(event, updateActivity);
       });
+      window.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
       clearInterval(interval);
     };
   }, [role, handleLogout]);
