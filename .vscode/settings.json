@@ -1,5 +1,7 @@
 {
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.import.gradle.wrapper.enabled": true,
-    "java.import.gradle.version": "8.14.3"
+    "java.import.gradle.version": "8.14.3",
+    "css.lint.unknownAtRules": "ignore",
+    "scss.lint.unknownAtRules": "ignore"
 }
