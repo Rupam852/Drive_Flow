@@ -7,7 +7,7 @@ import api from '@/lib/api';
 
 export default function Home() {
   const router = useRouter();
-  const [showLoading, setShowLoading] = useState(false);
+  const [showDetailedLoading, setShowDetailedLoading] = useState(false);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -22,10 +22,10 @@ export default function Home() {
     let isMounted = true;
     let progressTimer: NodeJS.Timeout;
 
-    // Start a 800ms timeout. If server hasn't responded by then, show the loading screen.
+    // Start a 1000ms timeout. If server hasn't responded by then, show the detailed loading screen.
     const delayTimer = setTimeout(() => {
       if (isMounted) {
-        setShowLoading(true);
+        setShowDetailedLoading(true);
         // Start showing progressive load
         progressTimer = setInterval(() => {
           setProgress((prev) => {
@@ -34,7 +34,7 @@ export default function Home() {
           });
         }, 300);
       }
-    }, 800);
+    }, 1000);
 
     // Call the server ping to verify availability
     api.get('/auth/ping')
@@ -65,11 +65,18 @@ export default function Home() {
     };
   }, [router]);
 
-  if (!showLoading) {
-    // If the server responded instantly (under 250ms), render nothing and redirect immediately!
-    return null;
+  if (!showDetailedLoading) {
+    // Show a clean, minimal spinner while doing the initial check (under 1 second)
+    return (
+      <div className="min-h-screen bg-[#080711] flex flex-col items-center justify-center text-white">
+        <div className="flex flex-col items-center gap-4 animate-fade-in">
+          <div className="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm text-gray-400 font-medium tracking-wide">Connecting...</p>
+        </div>
+      </div>
+    );
   }
 
-  // Show loading screen only if server was asleep (>250ms)
+  // Show detailed loading screen only if server was asleep (>1000ms)
   return <LoadingScreen message="Connecting to Server..." progress={progress} showSubtext={true} />;
 }
