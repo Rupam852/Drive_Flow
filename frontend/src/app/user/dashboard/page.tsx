@@ -90,7 +90,7 @@ export default function UserDashboard() {
   }
 
   const cards = [
-    { icon: HardDrive, label: 'Storage Used', value: fmt(stats?.used), color: 'bg-purple-500/30' },
+    { icon: HardDrive, label: 'Storage Used', value: fmt(stats?.used), color: 'bg-purple-500/30', href: '/user/files' },
     { icon: File, label: 'Total Files', value: stats?.totalFiles, color: 'bg-blue-500/30', href: '/user/files' },
     { icon: Folder, label: 'Total Folders', value: stats?.totalFolders, color: 'bg-emerald-500/30', href: '/user/files' },
   ];
