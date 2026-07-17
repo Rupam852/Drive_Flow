@@ -668,7 +668,7 @@ export default function UserFilesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-400 text-sm font-medium">{fmt(file.size, isFolder(file))}</td>
+                    <td className="px-4 py-3 text-gray-400 text-sm font-medium whitespace-nowrap">{fmt(file.size, isFolder(file))}</td>
                     <td className="px-6 py-4 text-right">
                       <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }}
                         onPointerDown={(e) => e.stopPropagation()}

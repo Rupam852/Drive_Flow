@@ -1598,7 +1598,7 @@ function AdminFilesContent() {
                         {file.isHidden && <span title="Hidden from users"><EyeOff className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" /></span>}
                       </div>
                     </td>
-                    <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm">{fmt(file.size, isFolder(file))}</td>
+                    <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm whitespace-nowrap">{fmt(file.size, isFolder(file))}</td>
                     <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm hidden md:table-cell whitespace-nowrap">{new Date(file.modifiedTime).toLocaleDateString()}</td>
                     <td className="px-2 sm:px-4 py-3">
                       <div className="flex items-center gap-2 sm:gap-3 transition-opacity">
