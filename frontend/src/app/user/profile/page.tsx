@@ -167,12 +167,6 @@ export default function ProfilePage() {
           </div>
           <div className="text-center sm:text-left space-y-1">
             <h3 className="text-xl font-bold text-white">{userData.name}</h3>
-            <div className="flex items-center justify-center sm:justify-start gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 w-fit">
-              <Shield className="w-3.5 h-3.5 text-blue-400" />
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-300">
-                {userData.role || 'User'} Status: {userData.status || 'Active'}
-              </span>
-            </div>
           </div>
         </div>
 
