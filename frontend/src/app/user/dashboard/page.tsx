@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { HardDrive, File, Folder, AlertCircle } from 'lucide-react';
+import { HardDrive, File, Folder, AlertCircle, TrendingUp } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -127,19 +127,87 @@ export default function UserDashboard() {
       </div>
 
       <div className="space-y-6">
-        {/* Storage Bar */}
+        {/* Storage Allocation */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="glass-card p-6 rounded-2xl">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-white font-medium">Storage Progress</span>
-            <span className="text-gray-400 text-sm">{usedPct}% Used</span>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-purple-400" />
+              <span className="text-white font-medium">Storage Allocation</span>
+            </div>
+            <span className="text-gray-400 text-sm">{fmt(stats?.used)} / {fmt(stats?.limit)}</span>
           </div>
-          <div className="h-4 w-full bg-white/5 rounded-full overflow-hidden p-1 border border-white/5">
-            <motion.div initial={{ width: 0 }} animate={{ width: `${rawPct > 0 ? Math.max(rawPct, 1) : 0}%` }} transition={{ duration: 1 }}
-              className="h-full rounded-full bg-gradient-to-r from-purple-500 to-blue-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]" />
-          </div>
-          <div className="mt-4 flex justify-between text-[10px] text-gray-500 uppercase tracking-widest font-bold">
-            <span>{fmt(stats?.used)}</span>
-            <span>{fmt(stats?.limit)} Limit</span>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-8">
+            <div className="relative w-40 h-40 shrink-0">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-white/5" />
+                <motion.circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent"
+                  strokeDasharray={440}
+                  initial={{ strokeDashoffset: 440 }}
+                  animate={{ strokeDashoffset: 440 - (440 * Math.min(rawPct, 100)) / 100 }}
+                  transition={{ duration: 1.5, ease: "easeOut" }}
+                  className="text-purple-500" />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-2xl font-bold text-white">{usedPct}%</span>
+                <span className="text-[10px] text-gray-400 uppercase tracking-widest">Used</span>
+              </div>
+            </div>
+
+            <div className="flex-1 w-full space-y-4">
+              {(() => {
+                if (!stats?.types) return null;
+                
+                const formatMimeType = (mime: string) => {
+                  if (!mime) return null;
+                  const m = mime.toLowerCase();
+                  if (m.includes('document') || m.includes('word') || m.includes('text') || m.includes('plain')) return 'DOCUMENT';
+                  if (m.includes('spreadsheet') || m.includes('excel')) return 'SPREADSHEET';
+                  if (m.includes('presentation') || m.includes('powerpoint')) return 'PRESENTATION';
+                  if (m.includes('pdf')) return 'PDF';
+                  if (m.includes('image')) return 'IMAGE';
+                  if (m.includes('video')) return 'VIDEO';
+                  if (m.includes('zip') || m.includes('rar') || m.includes('tar') || m.includes('compressed')) return 'ARCHIVE';
+                  return 'OTHER';
+                };
+
+                const grouped = stats.types.reduce((acc: any, curr: any) => {
+                  const label = formatMimeType(curr._id);
+                  if (!label) return acc;
+                  acc[label] = (acc[label] || 0) + curr.count;
+                  return acc;
+                }, {});
+
+                const totalTypeFiles = Object.values(grouped).reduce((a: any, b: any) => a + b, 0) as number;
+
+                const colors: any = {
+                  DOCUMENT: 'bg-blue-500',
+                  SPREADSHEET: 'bg-teal-500',
+                  PRESENTATION: 'bg-amber-500',
+                  PDF: 'bg-rose-500',
+                  IMAGE: 'bg-emerald-500',
+                  VIDEO: 'bg-purple-500',
+                  ARCHIVE: 'bg-indigo-500',
+                  OTHER: 'bg-gray-500'
+                };
+
+                return Object.entries(grouped).map(([label, count]: any) => {
+                  const pct = totalTypeFiles > 0 ? (count / totalTypeFiles) * 100 : 0;
+                  const color = colors[label] || 'bg-gray-500';
+                  return (
+                    <div key={label} className="space-y-1">
+                      <div className="flex justify-between text-xs font-semibold">
+                        <span className="text-gray-400">{label}</span>
+                        <span className="text-white">{pct.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1 }} className={`h-full rounded-full ${color}`} />
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
           </div>
         </motion.div>
 
