@@ -1349,11 +1349,6 @@ function AdminFilesContent() {
           <div className="min-w-0">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               File Manager
-              <button onClick={() => fetchStats(true)} disabled={refreshingStats}
-                className={`p-1.5 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-all ${refreshingStats ? 'opacity-50' : ''}`}
-                title="Deep Refresh Stats">
-                <RefreshCw className={`w-3 h-3 text-purple-400 ${refreshingStats ? 'animate-spin' : ''}`} />
-              </button>
               {stats && (
                 <span className="text-[10px] font-normal bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-gray-400">
                   {stats.totalFiles} Files • {stats.totalFolders} Folders
