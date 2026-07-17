@@ -178,30 +178,36 @@ export default function UserDashboard() {
                   return acc;
                 }, {});
 
-                const totalTypeFiles = Object.values(grouped).reduce((a: any, b: any) => a + b, 0) as number;
+                const sortedTypes = Object.entries(grouped)
+                  .map(([label, count]: any) => ({ label, count }))
+                  .sort((a: any, b: any) => b.count - a.count)
+                  .slice(0, 4);
 
-                const colors: any = {
-                  DOCUMENT: 'bg-blue-500',
+                const totalDisplayed = sortedTypes.reduce((sum, t) => sum + t.count, 0);
+
+                const colorsMap: Record<string, string> = {
+                  PDF: 'bg-blue-500',
+                  DOCUMENT: 'bg-emerald-500',
                   SPREADSHEET: 'bg-teal-500',
                   PRESENTATION: 'bg-amber-500',
-                  PDF: 'bg-rose-500',
-                  IMAGE: 'bg-emerald-500',
+                  IMAGE: 'bg-pink-500',
                   VIDEO: 'bg-purple-500',
                   ARCHIVE: 'bg-indigo-500',
                   OTHER: 'bg-gray-500'
                 };
 
-                return Object.entries(grouped).map(([label, count]: any) => {
-                  const pct = totalTypeFiles > 0 ? (count / totalTypeFiles) * 100 : 0;
-                  const color = colors[label] || 'bg-gray-500';
+                return sortedTypes.map((t, i) => {
+                  const pct = ((t.count / Math.max(1, totalDisplayed)) * 100).toFixed(1);
+                  const color = colorsMap[t.label] || 'bg-gray-500';
                   return (
-                    <div key={label} className="space-y-1">
+                    <div key={t.label} className="space-y-1">
                       <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-gray-400">{label}</span>
-                        <span className="text-white">{pct.toFixed(1)}%</span>
+                        <span className="text-gray-400">{t.label}</span>
+                        <span className="text-white">{pct}%</span>
                       </div>
                       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1 }} className={`h-full rounded-full ${color}`} />
+                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
+                          className={`h-full rounded-full ${color}`} />
                       </div>
                     </div>
                   );

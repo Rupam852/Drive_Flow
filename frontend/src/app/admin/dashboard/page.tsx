@@ -312,10 +312,20 @@ export default function AdminDashboard() {
                     .slice(0, 4);
 
                   const totalDisplayed = sortedTypes.reduce((sum, t) => sum + t.count, 0);
-                  const colors = ['bg-blue-400', 'bg-emerald-400', 'bg-pink-400', 'bg-amber-400'];
+                  const colorsMap: Record<string, string> = {
+                    PDF: 'bg-blue-500',
+                    DOCUMENT: 'bg-emerald-500',
+                    SPREADSHEET: 'bg-teal-500',
+                    PRESENTATION: 'bg-amber-500',
+                    IMAGE: 'bg-pink-500',
+                    VIDEO: 'bg-purple-500',
+                    ARCHIVE: 'bg-indigo-500',
+                    OTHER: 'bg-gray-500'
+                  };
 
                   return sortedTypes.map((t, i) => {
                     const pct = ((t.count / Math.max(1, totalDisplayed)) * 100).toFixed(1);
+                    const color = colorsMap[t.label] || 'bg-gray-500';
                     return (
                       <div key={t.label} className="space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
@@ -324,7 +334,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                           <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1, delay: 0.5 + i * 0.1 }}
-                            className={`h-full ${colors[i % colors.length]}`} />
+                            className={`h-full ${color}`} />
                         </div>
                       </div>
                     );
