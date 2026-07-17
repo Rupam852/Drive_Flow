@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw, AlertCircle, CheckCircle, AlertTriangle, Info, X } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -46,10 +46,20 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' | 'info' | 'warning' }[]>([]);
   const router = useRouter();
 
+  const addToast = (msg: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') => {
+    const id = Date.now();
+    setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(x => x.id !== id)), 4000);
+  };
+
   const load = async (cleanup = false) => {
-    if (cleanup) setRefreshing(true);
+    if (cleanup) {
+      setRefreshing(true);
+      addToast('Cleaning and syncing files...', 'info');
+    }
     else setLoading(true);
     setError('');
     try {
@@ -70,6 +80,7 @@ export default function AdminDashboard() {
 
       if (!statsRes.data && (statsRes as any).error) {
         setError(`Connection Error: ${api.defaults.baseURL}`);
+        addToast('Connection to server failed', 'error');
       }
 
       if (statsRes.data) setStats(statsRes.data);
@@ -77,9 +88,14 @@ export default function AdminDashboard() {
         setUserCount(usersRes.data.filter((u: any) => u.role !== 'admin').length);
       }
       if (logsRes.data) setLogs(logsRes.data.slice(0, 5));
+
+      if (cleanup) {
+        addToast('Deep refresh completed successfully!', 'success');
+      }
     } catch (e: any) {
       console.error('Dashboard load error:', e);
       setError('System Error: ' + (e.message || 'Unknown failure'));
+      addToast('Deep refresh failed', 'error');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -193,6 +209,7 @@ export default function AdminDashboard() {
   };
 
   return (
+    <>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -359,5 +376,55 @@ export default function AdminDashboard() {
         </motion.div>
       </div>
     </div>
+
+    {/* Toasts */}
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[200] flex flex-col gap-3 pointer-events-none w-[90vw] sm:w-auto">
+      <AnimatePresence>
+        {toasts.map(t => (
+          <motion.div key={t.id} 
+            initial={{ x: 100, opacity: 0, scale: 0.9 }} 
+            animate={{ x: 0, opacity: 1, scale: 1 }} 
+            exit={{ x: 100, opacity: 0, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className={`pointer-events-auto px-5 py-3.5 rounded-[20px] shadow-2xl backdrop-blur-xl border flex items-center gap-4 min-w-[280px] max-w-sm relative overflow-hidden group
+              ${t.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-emerald-500/10' : 
+                t.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-rose-500/10' : 
+                t.type === 'warning' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400 shadow-amber-500/10' :
+                'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-indigo-500/10'}`}>
+            
+            <div className={`absolute -right-4 -top-4 w-16 h-16 blur-2xl opacity-20 transition-opacity group-hover:opacity-40
+              ${t.type === 'success' ? 'bg-emerald-400' : 
+                t.type === 'error' ? 'bg-rose-400' : 
+                t.type === 'warning' ? 'bg-amber-400' :
+                'bg-indigo-400'}`} 
+            />
+
+            <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border shadow-inner
+              ${t.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30' : 
+                t.type === 'error' ? 'bg-rose-500/20 border-rose-500/30' : 
+                t.type === 'warning' ? 'bg-amber-500/20 border-amber-500/30' :
+                'bg-indigo-500/20 border-indigo-500/30'}`}>
+              {t.type === 'success' && <CheckCircle className="w-5 h-5" />}
+              {t.type === 'error' && <AlertCircle className="w-5 h-5" />}
+              {t.type === 'warning' && <AlertTriangle className="w-5 h-5" />}
+              {t.type === 'info' && <Info className="w-5 h-5" />}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-bold tracking-tight leading-tight mb-0.5 uppercase opacity-50">
+                {t.type}
+              </p>
+              <p className="text-sm font-medium text-white/90 truncate">{t.msg}</p>
+            </div>
+
+            <button onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))}
+              className="p-1 hover:bg-white/5 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+              <X className="w-3.5 h-3.5 text-gray-500" />
+            </button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+    </>
   );
 }
