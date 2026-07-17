@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.toggleHideFile = exports.findDuplicates = exports.getFileMetadata = exports.clearActivityLogs = exports.getDownloadLink = exports.finalizeUpload = exports.uploadProxy = exports.getUploadSession = exports.deleteUser = exports.updateUserStatus = exports.getAllUsers = exports.emptyTrash = exports.deletePermanently = exports.restoreAll = exports.restoreBulk = exports.restoreFile = exports.getTrashedFiles = exports.getUserActivityLogs = exports.getActivityLogs = exports.searchFiles = exports.bulkDownload = exports.getDriveStats = exports.downloadFile = exports.trashFiles = exports.moveFiles = exports.renameFile = exports.createDoc = exports.createFolder = exports.uploadFile = exports.listFiles = exports.upload = void 0;
+exports.getDownloadToken = exports.toggleHideFile = exports.findDuplicates = exports.getFileMetadata = exports.clearActivityLogs = exports.getDownloadLink = exports.finalizeUpload = exports.uploadProxy = exports.getUploadSession = exports.deleteUser = exports.updateUserStatus = exports.getAllUsers = exports.emptyTrash = exports.deletePermanently = exports.restoreAll = exports.restoreBulk = exports.restoreFile = exports.getTrashedFiles = exports.getUserActivityLogs = exports.getActivityLogs = exports.searchFiles = exports.bulkDownload = exports.getDriveStats = exports.downloadFile = exports.trashFiles = exports.moveFiles = exports.renameFile = exports.createDoc = exports.createFolder = exports.uploadFile = exports.listFiles = exports.upload = void 0;
 const axios_1 = __importDefault(require("axios"));
 const stream_1 = require("stream");
 const multer_1 = __importDefault(require("multer"));
@@ -591,8 +591,14 @@ const getDriveStats = async (req, res) => {
                 console.error('Sync error:', error);
             }
         };
-        // Trigger sync in background
-        syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
+        // Trigger sync
+        if (req.query.cleanup === 'true') {
+            console.log('[getDriveStats] Awaiting deep clean synchronization...');
+            await syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID);
+        }
+        else {
+            syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
+        }
         const isAdmin = req.user?.role === 'admin';
         // Calculate usedBytes from our LOCAL DB (Sum of all managed active files)
         const statsMatch = { rootId: DRIVE_FOLDER_ID, status: 'active', type: { $nin: ['application/vnd.google-apps.folder', 'folder'] } };
@@ -604,8 +610,8 @@ const getDriveStats = async (req, res) => {
             { $group: { _id: null, totalSize: { $sum: '$size' } } }
         ]);
         const usedBytes = statsResult.length > 0 ? statsResult[0].totalSize : 0;
-        // Set a VIRTUAL storage limit of exactly 10GB for our app
-        const limitBytes = 10737418240; // 10 GB in bytes (10 * 1024 * 1024 * 1024)
+        // Set a VIRTUAL storage limit of exactly 5GB for our app
+        const limitBytes = 5368709120; // 5 GB in bytes (5 * 1024 * 1024 * 1024)
         // Count ALL Active Files recursively (Strictly excluding folders)
         const fileCountQuery = {
             rootId: DRIVE_FOLDER_ID,
@@ -1286,4 +1292,37 @@ const toggleHideFile = async (req, res) => {
     }
 };
 exports.toggleHideFile = toggleHideFile;
+// @desc  Generate a short-lived download token
+// @route POST /api/files/download-token
+const getDownloadToken = async (req, res) => {
+    try {
+        const { fileId, fileIds } = req.body;
+        const jwt = require('jsonwebtoken');
+        let payload = {
+            id: req.user?._id,
+            purpose: 'download'
+        };
+        if (fileId) {
+            await verifyFileAccess(fileId, req);
+            payload.fileId = fileId;
+        }
+        else if (fileIds) {
+            const ids = fileIds.split(',');
+            for (const id of ids) {
+                await verifyFileAccess(id, req);
+            }
+            payload.fileIds = fileIds;
+        }
+        else {
+            res.status(400).json({ message: 'fileId or fileIds is required' });
+            return;
+        }
+        const downloadToken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '60s' });
+        res.json({ downloadToken });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.getDownloadToken = getDownloadToken;
 //# sourceMappingURL=fileController.js.map

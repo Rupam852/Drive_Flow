@@ -35,6 +35,7 @@ router.post('/doc', authMiddleware_1.protect, authMiddleware_1.approved, fileCon
 router.put('/move', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.moveFiles);
 router.put('/:id/rename', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.renameFile);
 router.delete('/', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.trashFiles);
+router.post('/download-token', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.getDownloadToken);
 router.get('/:id/download', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.downloadFile);
 router.get('/:id/direct-download', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.getDownloadLink);
 router.post('/upload-session', authMiddleware_1.protect, authMiddleware_1.approved, fileController_1.getUploadSession);

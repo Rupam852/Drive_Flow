@@ -679,8 +679,13 @@ export const getDriveStats = async (req: Request, res: Response) => {
       }
     };
 
-    // Trigger sync in background
-    syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
+    // Trigger sync
+    if (req.query.cleanup === 'true') {
+      console.log('[getDriveStats] Awaiting deep clean synchronization...');
+      await syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID);
+    } else {
+      syncDriveData(DRIVE_FOLDER_ID, userId, DRIVE_FOLDER_ID).catch(err => console.error("Background sync failed", err));
+    }
 
     const isAdmin = (req as any).user?.role === 'admin';
 
