@@ -1621,7 +1621,7 @@ function AdminFilesContent() {
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); handleToggleHide(file); }} title={file.isHidden ? 'Unhide (show to users)' : 'Hide from users'}
                           className={`p-1.5 rounded-lg transition-colors ${file.isHidden ? 'text-amber-400 hover:bg-amber-500/20 hover:text-amber-300' : 'text-gray-400 hover:bg-amber-500/10 hover:text-amber-400'}`}>
-                          {file.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                          {file.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); handleDelete([file.id]); }} title="Delete"
                           disabled={deletingIds.includes(file.id)}
@@ -1706,7 +1706,7 @@ function AdminFilesContent() {
                   <button onClick={e => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Rename"><Pencil className="w-4 h-4" /></button>
                   <button onClick={e => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Move"><Move className="w-4 h-4" /></button>
                   <button onClick={e => { e.stopPropagation(); handleToggleHide(file); }} className={`p-2 rounded-lg transition-colors ${file.isHidden ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-white/10 text-white hover:bg-amber-500/20 hover:text-amber-400'}`} title={file.isHidden ? 'Unhide' : 'Hide'}>
-                    {file.isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    {file.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                   <button onClick={e => { e.stopPropagation(); handleDelete([file.id]); }} className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400" title="Delete"><Trash2 className="w-4 h-4" /></button>
                 </div>
