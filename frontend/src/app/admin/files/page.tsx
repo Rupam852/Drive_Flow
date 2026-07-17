@@ -2122,7 +2122,7 @@ function AdminFilesContent() {
                     <div key={u._id} className="p-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all">
                       {/* Row 1: Avatar + Name + Status badge */}
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/30 to-pink-500/20 flex items-center justify-center text-purple-300 font-bold text-sm uppercase shrink-0 border border-white/10">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-900/40 via-indigo-950/30 to-purple-900/40 flex items-center justify-center text-blue-300 font-bold text-sm uppercase shrink-0 border border-white/10">
                           {u.name[0]}
                         </div>
                         <div className="flex-1 min-w-0">
