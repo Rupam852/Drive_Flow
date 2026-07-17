@@ -8,3 +8,24 @@ build/
 .next/
 out/
 app-debug.apk
+
+# ── Secrets & Credentials ──
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.pem
+*.key
+*.p8
+*.pkcs12
+*.p12
+*.jks
+*.keystore
+*credentials*.json
+*service-account*.json
+service-account.json
+credentials.json
+
+# ── OS Files ──
+.DS_Store
+Thumbs.db

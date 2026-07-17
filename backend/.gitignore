@@ -4,7 +4,19 @@ node_modules/
 # env files
 .env
 .env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # dist
 dist/
 build/
+
+# secrets
+*.pem
+*.key
+*credentials*.json
+*service-account*.json
+service-account.json
+credentials.json
