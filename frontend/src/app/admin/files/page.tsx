@@ -1108,13 +1108,22 @@ function AdminFilesContent() {
           reader.readAsDataURL(blob);
         });
 
-        await Filesystem.writeFile({
-          path: fileName,
-          data: base64data,
-          directory: Directory.Documents
-        });
-        
-        addToast(`Saved "${fileName}" to Documents!`, 'success');
+        const DownloadHelper = (window as any).Capacitor?.Plugins?.DownloadHelper;
+        if (DownloadHelper) {
+          await DownloadHelper.saveToDownloads({
+            fileName: fileName,
+            base64Data: base64data,
+            mimeType: blob.type || 'application/octet-stream'
+          });
+          addToast(`Saved "${fileName}" to Downloads!`, 'success');
+        } else {
+          await Filesystem.writeFile({
+            path: fileName,
+            data: base64data,
+            directory: Directory.Documents
+          });
+          addToast(`Saved "${fileName}" to Documents!`, 'success');
+        }
       } catch (err) {
         console.error('Native download error, falling back:', err);
         const a = document.createElement('a');
