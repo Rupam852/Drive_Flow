@@ -1088,16 +1088,64 @@ function AdminFilesContent() {
   };
 
   // Universal download trigger - works on both web and Android
-  const triggerDownload = (url: string) => {
-    // On Capacitor native (Android), _system opens system browser which handles downloads
+  const triggerDownload = async (url: string, fileName = 'file') => {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = isNative ? '_system' : '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => document.body.removeChild(a), 500);
+    if (isNative) {
+      addToast(`Downloading "${fileName}"...`);
+      try {
+        const Plugins = (window as any).Capacitor?.Plugins;
+        const Filesystem = Plugins?.Filesystem;
+        if (Filesystem) {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          const blob = await res.blob();
+          
+          const base64data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+
+          await Filesystem.writeFile({
+            path: fileName,
+            data: base64data,
+            directory: 'DOWNLOADS'
+          });
+          
+          addToast(`Saved "${fileName}" to Downloads!`, 'success');
+        } else {
+          // Fallback for old APKs
+          const a = document.createElement('a');
+          a.href = url;
+          a.target = '_system';
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => document.body.removeChild(a), 500);
+        }
+      } catch (err) {
+        console.error('Native download error, falling back:', err);
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_system';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => document.body.removeChild(a), 500);
+      }
+    } else {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => document.body.removeChild(a), 500);
+    }
   };
 
   const handleBulkDownload = async (customName?: string) => {
@@ -1141,7 +1189,7 @@ function AdminFilesContent() {
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&downloadToken=${dlToken}&fileName=${name}`;
       
       if (isNative) {
-        triggerDownload(url);
+        triggerDownload(url, (customName || 'DriveFlow_Export') + '.zip');
         setTimeout(() => setDownloadProgress(null), 3000);
       } else {
         const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
@@ -1186,8 +1234,9 @@ function AdminFilesContent() {
     }
 
     if (format) {
+      const ext = format === 'pdf' ? '.pdf' : '.docx';
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?downloadToken=${dlToken}&format=${format}`;
-      triggerDownload(url);
+      triggerDownload(url, file.name.replace(/\.[^.]+$/, '') + ext);
       setShowDownloadModal(false);
       return;
     }
@@ -1200,7 +1249,7 @@ function AdminFilesContent() {
       
       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
       if (isNative) {
-        triggerDownload(url);
+        triggerDownload(url, file.name + '.zip');
         setTimeout(() => setDownloadProgress(null), 3000);
       } else {
         try {
@@ -1236,7 +1285,7 @@ function AdminFilesContent() {
       
       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
       if (isNative) {
-        triggerDownload(url);
+        triggerDownload(url, file.name);
         setTimeout(() => setDownloadProgress(null), 2000);
       } else {
         const response = await api.get(`/files/${file.id}/download`, {

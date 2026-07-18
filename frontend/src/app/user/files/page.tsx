@@ -222,13 +222,43 @@ export default function UserFilesPage() {
   };
 
   // Universal download trigger - works on both web and Android WebView
-  const triggerDownload = (url: string, fileName = 'file') => {
+  const triggerDownload = async (url: string, fileName = 'file') => {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     if (isNative) {
-      // On Android: window.open with _system opens system browser for download
-      // This saves to the actual Downloads folder without navigating the WebView
       addToast(`Downloading "${fileName}"...`);
-      window.open(url, '_system');
+      try {
+        const Plugins = (window as any).Capacitor?.Plugins;
+        const Filesystem = Plugins?.Filesystem;
+        if (Filesystem) {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          const blob = await res.blob();
+          
+          const base64data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+
+          await Filesystem.writeFile({
+            path: fileName,
+            data: base64data,
+            directory: 'DOWNLOADS'
+          });
+          
+          addToast(`Saved "${fileName}" to Downloads!`, 'success');
+        } else {
+          // Fallback for old APKs
+          window.open(url, '_system');
+        }
+      } catch (err) {
+        console.error('Native download error, falling back:', err);
+        window.open(url, '_system');
+      }
     } else {
       // On web: standard anchor download
       const a = document.createElement('a');
