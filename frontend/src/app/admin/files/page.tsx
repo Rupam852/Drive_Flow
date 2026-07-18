@@ -1168,48 +1168,72 @@ function AdminFilesContent() {
     addToast('Preparing ZIP download...');
     setDownloadProgress(-1);
 
+    const ids = Array.from(selected).join(',');
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    const zipFileName = (customName || 'DriveFlow_Export') + '.zip';
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
     try {
-      const ids = Array.from(selected).join(',');
-      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-      let dlToken = '';
-      if (isNative) {
-        try {
-          const res = await api.post('/files/download-token', { fileIds: ids });
-          dlToken = res.data.downloadToken;
-        } catch (e) {
-          addToast('Download failed to start', 'error');
-          setDownloadProgress(null);
-          return;
+      const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
+        responseType: 'blob',
+        onDownloadProgress: (pe) => {
+          if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+          else setDownloadProgress(-1);
         }
-      }
-      const name = encodeURIComponent((customName || 'DriveFlow_Export') + '.zip');
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${ids}&downloadToken=${dlToken}&fileName=${name}`;
-      
+      });
+
       if (isNative) {
-        triggerDownload(url, (customName || 'DriveFlow_Export') + '.zip');
-        setTimeout(() => setDownloadProgress(null), 3000);
-      } else {
-        const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
-          responseType: 'blob',
-          onDownloadProgress: (pe) => {
-            if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
-            else setDownloadProgress(-1);
-          }
+        const base64data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(response.data);
         });
+
+        const DownloadHelper = (window as any).Capacitor?.Plugins?.DownloadHelper;
+        if (DownloadHelper) {
+          await DownloadHelper.saveToDownloads({
+            fileName: zipFileName,
+            base64Data: base64data,
+            mimeType: 'application/zip'
+          });
+          addToast(`Saved "${zipFileName}" to Downloads!`, 'success');
+        } else {
+          await Filesystem.writeFile({
+            path: zipFileName,
+            data: base64data,
+            directory: Directory.Documents
+          });
+          addToast(`Saved "${zipFileName}" to Documents!`, 'success');
+        }
+      } else {
         const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.setAttribute('download', (customName || 'DriveFlow_Export') + '.zip');
+        link.setAttribute('download', zipFileName);
         document.body.appendChild(link);
         link.click();
         link.remove();
         window.URL.revokeObjectURL(blobUrl);
-        setDownloadProgress(null);
       }
+      setDownloadProgress(null);
       setSelected(new Set());
     } catch (e: any) {
       addToast('Bulk download failed', 'error');
       setDownloadProgress(null);
+      if (isNative) {
+        let dlToken = '';
+        try {
+          const res = await api.post('/files/download-token', { fileIds: ids });
+          dlToken = res.data.downloadToken;
+        } catch (e) { return; }
+        const name = encodeURIComponent(zipFileName);
+        const url = `${apiBase}/files/bulk-download?fileIds=${ids}&downloadToken=${dlToken}&fileName=${name}`;
+        window.open(url, '_system');
+      }
     }
   };
 
@@ -1230,67 +1254,122 @@ function AdminFilesContent() {
       return;
     }
 
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+
     if (format) {
       const ext = format === 'pdf' ? '.pdf' : '.docx';
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?downloadToken=${dlToken}&format=${format}`;
+      const url = `${apiBase}/files/${file.id}/download?downloadToken=${dlToken}&format=${format}`;
       triggerDownload(url, file.name.replace(/\.[^.]+$/, '') + ext);
       setShowDownloadModal(false);
       return;
     }
 
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+
     if (isFolder(file)) {
       addToast('Preparing folder ZIP...');
       setDownloadProgress(-1);
-      const name = encodeURIComponent(file.name + '.zip');
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/bulk-download?fileIds=${file.id}&downloadToken=${dlToken}&fileName=${name}`;
+      const zipFileName = file.name + '.zip';
+      const name = encodeURIComponent(zipFileName);
+      const url = `${apiBase}/files/bulk-download?fileIds=${file.id}&downloadToken=${dlToken}&fileName=${name}`;
       
-      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-      if (isNative) {
-        triggerDownload(url, file.name + '.zip');
-        setTimeout(() => setDownloadProgress(null), 3000);
-      } else {
-        try {
-          const response = await api.get(`/files/bulk-download?fileIds=${file.id}`, {
-            responseType: 'blob',
-            onDownloadProgress: (pe) => {
-              if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
-              else setDownloadProgress(-1);
-            }
+      try {
+        const response = await api.get(`/files/bulk-download?fileIds=${file.id}`, {
+          responseType: 'blob',
+          onDownloadProgress: (pe) => {
+            if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+            else setDownloadProgress(-1);
+          }
+        });
+
+        if (isNative) {
+          const base64data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+              const base64 = (reader.result as string).split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(response.data);
           });
+
+          const DownloadHelper = (window as any).Capacitor?.Plugins?.DownloadHelper;
+          if (DownloadHelper) {
+            await DownloadHelper.saveToDownloads({
+              fileName: zipFileName,
+              base64Data: base64data,
+              mimeType: 'application/zip'
+            });
+            addToast(`Saved "${zipFileName}" to Downloads!`, 'success');
+          } else {
+            await Filesystem.writeFile({
+              path: zipFileName,
+              data: base64data,
+              directory: Directory.Documents
+            });
+            addToast(`Saved "${zipFileName}" to Documents!`, 'success');
+          }
+        } else {
           const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
           const link = document.createElement('a');
           link.href = blobUrl;
-          link.setAttribute('download', file.name + '.zip');
+          link.setAttribute('download', zipFileName);
           document.body.appendChild(link);
           link.click();
           link.remove();
           window.URL.revokeObjectURL(blobUrl);
-          setDownloadProgress(null);
-        } catch (e) {
-          addToast('Folder download failed', 'error');
-          setDownloadProgress(null);
+        }
+        setDownloadProgress(null);
+      } catch (e) {
+        addToast('Folder download failed', 'error');
+        setDownloadProgress(null);
+        if (isNative) {
+          window.open(url, '_system');
         }
       }
       return;
     }
 
-    // Single file: use direct download for mobile, or axios for web
+    // Single file
     addToast('Starting download...');
     setDownloadProgress(-1);
+    const url = `${apiBase}/files/${file.id}/download?downloadToken=${dlToken}`;
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${file.id}/download?downloadToken=${dlToken}`;
-      
-      const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+      const response = await api.get(`/files/${file.id}/download`, {
+        responseType: 'blob',
+        onDownloadProgress: (pe) => {
+          if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
+        }
+      });
+
       if (isNative) {
-        triggerDownload(url, file.name);
-        setTimeout(() => setDownloadProgress(null), 2000);
-      } else {
-        const response = await api.get(`/files/${file.id}/download`, {
-          responseType: 'blob',
-          onDownloadProgress: (pe) => {
-            if (pe.total) setDownloadProgress(Math.round((pe.loaded * 100) / pe.total));
-          }
+        const base64data = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1];
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(response.data);
         });
+
+        const DownloadHelper = (window as any).Capacitor?.Plugins?.DownloadHelper;
+        if (DownloadHelper) {
+          await DownloadHelper.saveToDownloads({
+            fileName: file.name,
+            base64Data: base64data,
+            mimeType: response.data.type || 'application/octet-stream'
+          });
+          addToast(`Saved "${file.name}" to Downloads!`, 'success');
+        } else {
+          await Filesystem.writeFile({
+            path: file.name,
+            data: base64data,
+            directory: Directory.Documents
+          });
+          addToast(`Saved "${file.name}" to Documents!`, 'success');
+        }
+      } else {
         const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');
         link.href = blobUrl;
@@ -1299,11 +1378,14 @@ function AdminFilesContent() {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(blobUrl);
-        setDownloadProgress(null);
       }
+      setDownloadProgress(null);
     } catch (e) {
       addToast('Download failed', 'error');
       setDownloadProgress(null);
+      if (isNative) {
+        window.open(url, '_system');
+      }
     }
     setShowDownloadModal(false);
   };
