@@ -91,6 +91,7 @@ const loginUser = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 status: user.status,
+                profilePic: user.profilePic,
                 token: generateToken(user._id.toString(), user.role),
             });
         }
@@ -301,6 +302,7 @@ const updateProfile = async (req, res) => {
                 email: user.email,
                 role: user.role,
                 status: user.status,
+                profilePic: user.profilePic,
             }
         });
     }

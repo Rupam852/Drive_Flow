@@ -99,6 +99,7 @@ export const loginUser = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
         status: user.status,
+        profilePic: user.profilePic,
         token: generateToken((user._id as any).toString(), user.role),
       });
     } else {
@@ -317,6 +318,7 @@ export const updateProfile = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
         status: user.status,
+        profilePic: user.profilePic,
       }
     });
   } catch (error) {
