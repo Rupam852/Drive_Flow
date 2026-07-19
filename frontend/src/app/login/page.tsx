@@ -308,8 +308,11 @@ export default function LoginPage() {
             Continue with Google
           </motion.button>
         ) : (
-          <div className="w-full flex justify-center">
+          <div className="w-full flex flex-col items-center justify-center">
             <div id="google-signin-btn" className="w-full min-h-[44px]" />
+            <p className="text-[10px] text-gray-500 mt-2 text-center max-w-[280px]">
+              If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
+            </p>
           </div>
         )}
 
