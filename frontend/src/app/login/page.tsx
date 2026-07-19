@@ -40,6 +40,20 @@ export default function LoginPage() {
     router.prefetch('/admin/dashboard');
 
     if (!isNative) {
+      // Direct Adblocker / Brave Shield check
+      const checkAdBlocker = async () => {
+        try {
+          await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-store',
+          });
+        } catch (err) {
+          setError('Adblocker or Brave Shield is active. Google Sign-In & Sign-Up may not work. Please disable it for this site and refresh.');
+        }
+      };
+      checkAdBlocker();
+
       const id = 'google-jssdk';
       const initGis = () => {
         if ((window as any).google) {
