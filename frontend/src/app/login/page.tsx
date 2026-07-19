@@ -40,40 +40,6 @@ export default function LoginPage() {
     router.prefetch('/admin/dashboard');
 
     if (!isNative) {
-      // Direct Adblocker / Brave Shield / Social Block check
-      const checkAdBlocker = async () => {
-        try {
-          // Check if Google Sign-in client library itself is blocked
-          await fetch('https://accounts.google.com/gsi/client', {
-            method: 'HEAD',
-            mode: 'no-cors',
-            cache: 'no-store',
-          });
-          // Check if Google Sign-in status endpoint is blocked (e.g. by Brave Shield)
-          await fetch('https://accounts.google.com/gsi/status', {
-            method: 'HEAD',
-            mode: 'no-cors',
-            cache: 'no-store',
-          });
-          // Check if Google Sign-in telemetry endpoint is blocked (Brave blocks this as tracking)
-          await fetch('https://accounts.google.com/gsi/log?format=json&hasfast=true', {
-            method: 'HEAD',
-            mode: 'no-cors',
-            cache: 'no-store',
-          });
-          // Also check standard Adblock list trigger
-          await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
-            method: 'HEAD',
-            mode: 'no-cors',
-            cache: 'no-store',
-          });
-        } catch (err) {
-          console.warn('Adblocker or Social Sign-in block detected:', err);
-          setError('Google Sign-In is blocked by Brave Shield or an Adblocker. Please disable shields/adblocker for this site and refresh.');
-        }
-      };
-      checkAdBlocker();
-
       const id = 'google-jssdk';
       const initGis = () => {
         if ((window as any).google) {
