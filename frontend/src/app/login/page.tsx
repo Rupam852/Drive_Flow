@@ -57,6 +57,8 @@ export default function LoginPage() {
               text: 'continue_with',
             });
           }
+        } else {
+          setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
         }
       };
 
@@ -70,6 +72,9 @@ export default function LoginPage() {
         script.defer = true;
         script.onload = () => {
           setTimeout(initGis, 100);
+        };
+        script.onerror = () => {
+          setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
         };
         document.body.appendChild(script);
       }

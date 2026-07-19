@@ -61,6 +61,8 @@ export default function RegisterPage() {
               text: 'signup_with',
             });
           }
+        } else {
+          setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
         }
       };
 
@@ -74,6 +76,9 @@ export default function RegisterPage() {
         script.defer = true;
         script.onload = () => {
           setTimeout(initGis, 100);
+        };
+        script.onerror = () => {
+          setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
         };
         document.body.appendChild(script);
       }
