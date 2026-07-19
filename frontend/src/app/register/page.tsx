@@ -44,17 +44,24 @@ export default function RegisterPage() {
     }
 
     if (!isNative) {
-      // Direct Adblocker / Brave Shield check
+      // Direct Adblocker / Brave Shield / Social Block check
       const checkAdBlocker = async () => {
         try {
+          // Check if Google Sign-in client library itself is blocked
+          await fetch('https://accounts.google.com/gsi/client', {
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-store',
+          });
+          // Also check standard Adblock list trigger
           await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
             method: 'HEAD',
             mode: 'no-cors',
             cache: 'no-store',
           });
         } catch (err) {
-          console.warn('Adblocker detected by DriveFlow:', err);
-          setError('Adblocker or Brave Shield is active. Google Sign-In & Sign-Up may not work. Please disable it for this site and refresh.');
+          console.warn('Adblocker or Social Sign-in block detected:', err);
+          setError('Google Sign-In is blocked by Brave Shield or an Adblocker. Please disable shields/adblocker for this site and refresh.');
         }
       };
       checkAdBlocker();
@@ -65,6 +72,10 @@ export default function RegisterPage() {
           (window as any).google.accounts.id.initialize({
             client_id: '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com',
             callback: handleGoogleCredentialResponse,
+            error_callback: (err: any) => {
+              console.warn('Google Sign-in error_callback:', err);
+              setError('Google Sign-In was blocked or failed to load. Please disable Brave Shields/Adblocker or check browser popup settings.');
+            }
           });
           const container = document.getElementById('google-signin-btn');
           if (container) {
