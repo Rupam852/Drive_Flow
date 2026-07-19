@@ -56,6 +56,13 @@ export default function LoginPage() {
               shape: 'pill',
               text: 'continue_with',
             });
+
+            // Check if rendering was blocked silently by Adblocker/Brave Shield
+            setTimeout(() => {
+              if (container.children.length === 0) {
+                setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
+              }
+            }, 1500);
           }
         } else {
           setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
