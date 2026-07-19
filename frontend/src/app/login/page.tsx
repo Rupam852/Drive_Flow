@@ -87,10 +87,12 @@ export default function LoginPage() {
           });
           const container = document.getElementById('google-signin-btn');
           if (container) {
+            const containerWidth = container.clientWidth || 384;
+            const finalWidth = Math.min(400, Math.max(200, containerWidth));
             (window as any).google.accounts.id.renderButton(container, {
               theme: 'outline',
               size: 'large',
-              width: 384, // matches card width
+              width: finalWidth,
               shape: 'rectangular',
               text: 'continue_with',
             });
