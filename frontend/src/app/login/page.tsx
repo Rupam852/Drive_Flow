@@ -44,7 +44,7 @@ export default function LoginPage() {
       const initGis = () => {
         if ((window as any).google) {
           (window as any).google.accounts.id.initialize({
-            client_id: '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com',
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com',
             callback: handleGoogleCredentialResponse,
             error_callback: (err: any) => {
               console.warn('Google Sign-in error_callback:', err);

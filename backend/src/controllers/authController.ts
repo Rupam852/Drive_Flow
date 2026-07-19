@@ -339,8 +339,8 @@ export const googleAuth = async (req: Request, res: Response) => {
     const ticket = await googleClient.verifyIdToken({
       idToken,
       audience: [
-        '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com', // Web Client ID
-        '807433349889-1lstbeco9bsmrtjeugvka2mi9ff9cq9u.apps.googleusercontent.com'  // Android Client ID
+        process.env.GOOGLE_CLIENT_ID || '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com', // Web Client ID
+        process.env.GOOGLE_ANDROID_CLIENT_ID || '807433349889-1lstbeco9bsmrtjeugvka2mi9ff9cq9u.apps.googleusercontent.com'  // Android Client ID
       ],
     });
 
