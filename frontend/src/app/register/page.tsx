@@ -92,10 +92,10 @@ export default function RegisterPage() {
           const container = document.getElementById('google-signin-btn');
           if (container) {
             (window as any).google.accounts.id.renderButton(container, {
-              theme: 'outline',
+              theme: 'filled_black',
               size: 'large',
               width: 384,
-              shape: 'pill',
+              shape: 'rectangular',
               text: 'signup_with',
             });
 
@@ -466,7 +466,7 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleNativeGoogleRegister}
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-medium transition-all"
+                className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-[#131314] hover:bg-[#1e1e1f] border border-white/10 text-white rounded-lg font-medium transition-all"
               >
                 <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                   <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.13-5.136 4.13A5.72 5.72 0 0 1 8.24 12.8a5.72 5.72 0 0 1 5.751-5.73 5.56 5.56 0 0 1 3.96 1.6l3.055-3.055A9.97 9.97 0 0 0 13.99 2 9.99 9.99 0 0 0 4 12a9.99 9.99 0 0 0 9.99 10c5.38 0 9.8-3.97 9.8-10 0-.68-.06-1.3-.16-1.715H12.24Z" />
