@@ -49,6 +49,7 @@ export default function LoginPage() {
             cache: 'no-store',
           });
         } catch (err) {
+          console.warn('Adblocker detected by DriveFlow:', err);
           setError('Adblocker or Brave Shield is active. Google Sign-In & Sign-Up may not work. Please disable it for this site and refresh.');
         }
       };
