@@ -49,6 +49,12 @@ export default function LoginPage() {
             mode: 'no-cors',
             cache: 'no-store',
           });
+          // Check if Google Sign-in status endpoint is blocked (e.g. by Brave Shield)
+          await fetch('https://accounts.google.com/gsi/status', {
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-store',
+          });
           // Also check standard Adblock list trigger
           await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
             method: 'HEAD',
