@@ -86,7 +86,7 @@ export default function LoginPage() {
     setError('');
     setIsSubmitting(true);
     try {
-      const res = await api.post('/auth/google', { idToken });
+      const res = await api.post('/auth/google', { idToken, action: 'login' });
       const userData = res.data;
 
       if (userData.status === 'pending') {

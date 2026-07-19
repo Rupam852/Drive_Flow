@@ -330,7 +330,7 @@ const googleClient = new OAuth2Client();
 
 export const googleAuth = async (req: Request, res: Response) => {
   try {
-    const { idToken } = req.body;
+    const { idToken, action } = req.body;
     if (!idToken) {
       res.status(400).json({ message: 'idToken is required' });
       return;
@@ -395,7 +395,13 @@ export const googleAuth = async (req: Request, res: Response) => {
         token: generateToken(user._id.toString(), user.role),
       });
     } else {
-      // Register new user
+      // User does not exist
+      if (action === 'login') {
+        res.status(404).json({ message: 'No account found with this email. Please register first.' });
+        return;
+      }
+
+      // Register new user (action is 'register')
       const randomPassword = crypto.randomBytes(16).toString('hex');
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(randomPassword, salt);

@@ -314,7 +314,7 @@ exports.updateProfile = updateProfile;
 const googleClient = new google_auth_library_1.OAuth2Client();
 const googleAuth = async (req, res) => {
     try {
-        const { idToken } = req.body;
+        const { idToken, action } = req.body;
         if (!idToken) {
             res.status(400).json({ message: 'idToken is required' });
             return;
@@ -372,7 +372,12 @@ const googleAuth = async (req, res) => {
             });
         }
         else {
-            // Register new user
+            // User does not exist
+            if (action === 'login') {
+                res.status(404).json({ message: 'No account found with this email. Please register first.' });
+                return;
+            }
+            // Register new user (action is 'register')
             const randomPassword = crypto_1.default.randomBytes(16).toString('hex');
             const salt = await bcryptjs_1.default.genSalt(10);
             const passwordHash = await bcryptjs_1.default.hash(randomPassword, salt);

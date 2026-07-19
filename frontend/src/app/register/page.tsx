@@ -90,7 +90,7 @@ export default function RegisterPage() {
     setError('');
     setIsSubmitting(true);
     try {
-      const res = await api.post('/auth/google', { idToken });
+      const res = await api.post('/auth/google', { idToken, action: 'register' });
       const userData = res.data;
 
       if (userData.status === 'pending') {
