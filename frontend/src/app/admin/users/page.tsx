@@ -11,6 +11,7 @@ interface User {
   email: string;
   role: string;
   status: 'pending' | 'approved' | 'rejected';
+  profilePic?: string;
   createdAt: string;
 }
 
@@ -121,9 +122,18 @@ export default function AdminUsersPage() {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-tr from-blue-900 via-indigo-950 to-purple-900 flex items-center justify-center border border-white/10 text-white text-sm font-bold">
-                            {user.name[0].toUpperCase()}
-                          </div>
+                          {user.profilePic ? (
+                            <img 
+                              src={user.profilePic} 
+                              alt={user.name} 
+                              className="w-8 h-8 shrink-0 rounded-full object-cover border border-white/10"
+                              referrerPolicy="no-referrer"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-tr from-blue-900 via-indigo-950 to-purple-900 flex items-center justify-center border border-white/10 text-white text-sm font-bold">
+                              {user.name[0].toUpperCase()}
+                            </div>
+                          )}
                           <span className="text-white font-medium">{user.name}</span>
                         </div>
                       </td>

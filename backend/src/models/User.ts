@@ -9,6 +9,8 @@ export interface IUser extends Document {
   isEmailVerified: boolean;
   emailVerificationOtp?: string;
   otpExpires?: Date;
+  googleId?: string;
+  profilePic?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,6 +29,8 @@ const userSchema = new Schema<IUser>(
     isEmailVerified: { type: Boolean, default: false },
     emailVerificationOtp: { type: String },
     otpExpires: { type: Date },
+    googleId: { type: String },
+    profilePic: { type: String },
   },
   { timestamps: true }
 );

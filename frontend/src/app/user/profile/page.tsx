@@ -162,9 +162,18 @@ export default function ProfilePage() {
 
         {/* Profile Header Avatar */}
         <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-white/5">
-          <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-900 via-indigo-950 to-purple-900 flex items-center justify-center border border-white/10 text-white font-extrabold text-3xl">
-            {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
-          </div>
+          {userData.profilePic ? (
+            <img 
+              src={userData.profilePic} 
+              alt={userData.name} 
+              className="w-24 h-24 rounded-3xl object-cover border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-900 via-indigo-950 to-purple-900 flex items-center justify-center border border-white/10 text-white font-extrabold text-3xl">
+              {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+            </div>
+          )}
           <div className="text-center sm:text-left space-y-1">
             <h3 className="text-xl font-bold text-white">{userData.name}</h3>
           </div>

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail, User, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
 export default function RegisterPage() {
@@ -24,8 +25,13 @@ export default function RegisterPage() {
   const [showOtp, setShowOtp] = useState(false);
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isNativeApp, setIsNativeApp] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
+    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
+    setIsNativeApp(isNative);
+
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const emailParam = params.get('email');
@@ -36,7 +42,105 @@ export default function RegisterPage() {
         setShowOtp(true);
       }
     }
-  }, []);
+
+    if (!isNative) {
+      const id = 'google-jssdk';
+      const initGis = () => {
+        if ((window as any).google) {
+          (window as any).google.accounts.id.initialize({
+            client_id: '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com',
+            callback: handleGoogleCredentialResponse,
+          });
+          const container = document.getElementById('google-signin-btn');
+          if (container) {
+            (window as any).google.accounts.id.renderButton(container, {
+              theme: 'outline',
+              size: 'large',
+              width: 384,
+              shape: 'pill',
+              text: 'signup_with',
+            });
+          }
+        }
+      };
+
+      if (document.getElementById(id)) {
+        setTimeout(initGis, 100);
+      } else {
+        const script = document.createElement('script');
+        script.id = id;
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          setTimeout(initGis, 100);
+        };
+        document.body.appendChild(script);
+      }
+    }
+  }, [router]);
+
+  const handleGoogleCredentialResponse = async (response: any) => {
+    if (response?.credential) {
+      await submitGoogleRegister(response.credential);
+    }
+  };
+
+  const submitGoogleRegister = async (idToken: string) => {
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const res = await api.post('/auth/google', { idToken });
+      const userData = res.data;
+
+      if (userData.status === 'pending') {
+        setSuccess(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      localStorage.setItem('token', userData.token);
+      localStorage.setItem(`token_${userData.role}`, userData.token);
+      localStorage.setItem('role', userData.role);
+      localStorage.setItem('user', JSON.stringify(userData));
+
+      if (userData.role === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/user/dashboard');
+      }
+    } catch (err: any) {
+      if (err.response?.status === 403) {
+        setError(err.response.data.message || 'Google account is pending approval.');
+      } else {
+        setError(err.response?.data?.message || 'Google Sign-Up failed.');
+      }
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleNativeGoogleRegister = async () => {
+    setError('');
+    const GoogleAuthPlugin = (window as any).Capacitor?.Plugins?.GoogleAuthPlugin;
+    if (!GoogleAuthPlugin) {
+      setError('Native Google Sign-In helper is not loaded.');
+      return;
+    }
+
+    try {
+      const res = await GoogleAuthPlugin.login({
+        webClientId: '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com'
+      });
+      if (res?.idToken) {
+        await submitGoogleRegister(res.idToken);
+      } else {
+        setError('Failed to obtain Google login ID token.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || 'Native Google Sign-In cancelled or failed.');
+    }
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -296,13 +400,42 @@ export default function RegisterPage() {
             </motion.button>
           </form>
         )}
+
         {!success && !showOtp && (
-          <p className="mt-6 text-center text-sm text-gray-400">
-            Already have an account?{' '}
-            <Link href="/login" className="text-white font-medium hover:text-[var(--color-primary)] transition-colors">
-              Sign in
-            </Link>
-          </p>
+          <>
+            <div className="relative flex py-2 items-center justify-center my-4">
+              <div className="flex-grow border-t border-white/10"></div>
+              <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+              <div className="flex-grow border-t border-white/10"></div>
+            </div>
+
+            {isNativeApp ? (
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                type="button"
+                onClick={handleNativeGoogleRegister}
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-medium transition-all"
+              >
+                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.13-5.136 4.13A5.72 5.72 0 0 1 8.24 12.8a5.72 5.72 0 0 1 5.751-5.73 5.56 5.56 0 0 1 3.96 1.6l3.055-3.055A9.97 9.97 0 0 0 13.99 2 9.99 9.99 0 0 0 4 12a9.99 9.99 0 0 0 9.99 10c5.38 0 9.8-3.97 9.8-10 0-.68-.06-1.3-.16-1.715H12.24Z" />
+                </svg>
+                Sign up with Google
+              </motion.button>
+            ) : (
+              <div className="w-full flex justify-center">
+                <div id="google-signin-btn" className="w-full min-h-[44px]" />
+              </div>
+            )}
+
+            <p className="mt-6 text-center text-sm text-gray-400">
+              Already have an account?{' '}
+              <Link href="/login" className="text-white font-medium hover:text-[var(--color-primary)] transition-colors">
+                Sign in
+              </Link>
+            </p>
+          </>
         )}
       </motion.div>
     </div>

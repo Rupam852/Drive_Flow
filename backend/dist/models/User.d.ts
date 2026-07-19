@@ -8,6 +8,8 @@ export interface IUser extends Document {
     isEmailVerified: boolean;
     emailVerificationOtp?: string;
     otpExpires?: Date;
+    googleId?: string;
+    profilePic?: string;
     createdAt: Date;
     updatedAt: Date;
 }

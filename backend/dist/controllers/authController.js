@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProfile = exports.getAppVersion = exports.seedAdmin = exports.resendOtp = exports.verifyEmail = exports.loginUser = exports.registerUser = void 0;
+exports.googleAuth = exports.updateProfile = exports.getAppVersion = exports.seedAdmin = exports.resendOtp = exports.verifyEmail = exports.loginUser = exports.registerUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const fs_1 = __importDefault(require("fs"));
@@ -12,6 +12,7 @@ const User_1 = require("../models/User");
 const logger_1 = require("../utils/logger");
 const mailer_1 = require("../utils/mailer");
 const crypto_1 = __importDefault(require("crypto"));
+const google_auth_library_1 = require("google-auth-library");
 const generateToken = (id, role) => {
     return jsonwebtoken_1.default.sign({ id, role }, process.env.JWT_SECRET, {
         expiresIn: '30d',
@@ -308,4 +309,129 @@ const updateProfile = async (req, res) => {
     }
 };
 exports.updateProfile = updateProfile;
+const googleClient = new google_auth_library_1.OAuth2Client();
+const googleAuth = async (req, res) => {
+    try {
+        const { idToken } = req.body;
+        if (!idToken) {
+            res.status(400).json({ message: 'idToken is required' });
+            return;
+        }
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: [
+                '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com', // Web Client ID
+                '807433349889-1lstbeco9bsmrtjeugvka2mi9ff9cq9u.apps.googleusercontent.com' // Android Client ID
+            ],
+        });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+            res.status(400).json({ message: 'Invalid token payload' });
+            return;
+        }
+        const { email, name, picture, sub: googleId } = payload;
+        // Check if user exists
+        let user = await User_1.User.findOne({ email });
+        if (user) {
+            let updated = false;
+            if (picture && user.profilePic !== picture) {
+                user.profilePic = picture;
+                updated = true;
+            }
+            if (!user.googleId) {
+                user.googleId = googleId;
+                updated = true;
+            }
+            if (!user.isEmailVerified) {
+                user.isEmailVerified = true;
+                updated = true;
+            }
+            if (updated) {
+                await user.save();
+            }
+            // Check status
+            if (user.status === 'pending') {
+                res.status(403).json({ message: 'Please wait for admin approval. Contact admin.' });
+                return;
+            }
+            if (user.status === 'rejected') {
+                res.status(403).json({ message: 'Your profile has been rejected. Please contact admin.' });
+                return;
+            }
+            await (0, logger_1.logActivity)(user._id.toString(), 'login', `User logged in via Google: ${user.name}`);
+            res.status(200).json({
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                status: user.status,
+                profilePic: user.profilePic,
+                token: generateToken(user._id.toString(), user.role),
+            });
+        }
+        else {
+            // Register new user
+            const randomPassword = crypto_1.default.randomBytes(16).toString('hex');
+            const salt = await bcryptjs_1.default.genSalt(10);
+            const passwordHash = await bcryptjs_1.default.hash(randomPassword, salt);
+            user = await User_1.User.create({
+                name: name || email.split('@')[0],
+                email,
+                passwordHash,
+                role: 'user',
+                status: 'pending',
+                isEmailVerified: true, // Google verifies email
+                googleId,
+                profilePic: picture,
+            });
+            // Send confirmation to user
+            const userHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
+          <h2 style="color: #2563eb; text-align: center; margin-bottom: 20px;">Welcome to DriveFlow!</h2>
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${user.name}</strong>,</p>
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Thank you for registering using Google!</p>
+          <div style="background-color: #eff6ff; border-left: 4px solid #2563eb; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <p style="font-size: 15px; color: #1e3a8a; margin: 0; font-weight: bold;">Account Status: Pending Admin Approval</p>
+            <p style="font-size: 14px; color: #1e40af; margin: 5px 0 0 0;">Please wait up to <strong>2 hours</strong>. Our admin team will quickly review and approve your account.</p>
+          </div>
+          <p style="font-size: 15px; color: #333; line-height: 1.6;">You will receive an automated email confirmation as soon as your account is approved and ready to access!</p>
+          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
+          <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+        </div>
+      `;
+            (0, mailer_1.sendCustomEmail)(user.email, '[DriveFlow] Account Pending Approval', userHtml).catch(console.error);
+            // Send alert to admin
+            const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'bott27124@gmail.com';
+            const adminHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #fcfcfc;">
+          <h2 style="color: #8b5cf6; text-align: center; margin-bottom: 20px;">🚨 New User Registered (via Google)</h2>
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello Admin,</p>
+          <p style="font-size: 16px; color: #333; line-height: 1.6;">A new user has registered using Google Sign-In and is now waiting for your manual approval to access DriveFlow.</p>
+          <div style="background-color: #faf5ff; border: 1px dashed #8b5cf6; padding: 15px; margin: 20px 0; border-radius: 8px;">
+            <p style="font-size: 15px; color: #581c87; margin: 0 0 8px 0; font-weight: bold;">User Details:</p>
+            <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Name:</strong> ${user.name}</p>
+            <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Email:</strong> ${user.email}</p>
+            <p style="font-size: 14px; color: #333; margin: 4px 0;"><strong>Registered At:</strong> ${new Date().toLocaleString()}</p>
+          </div>
+          <p style="font-size: 15px; color: #333; line-height: 1.6;">Please log into your Admin Panel to approve or reject this user's profile.</p>
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="${process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app'}/login" style="background-color: #8b5cf6; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 10px rgba(139,92,246,0.25); display: inline-block;">Go to Admin Dashboard</a>
+          </div>
+          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
+          <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Automation Relay</p>
+        </div>
+      `;
+            (0, mailer_1.sendCustomEmail)(adminEmail, '[DriveFlow Alert] New User Pending Approval', adminHtml).catch(console.error);
+            await (0, logger_1.logActivity)(user._id.toString(), 'register', `New user registered via Google: ${user.name}`);
+            res.status(202).json({
+                status: 'pending',
+                message: 'Registration successful. Please wait for admin approval.',
+            });
+        }
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.googleAuth = googleAuth;
 //# sourceMappingURL=authController.js.map

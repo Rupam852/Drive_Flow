@@ -12,6 +12,7 @@ router.get('/ping', (req, res) => { res.json({ status: 'ok' }); });
 router.get('/app-version', authController_1.getAppVersion);
 router.post('/register', authController_1.registerUser);
 router.post('/login', authController_1.loginUser);
+router.post('/google', authController_1.googleAuth);
 router.post('/verify-email', authController_1.verifyEmail);
 router.post('/resend-otp', authController_1.resendOtp);
 router.post('/forgot-password', passwordController_1.forgotPassword);
