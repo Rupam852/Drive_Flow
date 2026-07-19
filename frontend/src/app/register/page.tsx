@@ -59,6 +59,12 @@ export default function RegisterPage() {
             mode: 'no-cors',
             cache: 'no-store',
           });
+          // Check if Google Sign-in telemetry endpoint is blocked (Brave blocks this as tracking)
+          await fetch('https://accounts.google.com/gsi/log?format=json&hasfast=true', {
+            method: 'HEAD',
+            mode: 'no-cors',
+            cache: 'no-store',
+          });
           // Also check standard Adblock list trigger
           await fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', {
             method: 'HEAD',
