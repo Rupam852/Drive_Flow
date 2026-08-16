@@ -89,22 +89,28 @@ export default function UserFilesPage() {
     await fetchStats();
   });
 
-  // Animate fake counter 1→99 during indeterminate download phase
+  // Animate fake counter 1→95 during indeterminate download phase
   useEffect(() => {
     if (downloadProgress === -1) {
       setFakeProgress(1);
       const interval = setInterval(() => {
         setFakeProgress(prev => {
-          if (prev >= 99) { clearInterval(interval); return 99; }
-          const step = prev < 30 ? 3 : prev < 60 ? 2 : prev < 85 ? 1 : 0.3;
-          return Math.min(99, prev + step);
+          if (prev >= 95) { clearInterval(interval); return 95; }
+          const step = prev < 35 ? 4 : prev < 70 ? 2 : prev < 85 ? 1 : 0.4;
+          return Math.min(95, prev + step);
         });
-      }, 200);
+      }, 150);
       return () => clearInterval(interval);
     } else {
       setFakeProgress(0);
     }
   }, [downloadProgress]);
+
+  const finishDownloadModal = async () => {
+    setDownloadProgress(100);
+    await new Promise(resolve => setTimeout(resolve, 450));
+    setDownloadProgress(null);
+  };
   const currentFolder = path[path.length - 1]!;
 
   const loadFiles = async (folderId: string) => {
@@ -352,7 +358,7 @@ export default function UserFilesPage() {
           link.remove();
           window.URL.revokeObjectURL(blobUrl);
         }
-        setDownloadProgress(null);
+        await finishDownloadModal();
       } catch (e) {
         addToast('Conversion download failed', 'error');
         setDownloadProgress(null);
@@ -418,7 +424,7 @@ export default function UserFilesPage() {
           link.remove();
           window.URL.revokeObjectURL(blobUrl);
         }
-        setDownloadProgress(null);
+        await finishDownloadModal();
       } catch (e) {
         addToast('Folder download failed', 'error');
         setDownloadProgress(null);
@@ -480,7 +486,7 @@ export default function UserFilesPage() {
         link.remove();
         window.URL.revokeObjectURL(blobUrl);
       }
-      setDownloadProgress(null);
+      await finishDownloadModal();
     } catch (e) {
       addToast('Download failed', 'error');
       setDownloadProgress(null);
@@ -554,7 +560,7 @@ export default function UserFilesPage() {
         window.URL.revokeObjectURL(blobUrl);
         addToast(`Downloaded: "${zipFileName}"`);
       }
-      setDownloadProgress(null);
+      await finishDownloadModal();
       setSelected(new Set());
     } catch (e) {
       console.error(e);
@@ -1127,20 +1133,16 @@ export default function UserFilesPage() {
                     strokeWidth="8"
                     strokeLinecap="round"
                     strokeDasharray={251}
-                    animate={downloadProgress === -1
-                      ? { strokeDashoffset: [210, 20, 210], rotate: [0, 360] }
-                      : { strokeDashoffset: 251 - (251 * downloadProgress) / 100 }
-                    }
-                    transition={downloadProgress === -1
-                      ? { duration: 1.4, repeat: Infinity, ease: "easeInOut" }
-                      : { duration: 0.4, ease: "easeOut" }
-                    }
+                    animate={{
+                      strokeDashoffset: 251 - (251 * (downloadProgress === -1 ? Math.round(fakeProgress) : downloadProgress)) / 100
+                    }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
                     style={{ originX: '50%', originY: '50%' }}
                   />
                   <defs>
                     <linearGradient id="dlGradUser" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="#8b5cf6" />
-                      <stop offset="100%" stopColor="#ec4899" />
+                      <stop offset="0%" stopColor="#06b6d4" />
+                      <stop offset="100%" stopColor="#3b82f6" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -1160,28 +1162,27 @@ export default function UserFilesPage() {
               </div>
 
               <h3 className="text-lg font-bold text-white mb-1">
-                {downloadProgress === -1 ? 'Preparing...' : `Downloading ${downloadProgress}%`}
+                {downloadProgress === -1
+                  ? (fakeProgress < 35 ? 'Preparing...' : `Downloading ${Math.round(fakeProgress)}%`)
+                  : downloadProgress === 100
+                    ? '100% Complete!'
+                    : `Downloading ${downloadProgress}%`}
               </h3>
               <p className="text-xs text-gray-400 leading-relaxed">
-                {downloadProgress === -1 ? 'Zipping your files, please wait' : 'Downloading your files...'}
+                {downloadProgress === -1
+                  ? (fakeProgress < 35 ? 'Zipping & preparing your files, please wait' : 'Transferring file data...')
+                  : downloadProgress === 100
+                    ? 'File downloaded successfully'
+                    : 'Downloading your files...'}
               </p>
 
               {/* Progress bar */}
               <div className="mt-6 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                {downloadProgress === -1 ? (
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-purple-600 to-pink-500 rounded-full"
-                    animate={{ width: `${Math.round(fakeProgress)}%` }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
-                  />
-                ) : (
-                  <motion.div
-                    className="h-full bg-gradient-to-r from-purple-600 to-pink-500 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${downloadProgress}%` }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                  />
-                )}
+                <motion.div
+                  className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
+                  animate={{ width: `${downloadProgress === -1 ? Math.round(fakeProgress) : downloadProgress}%` }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                />
               </div>
 
             </motion.div>
