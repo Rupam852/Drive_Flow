@@ -312,7 +312,7 @@ export default function LoginPage() {
           </motion.button>
         ) : (
           <div className="w-full flex flex-col items-center justify-center">
-            <div id="google-signin-btn" className="w-full min-h-[44px]" />
+            <div id="google-signin-btn" className="w-full h-[44px] flex items-center justify-center overflow-hidden" />
             <p className="text-[10px] text-gray-500 mt-2 text-center max-w-[280px]">
               If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
             </p>
@@ -341,7 +341,7 @@ export default function LoginPage() {
         >
           {/* Pulsing dot */}
           <span className="absolute top-3 right-3 flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
           <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
