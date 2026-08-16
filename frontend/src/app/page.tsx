@@ -34,14 +34,14 @@ export default function Home() {
   return (
     <div className={`min-h-screen w-full bg-[#080711] flex flex-col items-center justify-center relative overflow-hidden transition-opacity duration-300 ${isFading ? 'opacity-0' : 'opacity-100'}`}>
       {/* Soft Ambient Background Orbs */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-indigo-600/20 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-1/3 right-1/3 w-60 h-60 bg-violet-600/15 rounded-full blur-[90px] pointer-events-none" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-cyan-500/15 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-1/3 right-1/3 w-60 h-60 bg-blue-600/15 rounded-full blur-[90px] pointer-events-none" />
 
       {/* Center Glass Card Container */}
       <div className="relative z-10 flex flex-col items-center gap-6 p-8 rounded-3xl soft-glass-card border border-white/10 shadow-2xl animate-fade-in max-w-xs w-full text-center">
         {/* App Logo Badge */}
         <div className="relative">
-          <div className="w-20 h-20 bg-gradient-to-tr from-indigo-600 via-purple-600 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+          <div className="w-20 h-20 bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/30">
             <HardDrive className="w-10 h-10 text-white animate-pulse" />
           </div>
         </div>
@@ -49,12 +49,12 @@ export default function Home() {
         {/* Title & Tagline */}
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-white tracking-tight">DriveFlow</h1>
-          <p className="text-xs text-purple-300/70 font-medium">Securing Workspace...</p>
+          <p className="text-xs text-cyan-300/80 font-medium">Securing Workspace...</p>
         </div>
 
         {/* Soft Glowing Spinner */}
         <div className="flex items-center gap-3 pt-2">
-          <div className="w-6 h-6 border-2 border-purple-500/30 border-t-purple-400 rounded-full animate-spin" />
+          <div className="w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
         </div>
       </div>
     </div>
