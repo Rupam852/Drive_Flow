@@ -16,6 +16,12 @@ export default function Home() {
     const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
     const targetPath = (role && token) ? (role === 'admin' ? '/admin/dashboard' : '/user/dashboard') : '/login';
 
+    // If not authenticated, redirect to /login immediately without showing spinner flash
+    if (targetPath === '/login') {
+      router.replace('/login');
+      return;
+    }
+
     // Pre-fetch target to speed up transition
     router.prefetch(targetPath);
 
