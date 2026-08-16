@@ -21,7 +21,10 @@ export default function LoginPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean; email?: string } | null>(null);
-  const [isNativeApp, setIsNativeApp] = useState(false);
+  const [isNativeApp, setIsNativeApp] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !!(window as any).Capacitor?.isNativePlatform?.();
+  });
   const router = useRouter();
 
   // Handle auto-login redirect or bypass loading screen and load Google SDK
