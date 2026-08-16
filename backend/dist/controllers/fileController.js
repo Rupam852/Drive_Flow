@@ -45,8 +45,14 @@ const verifyFileAccess = async (fileId, req) => {
     }
     return meta;
 };
-// Helper to calculate folder sizes in O(N) memory without lagging
+// Helper to calculate folder sizes in O(N) memory with a 10s TTL cache to eliminate DB lag
+let folderSizeCache = null;
+const CACHE_TTL_MS = 10000;
 const createFolderSizeCalculator = async () => {
+    const now = Date.now();
+    if (folderSizeCache && (now - folderSizeCache.timestamp < CACHE_TTL_MS)) {
+        return folderSizeCache.computeSize;
+    }
     const allFiles = await FileMetadata_1.FileMetadata.find({ status: 'active' }, 'fileId parentId size type').lean();
     const childrenMap = {};
     for (const f of allFiles) {
@@ -73,6 +79,7 @@ const createFolderSizeCalculator = async () => {
         sizesMap[folderId] = total;
         return total;
     };
+    folderSizeCache = { computeSize, timestamp: now };
     return computeSize;
 };
 // @desc  List all files/folders
@@ -811,31 +818,55 @@ exports.getUserActivityLogs = getUserActivityLogs;
 // @desc  Get all trashed files
 const getTrashedFiles = async (req, res) => {
     try {
-        // In Google Drive, when you trash a folder, its children also have trashed=true.
-        // To show only "top-level" trashed items, we can't easily do it with just 'q'.
-        // However, usually we only want to show items that the user explicitly deleted.
-        const files = await googleDrive_1.default.files.list({
-            q: "trashed = true",
-            fields: 'files(id, name, mimeType, size, modifiedTime, parents)',
-            pageSize: 100,
-        });
-        const allFiles = files.data.files || [];
-        const trashedIds = new Set(allFiles.map(f => f.id));
-        // Filter by files that belong to the current rootId in our DB
-        const rootTrashedMetas = await FileMetadata_1.FileMetadata.find({ rootId: DRIVE_FOLDER_ID, status: 'trashed' });
+        const query = DRIVE_FOLDER_ID ? { rootId: DRIVE_FOLDER_ID, status: 'trashed' } : { status: 'trashed' };
+        const rootTrashedMetas = await FileMetadata_1.FileMetadata.find(query).lean();
+        // If no trashed items in DB, return [] instantly without calling Google Drive API
+        if (!rootTrashedMetas || rootTrashedMetas.length === 0) {
+            return res.json([]);
+        }
         const rootTrashedIds = new Set(rootTrashedMetas.map(m => m.fileId));
-        const topLevelTrash = allFiles.filter(f => {
-            // Must belong to this root
-            if (!f.id || !rootTrashedIds.has(f.id))
-                return false;
-            if (!f.parents || f.parents.length === 0)
+        let allFiles = [];
+        try {
+            const filesRes = await googleDrive_1.default.files.list({
+                q: "trashed = true",
+                fields: 'files(id, name, mimeType, size, modifiedTime, parents)',
+                pageSize: 500,
+            });
+            allFiles = filesRes.data.files || [];
+        }
+        catch (e) {
+            console.warn('[getTrashedFiles] Google Drive API list failed, using DB metadata fallback:', e.message);
+        }
+        if (allFiles.length > 0) {
+            const trashedIds = new Set(allFiles.map(f => f.id));
+            const topLevelTrash = allFiles.filter(f => {
+                if (!f.id || !rootTrashedIds.has(f.id))
+                    return false;
+                if (!f.parents || f.parents.length === 0)
+                    return true;
+                return !f.parents.some((parentId) => trashedIds.has(parentId));
+            });
+            return res.json(topLevelTrash);
+        }
+        // Fallback: Construct topLevelTrash directly from DB metadata
+        const topLevelDbTrash = rootTrashedMetas
+            .filter(meta => {
+            if (!meta.parentId)
                 return true;
-            // If any parent is also in the trash list, this is a nested item
-            return !f.parents.some(parentId => trashedIds.has(parentId));
-        });
-        res.json(topLevelTrash);
+            return !rootTrashedIds.has(meta.parentId);
+        })
+            .map(meta => ({
+            id: meta.fileId,
+            name: meta.name || 'Untitled',
+            mimeType: meta.type,
+            size: meta.size?.toString() || '0',
+            modifiedTime: meta.updatedAt ? meta.updatedAt.toISOString() : meta.createdAt ? meta.createdAt.toISOString() : new Date().toISOString(),
+            parents: meta.parentId ? [meta.parentId] : []
+        }));
+        res.json(topLevelDbTrash);
     }
     catch (error) {
+        console.error('[getTrashedFiles] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };

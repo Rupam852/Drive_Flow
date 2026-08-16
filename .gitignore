@@ -8,6 +8,7 @@ build/
 .next/
 out/
 app-debug.apk
+app-universal-release.apk
 
 # ── Secrets & Credentials ──
 .env.local

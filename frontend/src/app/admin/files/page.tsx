@@ -513,13 +513,23 @@ function AdminFilesContent() {
   };
 
   const fetchTrash = async () => {
+    setShowTrash(true);
     setLoadingTrash(true);
     try {
       const res = await api.get('/files/admin-trash');
-      setTrashFiles(res.data);
-      setShowTrash(true);
-    } catch (e) { console.error(e); }
-    finally { setLoadingTrash(false); }
+      if (Array.isArray(res.data)) {
+        setTrashFiles(res.data);
+      } else {
+        setTrashFiles([]);
+        addToast(res.data?.message || 'Failed to fetch trash items', 'error');
+      }
+    } catch (e: any) {
+      console.error(e);
+      setTrashFiles([]);
+      addToast(e?.response?.data?.message || 'Error loading trash bin', 'error');
+    } finally {
+      setLoadingTrash(false);
+    }
   };
 
   const restoreFile = async (id: string) => {
@@ -2219,34 +2229,39 @@ function AdminFilesContent() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />
                   ))
-                ) : trashFiles.length === 0 ? (
+                ) : (!Array.isArray(trashFiles) || trashFiles.length === 0) ? (
                   <div className="py-20 text-center text-gray-500 italic">Trash is empty</div>
                 ) : (
-                  trashFiles.map((file) => (
-                    <div key={file.id}
-                      className={`p-3 border rounded-2xl flex items-center gap-3 cursor-pointer transition-all active:scale-[0.98]
-                        ${selectedTrash.has(file.id) ? 'border-purple-500/50 bg-purple-500/10' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
-                      onClick={() => {
-                        const next = new Set(selectedTrash);
-                        if (next.has(file.id)) next.delete(file.id);
-                        else next.add(file.id);
-                        setSelectedTrash(next);
-                      }}>
+                  trashFiles.map((file) => {
+                    if (!file || !file.id) return null;
+                    const fileDate = (file.modifiedTime || file.updatedAt || file.createdAt)
+                      ? new Date(file.modifiedTime || file.updatedAt || file.createdAt).toLocaleDateString()
+                      : 'N/A';
+                    return (
+                      <div key={file.id}
+                        className={`p-3 border rounded-2xl flex items-center gap-3 cursor-pointer transition-all active:scale-[0.98]
+                          ${selectedTrash.has(file.id) ? 'border-purple-500/50 bg-purple-500/10' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}
+                        onClick={() => {
+                          const next = new Set(selectedTrash);
+                          if (next.has(file.id)) next.delete(file.id);
+                          else next.add(file.id);
+                          setSelectedTrash(next);
+                        }}>
 
-                      {/* Checkbox */}
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all
-                        ${selectedTrash.has(file.id) ? 'bg-purple-500 border-purple-500' : 'border-white/20'}`}>
-                        {selectedTrash.has(file.id) && <Check className="w-3 h-3 text-white" />}
-                      </div>
+                        {/* Checkbox */}
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-all
+                          ${selectedTrash.has(file.id) ? 'bg-purple-500 border-purple-500' : 'border-white/20'}`}>
+                          {selectedTrash.has(file.id) && <Check className="w-3 h-3 text-white" />}
+                        </div>
 
-                      {/* Icon */}
-                      <FileIcon file={{ mimeType: file.mimeType } as any} />
+                        {/* Icon */}
+                        <FileIcon file={{ mimeType: file.mimeType } as any} />
 
-                      {/* Name + Date */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-white text-sm font-medium break-words">{file.name}</p>
-                        <p className="text-[10px] text-gray-500">{new Date(file.modifiedTime).toLocaleDateString()}</p>
-                      </div>
+                        {/* Name + Date */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-medium break-words">{file.name || 'Untitled'}</p>
+                          <p className="text-[10px] text-gray-500">{fileDate}</p>
+                        </div>
 
                       {/* Actions */}
                       <div className="flex items-center gap-1 shrink-0">
@@ -2260,7 +2275,8 @@ function AdminFilesContent() {
                         </button>
                       </div>
                     </div>
-                  ))
+                  );
+                })
                 )}
               </div>
             </motion.div>
