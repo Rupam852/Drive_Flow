@@ -4,6 +4,6 @@
   "main": "index.js",
   "compatibility_date": "2024-09-23",
   "vars": {
-    "RENDER_BACKEND_URL": "https://file-opcus.onrender.com"
+    "RENDER_BACKEND_URL": "https://drive-flow-vlss.onrender.com"
   }
 }

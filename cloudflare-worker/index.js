@@ -5,7 +5,7 @@
 
 export default {
   async fetch(request, env, ctx) {
-    const RENDER_BACKEND_URL = env.RENDER_BACKEND_URL || "https://file-opcus.onrender.com"; // Replace with your Render URL
+    const RENDER_BACKEND_URL = env.RENDER_BACKEND_URL || "https://drive-flow-vlss.onrender.com";
     const url = new URL(request.url);
 
     // Standard CORS Headers for edge responses
