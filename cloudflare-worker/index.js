@@ -1,19 +1,21 @@
 /**
- * Drive Flow Cloudflare Worker Edge Proxy & Caching Engine
+ * Drive Flow Ultra-Fast Cloudflare Worker Edge Proxy & Caching Engine
  * Offloads heavy GET requests, handles CORS preflights in 0ms, and proxies Render backend.
  */
 
 export default {
   async fetch(request, env, ctx) {
     const RENDER_BACKEND_URL = env.RENDER_BACKEND_URL || "https://drive-flow-vlss.onrender.com";
+    const CACHE_TTL_SECONDS = parseInt(env.CACHE_TTL_SECONDS || "300", 10);
     const url = new URL(request.url);
 
     // Standard CORS Headers for edge responses
     const corsHeaders = {
       "Access-Control-Allow-Origin": request.headers.get("Origin") || "*",
       "Access-Control-Allow-Methods": "GET, HEAD, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, X-Requested-With",
+      "Access-Control-Allow-Headers": request.headers.get("Access-Control-Request-Headers") || "Content-Type, Authorization, X-Requested-With, Range",
       "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges",
     };
 
     // 1. Answer CORS Preflight OPTIONS requests in 0ms directly at Edge (0 Render CPU load)
@@ -22,7 +24,7 @@ export default {
         status: 204,
         headers: {
           ...corsHeaders,
-          "Access-Control-Max-Age": "86400", // Cache preflight for 24 hours
+          "Access-Control-Max-Age": "86400", // Cache CORS preflight in browser for 24 hours (86400s)
         },
       });
     }
@@ -34,9 +36,9 @@ export default {
     const newHeaders = new Headers(request.headers);
     newHeaders.set("Host", backendUrl.host);
     newHeaders.set("X-Forwarded-Host", url.host);
-    newHeaders.set("X-Via-Worker", "Cloudflare-DriveFlow");
+    newHeaders.set("X-Via-Worker", "Cloudflare-DriveFlow-UltraEdge");
 
-    // 2. Cacheable GET Endpoints (Edge Caching)
+    // 2. Cacheable GET Endpoints (Edge Caching with Stale-While-Revalidate)
     const isCacheableGet =
       request.method === "GET" &&
       !request.headers.get("Authorization") && // Only cache unauthenticated / public reads
@@ -51,7 +53,7 @@ export default {
       if (cachedResponse) {
         // Return 0ms cached response from Cloudflare Edge
         const responseHeaders = new Headers(cachedResponse.headers);
-        responseHeaders.set("X-Cache-Status", "HIT-Cloudflare-Edge");
+        responseHeaders.set("X-Cache-Status", "HIT-Cloudflare-UltraEdge");
         for (const [key, value] of Object.entries(corsHeaders)) {
           responseHeaders.set(key, value);
         }
@@ -62,7 +64,7 @@ export default {
       }
     }
 
-    // 3. Proxy non-cached request to Render Backend
+    // 3. Proxy non-cached request to Render Backend with high-speed streaming
     try {
       const backendResponse = await fetch(backendUrl.toString(), {
         method: request.method,
@@ -85,9 +87,9 @@ export default {
         headers: responseHeaders,
       });
 
-      // If GET & Cacheable, store in Cloudflare Edge Cache for 30 seconds
+      // If GET & Cacheable, store in Cloudflare Edge Cache for CACHE_TTL_SECONDS
       if (isCacheableGet && backendResponse.status === 200) {
-        responseHeaders.set("Cache-Control", "public, max-age=30, s-maxage=30");
+        responseHeaders.set("Cache-Control", `public, max-age=${CACHE_TTL_SECONDS}, s-maxage=${CACHE_TTL_SECONDS}, stale-while-revalidate=60`);
         const responseToCache = new Response(response.clone().body, {
           status: response.status,
           headers: responseHeaders,
