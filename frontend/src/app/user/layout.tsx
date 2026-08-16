@@ -17,15 +17,18 @@ const navItems = [
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [authorized, setAuthorized] = useState(false);
+  const [mounted, setMounted] = useState(true);
+  const [authorized, setAuthorized] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    return !!(localStorage.getItem('token_user') || localStorage.getItem('token'));
+  });
   const router = useRouter();
   const pathname = usePathname();
 
   // Combined Mount & Auth Check (Client-only)
   useEffect(() => {
     try {
-      const token = localStorage.getItem('token_user');
+      const token = localStorage.getItem('token_user') || localStorage.getItem('token');
       if (token) {
         setAuthorized(true);
       } else {
@@ -34,7 +37,6 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     } catch (e) {
       router.replace('/login');
     }
-    setMounted(true);
   }, [router]);
 
   // Lock body scroll when sidebar is open on mobile
