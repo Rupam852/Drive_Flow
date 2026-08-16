@@ -38,12 +38,19 @@ export default {
     newHeaders.set("X-Forwarded-Host", url.host);
     newHeaders.set("X-Via-Worker", "Cloudflare-DriveFlow-UltraEdge");
 
-    // 2. Cacheable GET Endpoints (Edge Caching with Stale-While-Revalidate)
-    const isCacheableGet =
+    // 2. Cacheable GET Endpoints (Edge Caching for Stats, Ping & File Previews/Inline Streams)
+    const isPreviewRequest =
       request.method === "GET" &&
-      !request.headers.get("Authorization") && // Only cache unauthenticated / public reads
-      (url.pathname.startsWith("/api/files/stats") ||
-        url.pathname.startsWith("/api/auth/ping"));
+      (url.pathname.includes("/download") ||
+        url.pathname.includes("/preview") ||
+        url.pathname.includes("/thumbnail"));
+
+    const isCacheableGet =
+      (request.method === "GET" &&
+        !request.headers.get("Authorization") &&
+        (url.pathname.startsWith("/api/files/stats") ||
+          url.pathname.startsWith("/api/auth/ping"))) ||
+      isPreviewRequest;
 
     const cache = caches.default;
 
@@ -51,9 +58,9 @@ export default {
       const cacheKey = new Request(url.toString(), request);
       let cachedResponse = await cache.match(cacheKey);
       if (cachedResponse) {
-        // Return 0ms cached response from Cloudflare Edge
+        // Return 0ms cached binary preview response from Cloudflare Edge
         const responseHeaders = new Headers(cachedResponse.headers);
-        responseHeaders.set("X-Cache-Status", "HIT-Cloudflare-UltraEdge");
+        responseHeaders.set("X-Cache-Status", "HIT-Cloudflare-PreviewEdge");
         for (const [key, value] of Object.entries(corsHeaders)) {
           responseHeaders.set(key, value);
         }
@@ -87,9 +94,10 @@ export default {
         headers: responseHeaders,
       });
 
-      // If GET & Cacheable, store in Cloudflare Edge Cache for CACHE_TTL_SECONDS
+      // If GET & Cacheable, store in Cloudflare Edge Cache
       if (isCacheableGet && backendResponse.status === 200) {
-        responseHeaders.set("Cache-Control", `public, max-age=${CACHE_TTL_SECONDS}, s-maxage=${CACHE_TTL_SECONDS}, stale-while-revalidate=60`);
+        const edgeCacheTTL = isPreviewRequest ? 86400 : CACHE_TTL_SECONDS;
+        responseHeaders.set("Cache-Control", `public, max-age=${edgeCacheTTL}, s-maxage=${edgeCacheTTL}, stale-while-revalidate=3600`);
         const responseToCache = new Response(response.clone().body, {
           status: response.status,
           headers: responseHeaders,
