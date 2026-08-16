@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Folder, File, Download, Eye, X, ChevronRight, Home, Image, FileText, Film, MoreVertical, Check, Square, Search, ExternalLink, ArrowDown, Loader2 } from 'lucide-react';
+import { Folder, File, Download, Eye, X, ChevronRight, Home, Image, FileText, Film, MoreVertical, Check, Square, Search, ExternalLink, ArrowDown, Loader2, CheckCircle2, XCircle } from 'lucide-react';
 import api from '@/lib/api';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
