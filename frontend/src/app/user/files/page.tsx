@@ -106,6 +106,24 @@ export default function UserFilesPage() {
     }
   }, [downloadProgress]);
 
+  const [downloadTime, setDownloadTime] = useState<number>(0);
+
+  useEffect(() => {
+    if (downloadProgress !== null) {
+      setDownloadTime(0);
+      const interval = setInterval(() => {
+        setDownloadTime(prev => prev + 1);
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [downloadProgress !== null]);
+
+  const formatDownloadTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m > 0 ? m + 'm ' : ''}${s < 10 ? '0' : ''}${s}s`;
+  };
+
   const finishDownloadModal = async () => {
     setDownloadProgress(100);
     await new Promise(resolve => setTimeout(resolve, 450));
@@ -1137,9 +1155,16 @@ export default function UserFilesPage() {
             <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.85, opacity: 0 }}
               className="glass-card p-8 rounded-3xl w-[85vw] sm:max-w-xs text-center border border-white/20 shadow-2xl">
 
+              {/* Active Stream Live Timer Badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold mb-4">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                <span>ACTIVE STREAM • {formatDownloadTime(downloadTime)}</span>
+              </div>
+
               {/* Circular Progress */}
               <div className="relative w-24 h-24 mx-auto mb-6">
-                <svg viewBox="0 0 96 96" className="w-full h-full -rotate-90">
+                <div className="absolute inset-0 rounded-full bg-cyan-500/10 blur-xl animate-pulse" />
+                <svg viewBox="0 0 96 96" className="w-full h-full -rotate-90 relative z-10">
                   <circle cx="48" cy="48" r="40" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="8" />
                   <motion.circle
                     cx="48" cy="48" r="40"
@@ -1161,7 +1186,7 @@ export default function UserFilesPage() {
                     </linearGradient>
                   </defs>
                 </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center z-10">
                   <motion.span
                     key={downloadProgress === -1 ? 'fake' : 'real'}
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -1177,28 +1202,37 @@ export default function UserFilesPage() {
               </div>
 
               <h3 className="text-lg font-bold text-white mb-1">
-                {downloadProgress === -1
-                  ? (fakeProgress < 35 ? 'Preparing...' : `Downloading ${Math.round(fakeProgress)}%`)
-                  : downloadProgress === 100
-                    ? '100% Complete!'
-                    : `Downloading ${downloadProgress}%`}
+                {downloadProgress === 100
+                  ? '100% Complete!'
+                  : (downloadProgress === -1 ? Math.round(fakeProgress) : downloadProgress) < 25
+                    ? 'Stage 1/3: Preparing Metadata...'
+                    : (downloadProgress === -1 ? Math.round(fakeProgress) : downloadProgress) < 65
+                      ? 'Stage 2/3: Compressing Stream...'
+                      : `Stage 3/3: Downloading ${(downloadProgress === -1 ? Math.round(fakeProgress) : downloadProgress)}%`}
               </h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                {downloadProgress === -1
-                  ? (fakeProgress < 35 ? 'Zipping & preparing your files, please wait' : 'Transferring file data...')
-                  : downloadProgress === 100
-                    ? 'File downloaded successfully'
-                    : 'Downloading your files...'}
+              <p className="text-xs text-cyan-200/70 font-medium leading-relaxed min-h-[32px]">
+                {downloadProgress === 100
+                  ? 'File downloaded successfully'
+                  : (downloadProgress === -1 ? Math.round(fakeProgress) : downloadProgress) < 25
+                    ? 'Bundling cloud items & headers...'
+                    : (downloadProgress === -1 ? Math.round(fakeProgress) : downloadProgress) < 65
+                      ? 'Compressing file stream on cloud server...'
+                      : 'Transferring data chunks to device...'}
               </p>
 
               {/* Progress bar */}
-              <div className="mt-6 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="mt-5 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                 <motion.div
                   className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full"
                   animate={{ width: `${downloadProgress === -1 ? Math.round(fakeProgress) : downloadProgress}%` }}
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 />
               </div>
+
+              {/* Reassurance Note */}
+              <p className="mt-5 text-[11px] text-gray-400/80 bg-white/5 py-2 px-3 rounded-xl border border-white/5 leading-snug">
+                ⚡ Large ZIPs take a moment to compress on cloud. Please keep app open.
+              </p>
 
             </motion.div>
           </div>
