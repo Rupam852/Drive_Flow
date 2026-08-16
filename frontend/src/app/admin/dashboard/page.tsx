@@ -140,6 +140,7 @@ export default function AdminDashboard() {
     switch (action) {
       case 'upload': return '↑';
       case 'download': return '↓';
+      case 'preview': return '👁';
       case 'delete':
       case 'trash':
       case 'delete_user':
@@ -163,6 +164,7 @@ export default function AdminDashboard() {
     switch (action) {
       case 'upload': return 'bg-emerald-500';
       case 'download': return 'bg-blue-500';
+      case 'preview': return 'bg-cyan-500';
       case 'delete':
       case 'trash':
       case 'delete_permanent':
@@ -186,6 +188,7 @@ export default function AdminDashboard() {
     switch (action) {
       case 'upload': return 'uploaded';
       case 'download': return 'downloaded';
+      case 'preview': return 'previewed';
       case 'delete': return 'deleted';
       case 'trash': return 'moved to trash';
       case 'delete_permanent': return 'permanently deleted';

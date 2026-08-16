@@ -390,8 +390,11 @@ const downloadFile = async (req, res) => {
         const fileId = req.params['id'];
         // Verify file exists and is authorized for this user
         await verifyFileAccess(fileId, req);
-        const meta = await googleDrive_1.default.files.get({ fileId, fields: 'id, name, mimeType' });
-        await (0, logger_1.logActivity)(req.user?._id, 'download', `Downloaded ${meta.data.mimeType === 'application/vnd.google-apps.folder' ? 'Folder ZIP' : 'File'}: ${meta.data.name}`);
+        const isInline = req.query.inline === 'true';
+        const isFolder = meta.data.mimeType === 'application/vnd.google-apps.folder';
+        const actionType = isInline ? 'preview' : 'download';
+        const actionDesc = isInline ? `Previewed File: ${meta.data.name}` : `Downloaded ${isFolder ? 'Folder ZIP' : 'File'}: ${meta.data.name}`;
+        await (0, logger_1.logActivity)(req.user?._id, actionType, actionDesc);
         if (meta.data.mimeType === 'application/vnd.google-apps.folder') {
             // Handle Folder ZIP
             const archive = zipLib('zip', { zlib: { level: 9 } });

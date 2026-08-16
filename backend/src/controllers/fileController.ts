@@ -437,7 +437,12 @@ export const downloadFile = async (req: Request, res: Response) => {
 
     const meta = await drive.files.get({ fileId, fields: 'id, name, mimeType' });
 
-    await logActivity((req as any).user?._id, 'download', `Downloaded ${meta.data.mimeType === 'application/vnd.google-apps.folder' ? 'Folder ZIP' : 'File'}: ${meta.data.name}`);
+    const isInline = req.query['inline'] === 'true';
+    const isFolder = meta.data.mimeType === 'application/vnd.google-apps.folder';
+    const actionType = isInline ? 'preview' : 'download';
+    const actionDesc = isInline ? `Previewed File: ${meta.data.name}` : `Downloaded ${isFolder ? 'Folder ZIP' : 'File'}: ${meta.data.name}`;
+
+    await logActivity((req as any).user?._id, actionType, actionDesc);
 
     if (meta.data.mimeType === 'application/vnd.google-apps.folder') {
       // Handle Folder ZIP
