@@ -13,7 +13,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const role = localStorage.getItem('role');
+    const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
+    return !!(role && token);
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean; email?: string } | null>(null);
   const [isNativeApp, setIsNativeApp] = useState(false);
@@ -199,20 +204,15 @@ export default function LoginPage() {
       <div className="relative z-10 flex flex-col items-center w-full max-w-md gap-3">
 
       <motion.div 
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
         className="glass-card w-full p-8 rounded-[2rem]"
       >
         <div className="text-center mb-8">
-          <motion.div 
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl mx-auto mb-4 flex items-center justify-center"
-          >
+          <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/20">
             <Lock className="text-white w-8 h-8" />
-          </motion.div>
+          </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Welcome Back</h1>
           <p className="text-[var(--color-muted)] mt-2">Sign in to access your files</p>
         </div>
@@ -329,9 +329,9 @@ export default function LoginPage() {
         <motion.a
           href="https://neo-files-transfer.pages.dev/download/723586892fd0"
           rel="noopener noreferrer"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
