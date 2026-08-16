@@ -1102,10 +1102,10 @@ export default function UserFilesPage() {
       </AnimatePresence>
 
       {/* Toasts */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[100] flex flex-col gap-3 pointer-events-none w-[90vw] sm:w-auto">
+      <div className="fixed top-16 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[200] flex flex-col gap-3 pointer-events-none w-[90vw] sm:w-auto">
         <AnimatePresence>
           {toasts.map(t => (
-            <motion.div key={t.id} initial={{ x: 100, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 100, opacity: 0 }}
+            <motion.div key={t.id} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -30, opacity: 0 }}
               className={`px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md border flex items-center gap-3 min-w-[200px]
                 ${t.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
               <div className={`w-2 h-2 rounded-full ${t.type === 'success' ? 'bg-green-400 animate-pulse' : 'bg-red-400 animate-pulse'}`} />
