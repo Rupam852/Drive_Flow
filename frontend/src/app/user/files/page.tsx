@@ -1101,15 +1101,30 @@ export default function UserFilesPage() {
         )}
       </AnimatePresence>
 
-      {/* Toasts */}
-      <div className="fixed top-16 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[200] flex flex-col gap-3 pointer-events-none w-[90vw] sm:w-auto">
+      {/* Toasts - Centered at top of screen below header */}
+      <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[300] flex flex-col gap-3 pointer-events-none w-[90vw] max-w-sm">
         <AnimatePresence>
           {toasts.map(t => (
-            <motion.div key={t.id} initial={{ y: -30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -30, opacity: 0 }}
-              className={`px-4 py-3 rounded-2xl shadow-2xl backdrop-blur-md border flex items-center gap-3 min-w-[200px]
-                ${t.type === 'success' ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
-              <div className={`w-2 h-2 rounded-full ${t.type === 'success' ? 'bg-green-400 animate-pulse' : 'bg-red-400 animate-pulse'}`} />
-              <span className="text-sm font-medium">{t.msg}</span>
+            <motion.div key={t.id}
+              initial={{ y: -40, opacity: 0, scale: 0.9 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: -40, opacity: 0, scale: 0.9 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className={`pointer-events-auto px-5 py-3.5 rounded-[20px] shadow-2xl backdrop-blur-xl border flex items-center gap-4 min-w-[280px] max-w-sm relative overflow-hidden group
+                ${t.type === 'success' ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-emerald-500/20' : 
+                  'bg-rose-500/15 border-rose-500/30 text-rose-400 shadow-rose-500/20'}`}>
+              
+              <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center border shadow-inner
+                ${t.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30' : 'bg-rose-500/20 border-rose-500/30'}`}>
+                {t.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-bold tracking-wider leading-tight mb-0.5 uppercase opacity-60">
+                  {t.type}
+                </p>
+                <p className="text-sm font-medium text-white/90 truncate">{t.msg}</p>
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>

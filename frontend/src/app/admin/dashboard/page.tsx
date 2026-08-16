@@ -390,15 +390,15 @@ export default function AdminDashboard() {
       </div>
     </div>
 
-    {/* Toasts */}
-    <div className="fixed top-16 left-1/2 -translate-x-1/2 sm:left-auto sm:right-6 sm:translate-x-0 z-[200] flex flex-col gap-3 pointer-events-none w-[90vw] sm:w-auto">
+    {/* Toasts - Centered at top of screen below header */}
+    <div className="fixed top-16 left-1/2 -translate-x-1/2 z-[300] flex flex-col gap-3 pointer-events-none w-[90vw] max-w-sm">
       <AnimatePresence>
         {toasts.map(t => (
           <motion.div key={t.id} 
-            initial={{ y: -30, opacity: 0, scale: 0.9 }} 
+            initial={{ y: -40, opacity: 0, scale: 0.9 }} 
             animate={{ y: 0, opacity: 1, scale: 1 }} 
-            exit={{ y: -30, opacity: 0, scale: 0.9 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            exit={{ y: -40, opacity: 0, scale: 0.9 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
             className={`pointer-events-auto px-5 py-3.5 rounded-[20px] shadow-2xl backdrop-blur-xl border flex items-center gap-4 min-w-[280px] max-w-sm relative overflow-hidden group
               ${t.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-emerald-500/10' : 
                 t.type === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400 shadow-rose-500/10' : 
