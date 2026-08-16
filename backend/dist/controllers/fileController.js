@@ -390,7 +390,8 @@ const downloadFile = async (req, res) => {
         const fileId = req.params['id'];
         // Verify file exists and is authorized for this user
         await verifyFileAccess(fileId, req);
-        const isInline = req.query.inline === 'true';
+        const meta = await googleDrive_1.default.files.get({ fileId, fields: 'id, name, mimeType' });
+        const isInline = req.query['inline'] === 'true';
         const isFolder = meta.data.mimeType === 'application/vnd.google-apps.folder';
         const actionType = isInline ? 'preview' : 'download';
         const actionDesc = isInline ? `Previewed File: ${meta.data.name}` : `Downloaded ${isFolder ? 'Folder ZIP' : 'File'}: ${meta.data.name}`;

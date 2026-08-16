@@ -55,12 +55,16 @@ export default function AdminUsersPage() {
     finally { setActionLoading(null); }
   };
 
-  const deleteUser = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+  const [deleteModalUser, setDeleteModalUser] = useState<User | null>(null);
+
+  const confirmDeleteUser = async () => {
+    if (!deleteModalUser) return;
+    const id = deleteModalUser._id;
     setActionLoading(id + 'delete');
     try {
       await api.delete(`/users/${id}`);
       setUsers(prev => prev.filter(u => u._id !== id));
+      setDeleteModalUser(null);
     } catch (e) { console.error(e); }
     finally { setActionLoading(null); }
   };
@@ -180,7 +184,7 @@ export default function AdminUsersPage() {
                               </button>
                             )}
                             <button
-                              onClick={() => deleteUser(user._id)}
+                              onClick={() => setDeleteModalUser(user)}
                               disabled={!!actionLoading}
                               className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
                               title="Delete User"
@@ -197,6 +201,53 @@ export default function AdminUsersPage() {
           </table>
         </div>
       </div>
+
+      {/* Delete User Glassmorphic Confirmation Modal */}
+      <AnimatePresence>
+        {deleteModalUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="glass-card max-w-md w-full p-6 rounded-3xl border border-white/10 shadow-2xl space-y-5"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-white">Delete User Account?</h3>
+                <p className="text-sm text-gray-300">
+                  Are you sure you want to delete <span className="text-white font-semibold">{deleteModalUser.name}</span> ({deleteModalUser.email})?
+                </p>
+                <p className="text-xs text-red-400 font-medium">
+                  Warning: This action will permanently remove the user and cannot be undone.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setDeleteModalUser(null)}
+                  disabled={!!actionLoading}
+                  className="px-4 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/5 transition-colors text-sm font-medium"
+                >
+                  No, Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteUser}
+                  disabled={!!actionLoading}
+                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-sm transition-all shadow-lg shadow-red-600/30 flex items-center gap-2"
+                >
+                  {actionLoading === deleteModalUser._id + 'delete' ? (
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : null}
+                  Yes, Delete User
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
