@@ -3,6 +3,9 @@
     "java.import.gradle.wrapper.enabled": true,
     "java.import.gradle.version": "8.14.3",
     "java.import.gradle.nestedProjects": true,
+    "java.project.sourcePaths": [
+        "frontend/android/app/src/main/java"
+    ],
     "gradle.nestedProjects": true,
     "css.lint.unknownAtRules": "ignore",
     "scss.lint.unknownAtRules": "ignore"
