@@ -33,6 +33,13 @@ export default function LoginPage() {
     setIsNativeApp(isNative);
 
     const checkAuth = () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      if (searchParams.get('expired') === 'true') {
+        setError('Your login session expired. Please log in again to continue.');
+        setLoading(false);
+        return;
+      }
+
       const role = localStorage.getItem('role');
       const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
       

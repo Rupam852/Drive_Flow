@@ -71,55 +71,73 @@ export default {
       }
     }
 
-    // 3. Proxy non-cached request to Render Backend with high-speed streaming
-    try {
-      const backendResponse = await fetch(backendUrl.toString(), {
-        method: request.method,
-        headers: newHeaders,
-        body: ["GET", "HEAD"].includes(request.method) ? null : request.body,
-        redirect: "follow",
-      });
+    // 3. Proxy non-cached request to Render Backend with Edge Cold-Start Auto-Retry
+    let backendResponse;
+    let attempts = 0;
+    const maxAttempts = 3;
 
-      // Prepare response headers
-      const responseHeaders = new Headers(backendResponse.headers);
-      for (const [key, value] of Object.entries(corsHeaders)) {
-        responseHeaders.set(key, value);
+    while (attempts < maxAttempts) {
+      attempts++;
+      try {
+        backendResponse = await fetch(backendUrl.toString(), {
+          method: request.method,
+          headers: newHeaders,
+          body: ["GET", "HEAD"].includes(request.method) ? null : request.body,
+          redirect: "follow",
+        });
+
+        // Break loop if response is normal status or not a gateway wake-up error (502, 503, 504)
+        if (![502, 503, 504].includes(backendResponse.status) || attempts === maxAttempts) {
+          break;
+        }
+
+        // Wait 1.5s for Render server to finish cold-start wake up
+        await new Promise((r) => setTimeout(r, 1500));
+      } catch (error) {
+        if (attempts === maxAttempts) {
+          return new Response(
+            JSON.stringify({
+              error: "Cloudflare Edge Proxy Error",
+              message: error.message || "Failed to reach Render backend after retries",
+            }),
+            {
+              status: 502,
+              headers: {
+                "Content-Type": "application/json",
+                ...corsHeaders,
+              },
+            }
+          );
+        }
+        await new Promise((r) => setTimeout(r, 1500));
       }
-      responseHeaders.set("X-Cache-Status", "MISS-Passed-To-Render");
+    }
 
-      // Build Edge Response
-      const response = new Response(backendResponse.body, {
-        status: backendResponse.status,
-        statusText: backendResponse.statusText,
+    // Prepare response headers
+    const responseHeaders = new Headers(backendResponse.headers);
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      responseHeaders.set(key, value);
+    }
+    responseHeaders.set("X-Cache-Status", "MISS-Passed-To-Render");
+
+    // Build Edge Response
+    const response = new Response(backendResponse.body, {
+      status: backendResponse.status,
+      statusText: backendResponse.statusText,
+      headers: responseHeaders,
+    });
+
+    // If GET & Cacheable, store in Cloudflare Edge Cache
+    if (isCacheableGet && backendResponse.status === 200) {
+      const edgeCacheTTL = isPreviewRequest ? 86400 : CACHE_TTL_SECONDS;
+      responseHeaders.set("Cache-Control", `public, max-age=${edgeCacheTTL}, s-maxage=${edgeCacheTTL}, stale-while-revalidate=3600`);
+      const responseToCache = new Response(response.clone().body, {
+        status: response.status,
         headers: responseHeaders,
       });
-
-      // If GET & Cacheable, store in Cloudflare Edge Cache
-      if (isCacheableGet && backendResponse.status === 200) {
-        const edgeCacheTTL = isPreviewRequest ? 86400 : CACHE_TTL_SECONDS;
-        responseHeaders.set("Cache-Control", `public, max-age=${edgeCacheTTL}, s-maxage=${edgeCacheTTL}, stale-while-revalidate=3600`);
-        const responseToCache = new Response(response.clone().body, {
-          status: response.status,
-          headers: responseHeaders,
-        });
-        ctx.waitUntil(cache.put(new Request(url.toString(), request), responseToCache));
-      }
-
-      return response;
-    } catch (error) {
-      return new Response(
-        JSON.stringify({
-          error: "Cloudflare Edge Proxy Error",
-          message: error.message || "Failed to reach Render backend",
-        }),
-        {
-          status: 502,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders,
-          },
-        }
-      );
+      ctx.waitUntil(cache.put(new Request(url.toString(), request), responseToCache));
     }
+
+    return response;
   },
 };
