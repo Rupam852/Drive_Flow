@@ -22,41 +22,10 @@ export default function LoginPage() {
   });
   const router = useRouter();
 
-  // Direct Google OAuth 2.0 Navigation Fallback (100% Adblocker Immune)
-  const triggerDirectGoogleOAuth = (action: 'login' | 'register' = 'login') => {
-    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com';
-    const redirectUri = window.location.origin + (action === 'register' ? '/register' : '/login');
-    const scope = 'openid email profile';
-    const responseType = 'id_token';
-    const nonce = Math.random().toString(36).substring(2);
-
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${encodeURIComponent(clientId)}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=${encodeURIComponent(responseType)}` +
-      `&scope=${encodeURIComponent(scope)}` +
-      `&nonce=${encodeURIComponent(nonce)}` +
-      `&prompt=select_account`;
-
-    window.location.href = authUrl;
-  };
-
-  // Handle auto-login redirect, check for returned OAuth hash, or load Google SDK
+  // Handle auto-login redirect or load Google SDK
   useEffect(() => {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     setIsNativeApp(isNative);
-
-    // Check for returned Google OAuth credential / id_token in hash or search (Same tab redirect)
-    if (typeof window !== 'undefined') {
-      const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const searchParams = new URLSearchParams(window.location.search);
-      const idToken = hashParams.get('id_token') || hashParams.get('credential') || searchParams.get('credential');
-      if (idToken) {
-        window.history.replaceState(null, '', window.location.pathname);
-        submitGoogleLogin(idToken);
-        return;
-      }
-    }
 
     const checkAuth = () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -88,8 +57,6 @@ export default function LoginPage() {
             (window as any).google.accounts.id.initialize({
               client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com',
               callback: handleGoogleCredentialResponse,
-              ux_mode: 'redirect',
-              login_uri: typeof window !== 'undefined' ? window.location.origin + '/login' : undefined,
             });
             const container = document.getElementById('google-signin-btn');
             if (container) {
@@ -337,8 +304,7 @@ export default function LoginPage() {
         ) : (
           <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[62px]">
             <div 
-              onClick={() => triggerDirectGoogleOAuth('login')}
-              className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer active:scale-[0.99] transition-transform"
+              className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer"
               style={{ height: '44px', minHeight: '44px', maxHeight: '44px' }}
             >
               {/* Permanent static button - never erased during GIS load */}
