@@ -51,10 +51,11 @@ export default function RegisterPage() {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     setIsNativeApp(isNative);
 
-    // Check for returned Google OAuth id_token in hash (Direct OAuth Fallback)
-    if (typeof window !== 'undefined' && window.location.hash.includes('id_token=')) {
+    // Check for returned Google OAuth credential / id_token in hash or search (Same tab redirect)
+    if (typeof window !== 'undefined') {
       const hashParams = new URLSearchParams(window.location.hash.substring(1));
-      const idToken = hashParams.get('id_token');
+      const searchParams = new URLSearchParams(window.location.search);
+      const idToken = hashParams.get('id_token') || hashParams.get('credential') || searchParams.get('credential');
       if (idToken) {
         window.history.replaceState(null, '', window.location.pathname);
         submitGoogleRegister(idToken);
@@ -81,6 +82,8 @@ export default function RegisterPage() {
             (window as any).google.accounts.id.initialize({
               client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com',
               callback: handleGoogleCredentialResponse,
+              ux_mode: 'redirect',
+              login_uri: typeof window !== 'undefined' ? window.location.origin + '/register' : undefined,
             });
             const container = document.getElementById('google-signin-btn');
             if (container) {
