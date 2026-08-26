@@ -13,12 +13,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    const role = localStorage.getItem('role');
-    const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
-    return !!(role && token);
-  });
+  const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean; email?: string } | null>(null);
   const [isNativeApp, setIsNativeApp] = useState(() => {
@@ -201,10 +196,6 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
-
-  if (loading) {
-    return <LoadingScreen message="Loading..." />;
-  }
 
   return (
     <div className="min-h-screen w-full min-w-full flex items-center justify-center p-4 bg-gradient-dynamic relative overflow-hidden">
