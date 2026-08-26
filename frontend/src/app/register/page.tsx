@@ -221,26 +221,26 @@ export default function RegisterPage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
-        className="glass-card w-full max-w-sm p-5 sm:p-6 rounded-3xl relative z-10 shadow-2xl border border-white/10"
+        className="glass-card w-full max-w-[400px] p-6 sm:p-7 rounded-[1.75rem] relative z-10 shadow-2xl border border-white/10"
       >
-        <div className="text-center mb-4">
+        <div className="text-center mb-5">
           <motion.div 
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="w-11 h-11 bg-[var(--color-primary)] rounded-xl mx-auto mb-2 flex items-center justify-center shadow-md shadow-purple-500/20"
+            className="w-13 h-13 bg-[var(--color-primary)] rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-lg shadow-purple-500/25"
           >
-            <User className="text-white w-5 h-5" />
+            <User className="text-white w-6 h-6" />
           </motion.div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Create Account</h1>
-          <p className="text-xs text-[var(--color-muted)] mt-0.5">Join DriveFlow today</p>
+          <p className="text-xs sm:text-sm text-[var(--color-muted)] mt-0.5">Join DriveFlow today</p>
         </div>
 
         {error && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="bg-red-500/10 border border-red-500/40 text-red-200 px-3.5 py-2 rounded-xl mb-3.5 flex items-start gap-2 text-xs"
+            className="bg-red-500/10 border border-red-500/40 text-red-200 px-3.5 py-2.5 rounded-xl mb-4 flex items-start gap-2.5 text-xs sm:text-sm"
           >
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <p>{error}</p>
@@ -319,7 +319,7 @@ export default function RegisterPage() {
                   type="text"
                   name="name"
                   required
-                  className="block w-full pl-10 pr-3.5 py-2 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-3.5 py-2.5 bg-black/25 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={handleChange}
@@ -337,7 +337,7 @@ export default function RegisterPage() {
                   type="email"
                   name="email"
                   required
-                  className="block w-full pl-10 pr-3.5 py-2 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-3.5 py-2.5 bg-black/25 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={handleChange}
@@ -355,7 +355,7 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   required
-                  className="block w-full pl-10 pr-10 py-2 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-10 py-2.5 bg-black/25 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleChange}
@@ -383,7 +383,7 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmPassword"
                   required
-                  className="block w-full pl-10 pr-10 py-2 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-10 py-2.5 bg-black/25 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   placeholder="Confirm password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -403,7 +403,7 @@ export default function RegisterPage() {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-2.5 px-4 mt-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-500/20 active:scale-95"
+              className="w-full py-2.5 sm:py-3 px-4 mt-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95"
             >
               {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Register'}
             </motion.button>
@@ -412,7 +412,7 @@ export default function RegisterPage() {
 
         {!success && !showOtp && (
           <>
-            <div className="relative flex py-1 items-center justify-center my-2">
+            <div className="relative flex py-1 items-center justify-center my-2.5">
               <div className="flex-grow border-t border-white/10"></div>
               <span className="flex-shrink mx-3 text-gray-500 text-xs">or</span>
               <div className="flex-grow border-t border-white/10"></div>
@@ -425,7 +425,7 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleNativeGoogleRegister}
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-900 rounded-xl text-xs sm:text-sm font-semibold transition-all"
+                className="w-full flex items-center justify-center gap-2.5 py-2.5 sm:py-3 px-4 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-900 rounded-xl text-xs sm:text-sm font-semibold transition-all shadow-sm"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.13-5.136 4.13A5.72 5.72 0 0 1 8.24 12.8a5.72 5.72 0 0 1 5.751-5.73 5.56 5.56 0 0 1 3.96 1.6l3.055-3.055A9.97 9.97 0 0 0 13.99 2 9.99 9.99 0 0 0 4 12a9.99 9.99 0 0 0 9.99 10c5.38 0 9.8-3.97 9.8-10 0-.68-.06-1.3-.16-1.715H12.24Z" />
@@ -433,10 +433,10 @@ export default function RegisterPage() {
                 Register with Google
               </motion.button>
             ) : (
-              <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[58px]">
+              <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[62px]">
                 <div 
-                  className="relative w-full h-[40px] min-h-[40px] max-h-[40px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer"
-                  style={{ height: '40px', minHeight: '40px', maxHeight: '40px' }}
+                  className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer"
+                  style={{ height: '44px', minHeight: '44px', maxHeight: '44px' }}
                 >
                   {/* Permanent static button - never erased during GIS load */}
                   <div className="flex items-center justify-center gap-2.5 pointer-events-none z-0">
@@ -451,13 +451,13 @@ export default function RegisterPage() {
                     className="absolute inset-0 z-10 opacity-[0.001] flex items-center justify-center overflow-hidden" 
                   />
                 </div>
-                <p className="text-[10px] text-gray-500 mt-1 text-center max-w-[280px]">
+                <p className="text-[10px] text-gray-500 mt-1.5 text-center max-w-[300px]">
                   If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
                 </p>
               </div>
             )}
 
-            <p className="mt-3.5 text-center text-xs text-gray-400">
+            <p className="mt-4 text-center text-xs sm:text-sm text-gray-400">
               Already have an account?{' '}
               <Link href="/login" className="text-white font-semibold hover:text-[var(--color-primary)] transition-colors">
                 Sign in here
