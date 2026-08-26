@@ -28,9 +28,39 @@ export default function RegisterPage() {
   const [isNativeApp, setIsNativeApp] = useState(false);
   const router = useRouter();
 
+  // Direct Google OAuth 2.0 Navigation Fallback (100% Adblocker Immune)
+  const triggerDirectGoogleOAuth = (action: 'login' | 'register' = 'register') => {
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com';
+    const redirectUri = window.location.origin + (action === 'register' ? '/register' : '/login');
+    const scope = 'openid email profile';
+    const responseType = 'id_token';
+    const nonce = Math.random().toString(36).substring(2);
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${encodeURIComponent(clientId)}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=${encodeURIComponent(responseType)}` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&nonce=${encodeURIComponent(nonce)}` +
+      `&prompt=select_account`;
+
+    window.location.href = authUrl;
+  };
+
   useEffect(() => {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     setIsNativeApp(isNative);
+
+    // Check for returned Google OAuth id_token in hash (Direct OAuth Fallback)
+    if (typeof window !== 'undefined' && window.location.hash.includes('id_token=')) {
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const idToken = hashParams.get('id_token');
+      if (idToken) {
+        window.history.replaceState(null, '', window.location.pathname);
+        submitGoogleRegister(idToken);
+        return;
+      }
+    }
 
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -435,7 +465,8 @@ export default function RegisterPage() {
             ) : (
               <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[62px]">
                 <div 
-                  className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer"
+                  onClick={() => triggerDirectGoogleOAuth('register')}
+                  className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer active:scale-[0.99] transition-transform"
                   style={{ height: '44px', minHeight: '44px', maxHeight: '44px' }}
                 >
                   {/* Permanent static button - never erased during GIS load */}
