@@ -227,9 +227,9 @@ export default function RegisterPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none" />
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
         className="glass-card w-full max-w-sm p-5 sm:p-6 rounded-3xl relative z-10 shadow-2xl border border-white/10"
       >
         <div className="text-center mb-4">
