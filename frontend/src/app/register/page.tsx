@@ -93,15 +93,25 @@ export default function RegisterPage() {
       } else {
         const script = document.createElement('script');
         script.id = id;
-        script.src = 'https://accounts.google.com/gsi/client';
+        script.src = '/api/gsi/client';
         script.async = true;
         script.defer = true;
         script.onload = () => {
           setTimeout(initGis, 50);
         };
-        script.onerror = (e) => {
-          console.warn('Google GIS script load failed:', e);
-          setIsAdblocked(true);
+        script.onerror = () => {
+          // Direct fallback if proxy is unaccessible
+          const fbScript = document.createElement('script');
+          fbScript.id = id + '-fb';
+          fbScript.src = 'https://accounts.google.com/gsi/client';
+          fbScript.async = true;
+          fbScript.defer = true;
+          fbScript.onload = () => setTimeout(initGis, 50);
+          fbScript.onerror = (e) => {
+            console.warn('Google GIS script load failed:', e);
+            setIsAdblocked(true);
+          };
+          document.body.appendChild(fbScript);
         };
         document.body.appendChild(script);
       }
