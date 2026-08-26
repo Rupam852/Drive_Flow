@@ -52,14 +52,16 @@ export default function AdminDashboard() {
   const [toasts, setToasts] = useState<{ id: number; msg: string; type: 'success' | 'error' | 'info' | 'warning' }[]>([]);
   const router = useRouter();
 
+  const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
+
   const addToast = (msg: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, msg, type }]);
     setTimeout(() => setToasts(prev => prev.filter(x => x.id !== id)), 4000);
   };
 
-  const handleClearLogs = async () => {
-    if (!window.confirm('Are you sure you want to clear all activity logs?')) return;
+  const confirmClearLogs = async () => {
+    setShowClearConfirmModal(false);
     try {
       await api.delete('/files/admin-logs');
       addToast('All activity logs cleared successfully!', 'success');
@@ -449,7 +451,7 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-2">
                 {allLogs.length > 0 && (
                   <button
-                    onClick={handleClearLogs}
+                    onClick={() => setShowClearConfirmModal(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs font-semibold transition-all active:scale-95"
                     title="Clear all activity logs"
                   >
@@ -543,6 +545,50 @@ export default function AdminDashboard() {
               <span className="text-xs text-gray-500 font-medium">
                 Total {allLogs.length} activity logs recorded
               </span>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+
+    {/* Custom Glassmorphic Clear Logs Confirmation Modal */}
+    <AnimatePresence>
+      {showClearConfirmModal && (
+        <div 
+          className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={() => setShowClearConfirmModal(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 15 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#0f172a]/95 border border-red-500/30 rounded-3xl shadow-2xl w-full max-w-md p-6 text-center relative overflow-hidden"
+          >
+            <div className="w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 mx-auto mb-4 shadow-inner">
+              <Trash2 className="w-7 h-7" />
+            </div>
+            
+            <h3 className="text-xl font-bold text-white mb-2 tracking-tight">Clear All Activity Logs?</h3>
+            <p className="text-xs text-gray-300 leading-relaxed mb-6">
+              Are you sure you want to permanently clear all system activity logs? This action cannot be undone.
+            </p>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowClearConfirmModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl border border-white/10 bg-white/5 text-gray-300 hover:text-white hover:bg-white/10 text-xs font-semibold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmClearLogs}
+                className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Yes, Clear All</span>
+              </button>
             </div>
           </motion.div>
         </div>
