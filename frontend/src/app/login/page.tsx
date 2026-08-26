@@ -212,45 +212,45 @@ export default function LoginPage() {
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--color-primary)] rounded-full blur-[120px] opacity-30 pointer-events-none z-0 touch-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none z-0 touch-none" />
 
-      {/* Card + Banner wrapper */}
-      <div className="relative z-10 flex flex-col items-center w-full max-w-md gap-3">
+      {/* Card wrapper */}
+      <div className="relative z-10 flex flex-col items-center w-full max-w-sm">
 
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className="glass-card w-full p-8 rounded-[2rem]"
+        className="glass-card w-full p-6 sm:p-7 rounded-3xl shadow-2xl border border-white/10"
       >
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Lock className="text-white w-8 h-8" />
+        <div className="text-center mb-5">
+          <div className="w-12 h-12 bg-[var(--color-primary)] rounded-xl mx-auto mb-3 flex items-center justify-center shadow-md shadow-purple-500/20">
+            <Lock className="text-white w-6 h-6" />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Welcome Back</h1>
-          <p className="text-[var(--color-muted)] mt-2">Sign in to access your files</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Welcome Back</h1>
+          <p className="text-xs text-[var(--color-muted)] mt-1">Sign in to access your files</p>
         </div>
 
         {error && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl mb-6 flex items-start gap-3"
+            className="bg-red-500/10 border border-red-500/40 text-red-200 px-3.5 py-2.5 rounded-xl mb-4 flex items-start gap-2.5 text-xs"
           >
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-            <p className="text-sm">{error}</p>
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <p>{error}</p>
           </motion.div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-3.5">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5 ml-1">Email</label>
+            <label className="block text-xs font-semibold text-gray-300 mb-1 ml-0.5">Email</label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Mail className="h-4 w-4 text-gray-400" />
               </div>
               <input
                 type="email"
                 required
-                className="block w-full pl-11 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                className="block w-full pl-10 pr-3.5 py-2.5 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -259,15 +259,15 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5 ml-1">Password</label>
+            <label className="block text-xs font-semibold text-gray-300 mb-1 ml-0.5">Password</label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Lock className="h-4 w-4 text-gray-400" />
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                className="block w-full pl-11 pr-12 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                className="block w-full pl-10 pr-10 py-2.5 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -275,15 +275,15 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-white transition-colors"
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
 
           <div className="flex items-center justify-end">
-            <Link href="/forgot-password" className="text-sm text-[var(--color-primary)] hover:text-blue-300 transition-colors">
+            <Link href="/forgot-password" className="text-xs font-medium text-[var(--color-primary)] hover:text-blue-300 transition-colors">
               Forgot password?
             </Link>
           </div>
@@ -293,15 +293,15 @@ export default function LoginPage() {
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3.5 px-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-4 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-500/20 active:scale-95"
           >
-            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Sign In'}
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sign In'}
           </motion.button>
         </form>
 
-        <div className="relative flex py-2 items-center justify-center my-4">
+        <div className="relative flex py-1 items-center justify-center my-2.5">
           <div className="flex-grow border-t border-white/10"></div>
-          <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+          <span className="flex-shrink mx-3 text-gray-500 text-xs">or</span>
           <div className="flex-grow border-t border-white/10"></div>
         </div>
 
@@ -312,25 +312,25 @@ export default function LoginPage() {
             type="button"
             onClick={handleNativeGoogleLogin}
             disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-900 rounded-lg font-medium transition-all"
+            className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-900 rounded-xl text-xs sm:text-sm font-semibold transition-all"
           >
-            <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.13-5.136 4.13A5.72 5.72 0 0 1 8.24 12.8a5.72 5.72 0 0 1 5.751-5.73 5.56 5.56 0 0 1 3.96 1.6l3.055-3.055A9.97 9.97 0 0 0 13.99 2 9.99 9.99 0 0 0 4 12a9.99 9.99 0 0 0 9.99 10c5.38 0 9.8-3.97 9.8-10 0-.68-.06-1.3-.16-1.715H12.24Z" />
             </svg>
             Continue with Google
           </motion.button>
         ) : (
           <div className="w-full flex flex-col items-center justify-center">
-            <div id="google-signin-btn" className="w-full h-[44px] flex items-center justify-center overflow-hidden" />
-            <p className="text-[10px] text-gray-500 mt-2 text-center max-w-[280px]">
+            <div id="google-signin-btn" className="w-full h-[40px] flex items-center justify-center overflow-hidden" />
+            <p className="text-[10px] text-gray-500 mt-1.5 text-center max-w-[280px]">
               If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
             </p>
           </div>
         )}
 
-        <p className="mt-8 text-center text-sm text-gray-400">
+        <p className="mt-4 text-center text-xs text-gray-400">
           Don't have an account?{' '}
-          <Link href="/register" className="text-white font-medium hover:text-[var(--color-primary)] transition-colors">
+          <Link href="/register" className="text-white font-semibold hover:text-[var(--color-primary)] transition-colors">
             Register here
           </Link>
         </p>

@@ -227,32 +227,32 @@ export default function RegisterPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none" />
 
       <motion.div 
-        initial={{ opacity: 0, y: 30 }}
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className="glass-card w-full max-w-md p-8 rounded-[2rem] relative z-10"
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="glass-card w-full max-w-sm p-5 sm:p-6 rounded-3xl relative z-10 shadow-2xl border border-white/10"
       >
-        <div className="text-center mb-8">
+        <div className="text-center mb-4">
           <motion.div 
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="w-16 h-16 bg-[var(--color-primary)] rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            transition={{ delay: 0.1 }}
+            className="w-11 h-11 bg-[var(--color-primary)] rounded-xl mx-auto mb-2 flex items-center justify-center shadow-md shadow-purple-500/20"
           >
-            <User className="text-white w-8 h-8" />
+            <User className="text-white w-5 h-5" />
           </motion.div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Create Account</h1>
-          <p className="text-[var(--color-muted)] mt-2">Join DriveFlow today</p>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Create Account</h1>
+          <p className="text-xs text-[var(--color-muted)] mt-0.5">Join DriveFlow today</p>
         </div>
 
         {error && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
-            className="bg-red-500/10 border border-red-500/50 text-red-200 px-4 py-3 rounded-xl mb-6 flex items-start gap-3"
+            className="bg-red-500/10 border border-red-500/40 text-red-200 px-3.5 py-2 rounded-xl mb-3.5 flex items-start gap-2 text-xs"
           >
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-            <p className="text-sm">{error}</p>
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <p>{error}</p>
           </motion.div>
         )}
 
@@ -260,19 +260,19 @@ export default function RegisterPage() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-6"
+            className="text-center py-4"
           >
-            <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">Registration Successful</h3>
-            <p className="text-gray-300 mb-6">Please wait for admin approval. You can contact the admin to expedite the process.</p>
-            <div className="flex flex-col gap-3">
+            <CheckCircle2 className="w-12 h-12 text-green-400 mx-auto mb-3" />
+            <h3 className="text-lg font-bold text-white mb-1.5">Registration Successful</h3>
+            <p className="text-xs text-gray-300 mb-4 leading-relaxed">Please wait for admin approval. You can contact the admin to expedite the process.</p>
+            <div className="flex flex-col gap-2.5">
               <a 
                 href="mailto:rupambairagya08@gmail.com?subject=Approval Request"
-                className="w-full py-3 bg-[var(--color-primary)] hover:bg-blue-600 text-white rounded-xl transition-colors inline-block"
+                className="w-full py-2.5 bg-[var(--color-primary)] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-colors inline-block"
               >
                 Contact Admin
               </a>
-              <Link href="/login" className="text-gray-400 hover:text-white transition-colors py-2">
+              <Link href="/login" className="text-gray-400 hover:text-white transition-colors text-xs py-1">
                 Back to Login
               </Link>
             </div>
@@ -281,21 +281,21 @@ export default function RegisterPage() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-4"
+            className="text-center py-3"
           >
-            <div className="w-16 h-16 bg-purple-500/20 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <Mail className="w-8 h-8 text-purple-400" />
+            <div className="w-12 h-12 bg-purple-500/20 rounded-full mx-auto mb-3 flex items-center justify-center">
+              <Mail className="w-6 h-6 text-purple-400" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">Verify Your Email</h3>
-            <p className="text-gray-300 mb-2 text-sm">We've sent a 6-digit code to <b>{formData.email}</b>. Please enter it below.</p>
-            <p className="text-yellow-400/90 mb-6 text-xs font-medium bg-yellow-400/10 py-1.5 px-3 rounded-lg inline-block">Please check your Spam/Junk folder if you don't see it in your inbox.</p>
+            <h3 className="text-lg font-bold text-white mb-1.5">Verify Your Email</h3>
+            <p className="text-gray-300 mb-2 text-xs">We've sent a 6-digit code to <b>{formData.email}</b>.</p>
+            <p className="text-yellow-400/90 mb-4 text-[11px] font-medium bg-yellow-400/10 py-1 px-2.5 rounded-lg inline-block">Check Spam folder if not found in inbox.</p>
             
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <form onSubmit={handleVerifyOtp} className="space-y-3">
               <input
                 type="text"
                 required
                 maxLength={6}
-                className="block w-full text-center tracking-[0.5em] text-2xl py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all"
+                className="block w-full text-center tracking-[0.4em] text-xl py-2 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] transition-all font-mono"
                 placeholder="------"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
@@ -305,30 +305,30 @@ export default function RegisterPage() {
                 whileTap={{ scale: 0.98 }}
                 type="submit"
                 disabled={isVerifying || otp.length !== 6}
-                className="w-full py-3 bg-[var(--color-primary)] hover:bg-blue-600 text-white rounded-xl transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-2.5 bg-[var(--color-primary)] hover:bg-blue-600 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                {isVerifying ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Verify Email'}
+                {isVerifying ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Verify Email'}
               </motion.button>
             </form>
-            <div className="mt-6">
-              <button onClick={handleResendOtp} className="text-sm text-[var(--color-primary)] hover:text-white transition-colors">
-                Didn't receive the code? Resend
+            <div className="mt-4">
+              <button onClick={handleResendOtp} className="text-xs text-[var(--color-primary)] hover:text-white transition-colors">
+                Didn't receive code? Resend
               </button>
             </div>
           </motion.div>
         ) : (
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-3">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5 ml-1">Full Name</label>
+              <label className="block text-xs font-semibold text-gray-300 mb-1 ml-0.5">Full Name</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <User className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="text"
                   name="name"
                   required
-                  className="block w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-3.5 py-2 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={handleChange}
@@ -337,16 +337,16 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5 ml-1">Email</label>
+              <label className="block text-xs font-semibold text-gray-300 mb-1 ml-0.5">Email</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Mail className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type="email"
                   name="email"
                   required
-                  className="block w-full pl-11 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-3.5 py-2 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={handleChange}
@@ -355,16 +355,16 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5 ml-1">Password</label>
+              <label className="block text-xs font-semibold text-gray-300 mb-1 ml-0.5">Password</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Lock className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   required
-                  className="block w-full pl-11 pr-12 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-10 py-2 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   placeholder="Create a password"
                   value={formData.password}
                   onChange={handleChange}
@@ -372,27 +372,27 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-white transition-colors"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              <p className="text-[10px] text-gray-500 mt-1.5 ml-1 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> Use 6 to 9 characters for your password
+              <p className="text-[10px] text-gray-500 mt-1 ml-0.5 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> Use 6 to 9 characters for password
               </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1.5 ml-1">Confirm Password</label>
+              <label className="block text-xs font-semibold text-gray-300 mb-1 ml-0.5">Confirm Password</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Lock className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmPassword"
                   required
-                  className="block w-full pl-11 pr-12 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
+                  className="block w-full pl-10 pr-10 py-2 bg-black/20 border border-white/10 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent transition-all"
                   placeholder="Confirm password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
@@ -400,9 +400,9 @@ export default function RegisterPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-white transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-white transition-colors"
                 >
-                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
@@ -412,18 +412,18 @@ export default function RegisterPage() {
               whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3.5 px-4 mt-6 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 mt-3.5 bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-white rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-purple-500/20 active:scale-95"
             >
-              {isSubmitting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Register'}
+              {isSubmitting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Register'}
             </motion.button>
           </form>
         )}
 
         {!success && !showOtp && (
           <>
-            <div className="relative flex py-2 items-center justify-center my-4">
+            <div className="relative flex py-1 items-center justify-center my-2">
               <div className="flex-grow border-t border-white/10"></div>
-              <span className="flex-shrink mx-4 text-gray-500 text-sm">or</span>
+              <span className="flex-shrink mx-3 text-gray-500 text-xs">or</span>
               <div className="flex-grow border-t border-white/10"></div>
             </div>
 
@@ -434,26 +434,26 @@ export default function RegisterPage() {
                 type="button"
                 onClick={handleNativeGoogleRegister}
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-900 rounded-lg font-medium transition-all"
+                className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 bg-white hover:bg-neutral-100 border border-neutral-300 text-neutral-900 rounded-xl text-xs sm:text-sm font-semibold transition-all"
               >
-                <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                   <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.13-5.136 4.13A5.72 5.72 0 0 1 8.24 12.8a5.72 5.72 0 0 1 5.751-5.73 5.56 5.56 0 0 1 3.96 1.6l3.055-3.055A9.97 9.97 0 0 0 13.99 2 9.99 9.99 0 0 0 4 12a9.99 9.99 0 0 0 9.99 10c5.38 0 9.8-3.97 9.8-10 0-.68-.06-1.3-.16-1.715H12.24Z" />
                 </svg>
                 Register with Google
               </motion.button>
             ) : (
               <div className="w-full flex flex-col items-center justify-center">
-                <div id="google-signin-btn" className="w-full min-h-[44px]" />
-                <p className="text-[10px] text-gray-500 mt-2 text-center max-w-[280px]">
+                <div id="google-signin-btn" className="w-full min-h-[40px]" />
+                <p className="text-[10px] text-gray-500 mt-1 text-center max-w-[280px]">
                   If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
                 </p>
               </div>
             )}
 
-            <p className="mt-6 text-center text-sm text-gray-400">
+            <p className="mt-3.5 text-center text-xs text-gray-400">
               Already have an account?{' '}
-              <Link href="/login" className="text-white font-medium hover:text-[var(--color-primary)] transition-colors">
-                Sign in
+              <Link href="/login" className="text-white font-semibold hover:text-[var(--color-primary)] transition-colors">
+                Sign in here
               </Link>
             </p>
           </>
