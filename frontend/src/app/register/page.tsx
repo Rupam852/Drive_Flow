@@ -433,8 +433,12 @@ export default function RegisterPage() {
                 Register with Google
               </motion.button>
             ) : (
-              <div className="w-full flex flex-col items-center justify-center">
-                <div id="google-signin-btn" className="w-full min-h-[40px]" />
+              <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[58px]">
+                <div 
+                  id="google-signin-btn" 
+                  className="w-full h-[40px] min-h-[40px] max-h-[40px] flex items-center justify-center overflow-hidden shrink-0" 
+                  style={{ height: '40px', minHeight: '40px', maxHeight: '40px' }}
+                />
                 <p className="text-[10px] text-gray-500 mt-1 text-center max-w-[280px]">
                   If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
                 </p>
