@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Lock, Mail, AlertCircle, Loader2, Smartphone, Download } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, AlertCircle, Loader2, Smartphone, Download, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAdblocked, setIsAdblocked] = useState(false);
   const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean; email?: string } | null>(null);
   const [isNativeApp, setIsNativeApp] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -73,8 +74,17 @@ export default function LoginPage() {
           } catch (e) {
             console.warn('Google GIS init error:', e);
           }
+        } else {
+          setIsAdblocked(true);
         }
       };
+
+      // Probe for adblocker after 1.2s if Google SDK is missing
+      const timer = setTimeout(() => {
+        if (!(window as any).google) {
+          setIsAdblocked(true);
+        }
+      }, 1200);
 
       if (document.getElementById(id)) {
         setTimeout(initGis, 50);
@@ -89,9 +99,12 @@ export default function LoginPage() {
         };
         script.onerror = (e) => {
           console.warn('Google GIS script load failed:', e);
+          setIsAdblocked(true);
         };
         document.body.appendChild(script);
       }
+
+      return () => clearTimeout(timer);
     }
   }, [router]);
 
@@ -304,7 +317,12 @@ export default function LoginPage() {
         ) : (
           <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[62px]">
             <div 
-              className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer"
+              onClick={() => {
+                if (isAdblocked || !(window as any).google) {
+                  setError('🛡️ Adblocker / Brave Shield Detected! Google Sign-In script was blocked by your browser. Please turn off Shields/Adblocker or log in using Email & Password.');
+                }
+              }}
+              className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer active:scale-[0.99] transition-transform"
               style={{ height: '44px', minHeight: '44px', maxHeight: '44px' }}
             >
               {/* Permanent static button - never erased during GIS load */}
@@ -320,9 +338,16 @@ export default function LoginPage() {
                 className="absolute inset-0 z-10 opacity-[0.001] flex items-center justify-center overflow-hidden" 
               />
             </div>
-            <p className="text-[10px] text-gray-500 mt-2 text-center max-w-[300px]">
-              If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
-            </p>
+            {isAdblocked ? (
+              <div className="mt-2.5 w-full p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] text-center flex items-center justify-center gap-2 leading-tight">
+                <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
+                <span>Brave Shield / Adblocker is blocking Google Login. Please disable it or use Email & Password.</span>
+              </div>
+            ) : (
+              <p className="text-[10px] text-gray-500 mt-2 text-center max-w-[300px]">
+                If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
+              </p>
+            )}
           </div>
         )}
 
