@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw, AlertCircle, CheckCircle, AlertTriangle, Info, X, Activity, Search } from 'lucide-react';
+import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw, AlertCircle, CheckCircle, AlertTriangle, Info, X, Activity, Search, Trash2 } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -56,6 +56,20 @@ export default function AdminDashboard() {
     const id = Date.now();
     setToasts(prev => [...prev, { id, msg, type }]);
     setTimeout(() => setToasts(prev => prev.filter(x => x.id !== id)), 4000);
+  };
+
+  const handleClearLogs = async () => {
+    if (!window.confirm('Are you sure you want to clear all activity logs?')) return;
+    try {
+      await api.delete('/files/admin-logs');
+      addToast('All activity logs cleared successfully!', 'success');
+      setAllLogs([]);
+      setLogs([]);
+      load();
+    } catch (err: any) {
+      console.error('Failed to clear activity logs:', err);
+      addToast('Failed to clear activity logs', 'error');
+    }
   };
 
   const load = async (cleanup = false) => {
@@ -432,12 +446,24 @@ export default function AdminDashboard() {
                   <p className="text-xs text-gray-400 mt-0.5">Real-time audit trail of all user and admin activities</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowLogsModal(false)}
-                className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-all"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {allLogs.length > 0 && (
+                  <button
+                    onClick={handleClearLogs}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs font-semibold transition-all active:scale-95"
+                    title="Clear all activity logs"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear Logs</span>
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowLogsModal(false)}
+                  className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-all"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
             {/* Search Filter Bar */}
@@ -517,12 +543,6 @@ export default function AdminDashboard() {
               <span className="text-xs text-gray-500 font-medium">
                 Total {allLogs.length} activity logs recorded
               </span>
-              <button
-                onClick={() => setShowLogsModal(false)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white rounded-xl text-xs font-medium transition-all"
-              >
-                Close
-              </button>
             </div>
           </motion.div>
         </div>
