@@ -102,6 +102,13 @@ export default function RegisterPage() {
     }
   }, [router]);
 
+  const handleGoogleClick = () => {
+    if (!(window as any).google?.accounts?.id) {
+      setError('🛡️ Brave Shield / Adblocker Detected! Google Sign-In script was blocked by your browser. Please turn off Shields/Adblocker or register using Email & Password.');
+      setIsAdblocked(true);
+    }
+  };
+
   const handleGoogleCredentialResponse = async (response: any) => {
     if (response?.credential) {
       await submitGoogleRegister(response.credential);
@@ -448,11 +455,7 @@ export default function RegisterPage() {
             ) : (
               <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[62px]">
                 <div 
-                  onClick={() => {
-                    if (isAdblocked || !(window as any).google) {
-                      setError('🛡️ Adblocker / Brave Shield Detected! Google Sign-In script was blocked by your browser. Please turn off Shields/Adblocker or register using Email & Password.');
-                    }
-                  }}
+                  onClick={handleGoogleClick}
                   className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer active:scale-[0.99] transition-transform"
                   style={{ height: '44px', minHeight: '44px', maxHeight: '44px' }}
                 >
@@ -466,7 +469,8 @@ export default function RegisterPage() {
                   {/* Google GIS container overlay */}
                   <div 
                     id="google-signin-btn" 
-                    className="absolute inset-0 z-10 opacity-[0.001] flex items-center justify-center overflow-hidden" 
+                    onClick={handleGoogleClick}
+                    className="absolute inset-0 z-10 opacity-[0.001] flex items-center justify-center overflow-hidden cursor-pointer" 
                   />
                 </div>
                 {isAdblocked ? (
