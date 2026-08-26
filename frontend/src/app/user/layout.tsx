@@ -19,6 +19,7 @@ const navItems = [
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [authorized, setAuthorized] = useState(() => {
     if (typeof window === 'undefined') return true;
     return !!(localStorage.getItem('token_user') || localStorage.getItem('token'));
@@ -69,14 +70,18 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }, 0, [sidebarOpen, pathname, router]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token_user');
-    sessionStorage.removeItem('driveflow_app_prompt_dismissed');
-    // Only remove generic role if it matches user
-    if (localStorage.getItem('role') === 'user') {
-      localStorage.removeItem('role');
-      localStorage.removeItem('token');
-    }
-    router.push('/login');
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    setTimeout(() => {
+      localStorage.removeItem('token_user');
+      sessionStorage.removeItem('driveflow_app_prompt_dismissed');
+      // Only remove generic role if it matches user
+      if (localStorage.getItem('role') === 'user') {
+        localStorage.removeItem('role');
+        localStorage.removeItem('token');
+      }
+      router.replace('/login');
+    }, 600);
   };
 
   useInactivityTimeout('user', handleLogout);
@@ -96,6 +101,36 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <AndroidAppModal />
+
+      {/* Smooth Logout Transition Overlay */}
+      <AnimatePresence>
+        {isLoggingOut && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center text-white p-4 select-none"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="bg-[#0f172a]/95 border border-purple-500/30 rounded-3xl p-8 shadow-[0_0_50px_rgba(168,85,247,0.2)] flex flex-col items-center gap-4 text-center max-w-xs w-full relative overflow-hidden"
+            >
+              <div className="relative flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin"></div>
+                <LogOut className="w-5 h-5 text-purple-400 absolute" />
+              </div>
+
+              <div>
+                <h4 className="text-base font-bold text-white tracking-wide">Logging Out...</h4>
+                <p className="text-xs text-gray-400 mt-1">Clearing session & redirecting safely</p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Mobile Backdrop */}
       <AnimatePresence>
         {sidebarOpen && (
