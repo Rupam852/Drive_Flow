@@ -117,25 +117,29 @@ export default function LoginPage() {
   }, [router]);
 
   const handleGoogleClick = () => {
-    if (!(window as any).google?.accounts?.id) {
+    setError('');
+    const google = (window as any).google;
+    if (!google || !google.accounts || !google.accounts.id) {
       setError('🛡️ Brave Shield / Adblocker Detected! Google Sign-In script was blocked by your browser. Please turn off Shields/Adblocker or log in using Email & Password.');
       setIsAdblocked(true);
       return;
     }
 
-    // Monitor if browser loses focus when Google button is clicked
-    let focusLost = false;
-    const onBlur = () => { focusLost = true; };
-    window.addEventListener('blur', onBlur, { once: true });
-
-    setTimeout(() => {
-      window.removeEventListener('blur', onBlur);
-      const isAuthTokenPresent = !!(localStorage.getItem('token') || localStorage.getItem('token_user') || localStorage.getItem('token_admin'));
-      if (!focusLost && !isAuthTokenPresent) {
-        setError('🛡️ Brave Shield / Adblocker Detected! Your browser extension blocked the Google Login window. Please disable Brave Shield / Adblocker for this site and refresh.');
-        setIsAdblocked(true);
-      }
-    }, 1200);
+    setIsAdblocked(false);
+    try {
+      google.accounts.id.prompt((notification: any) => {
+        if (notification?.isNotDisplayed?.()) {
+          const reason = notification.getNotDisplayedReason?.();
+          console.warn('Google prompt not displayed:', reason);
+          if (reason === 'opt_out_or_no_session' || reason === 'suppressed_by_user' || reason === 'unregistered_origin') {
+            setError('🛡️ Brave Shield / Adblocker is blocking Google Sign-In pop-up. Please disable Shields for this site and refresh.');
+            setIsAdblocked(true);
+          }
+        }
+      });
+    } catch (err) {
+      console.warn('Google prompt error:', err);
+    }
   };
 
   const handleGoogleCredentialResponse = async (response: any) => {
