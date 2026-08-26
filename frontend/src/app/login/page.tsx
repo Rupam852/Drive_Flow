@@ -71,6 +71,14 @@ export default function LoginPage() {
                 text: 'continue_with',
               });
             }
+            try {
+              (window as any).google.accounts.id.prompt((notification: any) => {
+                if (notification?.isNotDisplayed?.()) {
+                  console.warn('Google prompt suppressed:', notification.getNotDisplayedReason?.());
+                  setIsAdblocked(true);
+                }
+              });
+            } catch (pErr) {}
           } catch (e) {
             console.warn('Google GIS init error:', e);
           }
@@ -112,7 +120,22 @@ export default function LoginPage() {
     if (!(window as any).google?.accounts?.id) {
       setError('🛡️ Brave Shield / Adblocker Detected! Google Sign-In script was blocked by your browser. Please turn off Shields/Adblocker or log in using Email & Password.');
       setIsAdblocked(true);
+      return;
     }
+
+    // Monitor if browser loses focus when Google button is clicked
+    let focusLost = false;
+    const onBlur = () => { focusLost = true; };
+    window.addEventListener('blur', onBlur, { once: true });
+
+    setTimeout(() => {
+      window.removeEventListener('blur', onBlur);
+      const isAuthTokenPresent = !!(localStorage.getItem('token') || localStorage.getItem('token_user') || localStorage.getItem('token_admin'));
+      if (!focusLost && !isAuthTokenPresent) {
+        setError('🛡️ Brave Shield / Adblocker Detected! Your browser extension blocked the Google Login window. Please disable Brave Shield / Adblocker for this site and refresh.');
+        setIsAdblocked(true);
+      }
+    }, 1200);
   };
 
   const handleGoogleCredentialResponse = async (response: any) => {
