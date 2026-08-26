@@ -305,9 +305,16 @@ export default function LoginPage() {
           <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[58px]">
             <div 
               id="google-signin-btn" 
-              className="w-full h-[40px] min-h-[40px] max-h-[40px] flex items-center justify-center overflow-hidden shrink-0" 
+              className="w-full h-[40px] min-h-[40px] max-h-[40px] flex items-center justify-center overflow-hidden shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm relative" 
               style={{ height: '40px', minHeight: '40px', maxHeight: '40px' }}
-            />
+            >
+              <div className="absolute inset-0 flex items-center justify-center gap-2.5 pointer-events-none z-0">
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.13-5.136 4.13A5.72 5.72 0 0 1 8.24 12.8a5.72 5.72 0 0 1 5.751-5.73 5.56 5.56 0 0 1 3.96 1.6l3.055-3.055A9.97 9.97 0 0 0 13.99 2 9.99 9.99 0 0 0 4 12a9.99 9.99 0 0 0 9.99 10c5.38 0 9.8-3.97 9.8-10 0-.68-.06-1.3-.16-1.715H12.24Z" />
+                </svg>
+                <span>Continue with Google</span>
+              </div>
+            </div>
             <p className="text-[10px] text-gray-500 mt-1.5 text-center max-w-[280px]">
               If the Google login window does not open, please disable Brave Shield / Adblocker and refresh.
             </p>
