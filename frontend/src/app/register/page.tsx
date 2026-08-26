@@ -491,12 +491,8 @@ export default function RegisterPage() {
               </motion.button>
             ) : (
               <div className="w-full flex flex-col items-center justify-center shrink-0 min-h-[62px]">
-                <motion.button 
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  type="button"
+                <div 
                   onClick={handleGoogleClick}
-                  disabled={isSubmitting}
                   className="relative w-full h-[44px] min-h-[44px] max-h-[44px] shrink-0 rounded-xl bg-white text-neutral-900 font-semibold text-xs sm:text-sm border border-neutral-300 shadow-sm overflow-hidden flex items-center justify-center cursor-pointer active:scale-[0.99] transition-transform"
                   style={{ height: '44px', minHeight: '44px', maxHeight: '44px' }}
                 >
@@ -507,12 +503,12 @@ export default function RegisterPage() {
                     </svg>
                     <span>Register with Google</span>
                   </div>
-                  {/* Google GIS container overlay with pointer-events-none so click always hits button handler */}
+                  {/* Google GIS container overlay for GIS iframe rendering */}
                   <div 
                     id="google-signin-btn" 
-                    className="absolute inset-0 z-10 opacity-[0.001] pointer-events-none flex items-center justify-center overflow-hidden" 
+                    className="absolute inset-0 z-10 opacity-[0.001] flex items-center justify-center overflow-hidden cursor-pointer" 
                   />
-                </motion.button>
+                </div>
                 {isAdblocked ? (
                   <div className="mt-2.5 w-full p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] text-center flex items-center justify-center gap-2 leading-tight">
                     <ShieldAlert className="w-4 h-4 shrink-0 text-amber-400" />
