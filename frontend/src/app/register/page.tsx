@@ -47,40 +47,31 @@ export default function RegisterPage() {
       const id = 'google-jssdk';
       const initGis = () => {
         if ((window as any).google) {
-          (window as any).google.accounts.id.initialize({
-            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com',
-            callback: handleGoogleCredentialResponse,
-            error_callback: (err: any) => {
-              console.warn('Google Sign-in error_callback:', err);
-              setError('Google Sign-In was blocked or failed to load. Please disable Brave Shields/Adblocker or check browser popup settings.');
-            }
-          });
-          const container = document.getElementById('google-signin-btn');
-          if (container) {
-            const containerWidth = container.clientWidth || 384;
-            const finalWidth = Math.min(400, Math.max(200, containerWidth));
-            (window as any).google.accounts.id.renderButton(container, {
-              theme: 'outline',
-              size: 'large',
-              width: finalWidth,
-              shape: 'rectangular',
-              text: 'signup_with',
+          try {
+            (window as any).google.accounts.id.initialize({
+              client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '807433349889-957a3l6dtio305gtn6g5f7ek39rgi498.apps.googleusercontent.com',
+              callback: handleGoogleCredentialResponse,
             });
-
-            // Check if rendering was blocked silently by Adblocker/Brave Shield
-            setTimeout(() => {
-              if (container.children.length === 0) {
-                setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
-              }
-            }, 1500);
+            const container = document.getElementById('google-signin-btn');
+            if (container) {
+              const containerWidth = container.clientWidth || 340;
+              const finalWidth = Math.min(380, Math.max(200, containerWidth));
+              (window as any).google.accounts.id.renderButton(container, {
+                theme: 'outline',
+                size: 'large',
+                width: finalWidth,
+                shape: 'rectangular',
+                text: 'signup_with',
+              });
+            }
+          } catch (e) {
+            console.warn('Google GIS init error:', e);
           }
-        } else {
-          setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
         }
       };
 
       if (document.getElementById(id)) {
-        setTimeout(initGis, 100);
+        setTimeout(initGis, 50);
       } else {
         const script = document.createElement('script');
         script.id = id;
@@ -88,10 +79,10 @@ export default function RegisterPage() {
         script.async = true;
         script.defer = true;
         script.onload = () => {
-          setTimeout(initGis, 100);
+          setTimeout(initGis, 50);
         };
-        script.onerror = () => {
-          setError('Google Sign-In was blocked. If you use Brave or an Adblocker, please disable shields/adblocker and refresh.');
+        script.onerror = (e) => {
+          console.warn('Google GIS script load failed:', e);
         };
         document.body.appendChild(script);
       }
