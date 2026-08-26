@@ -132,6 +132,7 @@ export default function LoginPage() {
       localStorage.setItem(`token_${userData.role}`, userData.token);
       localStorage.setItem('role', userData.role);
       localStorage.setItem('user', JSON.stringify(userData));
+      sessionStorage.removeItem('driveflow_app_prompt_dismissed');
 
       if (userData.role === 'admin') {
         router.push('/admin/dashboard');
@@ -184,6 +185,7 @@ export default function LoginPage() {
       localStorage.setItem(`token_${userData.role}`, userData.token);
       localStorage.setItem('role', userData.role);
       localStorage.setItem('user', JSON.stringify(userData));
+      sessionStorage.removeItem('driveflow_app_prompt_dismissed');
 
       if (userData.role === 'admin') {
         router.push('/admin/dashboard');
@@ -334,38 +336,7 @@ export default function LoginPage() {
         </p>
       </motion.div>
 
-      {/* Android App Download Banner — only on web, hidden inside the app */}
-      {!isNativeApp && (
-        <motion.a
-          href="https://neo-files-transfer.pages.dev/download/723586892fd0"
-          rel="noopener noreferrer"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          className="relative w-full flex items-center gap-4 px-5 py-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer shadow-[0_0_20px_rgba(16,185,129,0.1)] hover:shadow-[0_0_30px_rgba(16,185,129,0.2)]"
-        >
-          {/* Pulsing dot */}
-          <span className="absolute top-3 right-3 flex h-2 w-2">
-            <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-          </span>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
-            <Smartphone className="w-5 h-5 text-emerald-400" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-emerald-300 font-semibold text-sm">Android App Available</p>
-            <p className="text-emerald-500/80 text-xs mt-0.5">Please download this app for better experience</p>
-          </div>
-          <div className="flex items-center gap-1 shrink-0 bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="text-emerald-300 text-xs font-bold">Download</span>
-          </div>
-        </motion.a>
-      )}
-
-      </div> {/* end Card + Banner wrapper */}
+      </div> {/* end Card wrapper */}
       {/* Rejection / Pending Popup */}
       {showPopup && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">

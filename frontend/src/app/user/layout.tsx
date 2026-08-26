@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import CloudLogo from '@/components/CloudLogo';
+import AndroidAppModal from '@/components/AndroidAppModal';
 
 const navItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: LayoutDashboard },
@@ -69,6 +70,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
   const handleLogout = () => {
     localStorage.removeItem('token_user');
+    sessionStorage.removeItem('driveflow_app_prompt_dismissed');
     // Only remove generic role if it matches user
     if (localStorage.getItem('role') === 'user') {
       localStorage.removeItem('role');
@@ -93,6 +95,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
+      <AndroidAppModal />
       {/* Mobile Backdrop */}
       <AnimatePresence>
         {sidebarOpen && (

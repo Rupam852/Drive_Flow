@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import CloudLogo from '@/components/CloudLogo';
+import AndroidAppModal from '@/components/AndroidAppModal';
 
 
 const navItems = [
@@ -71,10 +72,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, 0, [sidebarOpen, pathname, router]);
 
-
-
   const handleLogout = () => {
     localStorage.removeItem('token_admin');
+    sessionStorage.removeItem('driveflow_app_prompt_dismissed');
     // Only remove generic role if it matches admin
     if (localStorage.getItem('role') === 'admin') {
       localStorage.removeItem('role');
@@ -99,6 +99,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
+      <AndroidAppModal />
       {/* Mobile Backdrop */}
       <AnimatePresence>
         {sidebarOpen && (
