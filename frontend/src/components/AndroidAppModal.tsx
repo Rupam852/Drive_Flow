@@ -14,9 +14,11 @@ export default function AndroidAppModal() {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     if (isNative) return;
 
-    // Check if dismissed in current login session
-    const isDismissed = sessionStorage.getItem('driveflow_app_prompt_dismissed');
-    if (!isDismissed) {
+    // Check if dismissed/prompted in current login session
+    const isPrompted = sessionStorage.getItem('driveflow_app_prompt_dismissed');
+    if (!isPrompted) {
+      // Mark as prompted immediately so reloading the page (F5) will NOT show the popup again
+      sessionStorage.setItem('driveflow_app_prompt_dismissed', 'true');
       const timer = setTimeout(() => setIsOpen(true), 800);
       return () => clearTimeout(timer);
     }
