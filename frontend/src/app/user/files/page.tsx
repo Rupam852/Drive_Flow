@@ -776,21 +776,8 @@ export default function UserFilesPage() {
           </div>
         </div>
 
-        {/* Right: storage bar + view toggle */}
+        {/* Right: view toggle */}
         <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-          {stats && (
-            <div className="w-40 sm:w-48 bg-white/5 p-2 px-3 rounded-2xl border border-white/10">
-              <div className="flex justify-between text-[9px] text-gray-400 mb-1 font-medium uppercase tracking-wider">
-                <span>Storage</span>
-                <span>{fmt(stats.used)} / {fmt(stats.limit)}</span>
-              </div>
-              <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${Math.max(Number(stats.used) > 0 ? 1 : 0, (Number(stats.used) / (Number(stats.limit) || 5 * 1024 * 1024 * 1024)) * 100)}%` }}
-                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500" />
-              </div>
-            </div>
-          )}
-
           <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
             <button onClick={() => setViewMode('list')}
               className={`p-1.5 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>

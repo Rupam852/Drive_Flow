@@ -1610,21 +1610,6 @@ function AdminFilesContent() {
           </div>
         </div>
 
-        {stats && (
-          <div className="w-full sm:w-56 bg-white/5 p-3 rounded-2xl border border-white/10 shrink-0 self-start sm:self-auto">
-            <div className="flex justify-between text-[10px] text-gray-400 mb-1.5 font-medium uppercase tracking-wider">
-              <span>Storage Usage</span>
-              <span>{fmt(stats.used)} / {fmt(stats.limit)}</span>
-            </div>
-            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${Math.max(Number(stats.used) > 0 ? 1 : 0, (Number(stats.used) / (Number(stats.limit) || 5 * 1024 * 1024 * 1024)) * 100)}%` }}
-                className="h-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-[0_0_10px_rgba(168,85,247,0.4)]"
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-2">
