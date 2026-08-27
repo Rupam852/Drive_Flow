@@ -6,6 +6,7 @@ import { HardDrive, File, Folder, Users, TrendingUp, RefreshCw, AlertCircle, Che
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import CloudLogo from '@/components/CloudLogo';
 
 const StatCard = ({ icon: Icon, label, value, color, href }: any) => (
   <Link href={href || '#'}>
@@ -232,6 +233,27 @@ export default function AdminDashboard() {
       default: return action.replace('_', ' ');
     }
   };
+
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-white">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-4 p-8 rounded-3xl glass border border-white/10 shadow-2xl max-w-xs w-full text-center"
+        >
+          <div className="relative flex items-center justify-center">
+            <div className="w-14 h-14 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+            <CloudLogo size={28} className="absolute animate-pulse" />
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-white tracking-tight">Loading Admin Dashboard...</h4>
+            <p className="text-xs text-gray-400 mt-1">Syncing system statistics & audit logs</p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <>
