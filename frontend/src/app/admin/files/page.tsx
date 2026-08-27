@@ -1574,12 +1574,6 @@ function AdminFilesContent() {
     >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div className="flex items-start gap-3 min-w-0">
-          {path.length > 1 && (
-            <button onClick={() => breadcrumbNav(path.length - 2)}
-              className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors shrink-0 mt-0.5" title="Go Back">
-              <ChevronRight className="w-5 h-5 rotate-180" />
-            </button>
-          )}
           <div className="min-w-0">
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
               File Manager
