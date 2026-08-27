@@ -333,7 +333,7 @@ export default function AdminDashboard() {
                   if (!stats?.types) return null;
                   
                   const formatMimeType = (mime: string) => {
-                    if (!mime) return null;
+                    if (!mime) return 'OTHER';
                     const m = mime.toLowerCase();
                     if (m.includes('document') || m.includes('word') || m.includes('text') || m.includes('plain')) return 'DOCUMENT';
                     if (m.includes('spreadsheet') || m.includes('excel')) return 'SPREADSHEET';
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
                     if (m.includes('image')) return 'IMAGE';
                     if (m.includes('video')) return 'VIDEO';
                     if (m.includes('zip') || m.includes('rar') || m.includes('tar') || m.includes('compressed')) return 'ARCHIVE';
-                    return null;
+                    return 'OTHER';
                   };
 
                   const grouped: Record<string, number> = {};
