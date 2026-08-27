@@ -431,10 +431,23 @@ function AdminFilesContent() {
   }, [path, previewFile, renaming, showLogs, showTrash, showUsers, showMoveModal, showDownloadModal, showNewFolderModal, confirmModal.show]);
 
   const navigateToFolder = (folder: { id: string, name: string }) => {
+    setSelected(new Set());
+    setSearchQuery('');
     const newPath = [...path, folder];
     setPath(newPath);
     window.history.pushState({ path: newPath }, '', `?folder=${folder.id}`);
     loadFiles(folder.id);
+  };
+
+  const breadcrumbNav = (idx: number) => {
+    if (idx === path.length - 1) return;
+    setSelected(new Set());
+    setSearchQuery('');
+    const newPath = path.slice(0, idx + 1);
+    setPath(newPath);
+    const targetFolder = newPath[newPath.length - 1];
+    window.history.replaceState({ path: newPath }, '', `?folder=${targetFolder.id}`);
+    loadFiles(targetFolder.id);
   };
   // ──────────────────────────────────────────────────────────────────
 
@@ -1490,13 +1503,6 @@ function AdminFilesContent() {
     setShowDownloadModal(false);
   };
 
-  const breadcrumbNav = (idx: number) => {
-    const newPath = path.slice(0, idx + 1);
-    setPath(newPath);
-    loadFiles(newPath[newPath.length - 1].id);
-    window.history.pushState({ path: newPath }, '', `?folder=${newPath[newPath.length - 1].id}`);
-  };
-
   const toggleSelect = (id: string) => {
     setSelected(prev => {
       const n = new Set(prev);
@@ -1774,7 +1780,7 @@ function AdminFilesContent() {
         key={currentFolder.id}
       >
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center text-white space-y-3">
+          <div className="py-24 flex flex-col items-center justify-center text-white space-y-3 min-h-[400px]">
             <div className="relative flex items-center justify-center">
               <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
               <CloudLogo size={24} className="absolute animate-pulse" />

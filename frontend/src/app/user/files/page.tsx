@@ -240,6 +240,7 @@ export default function UserFilesPage() {
   }, [files, activeCategory]);
 
   const navigate = (folder: DriveFile) => {
+    setSelected(new Set());
     setSearchQuery(''); 
     const newPath = [...path, { id: folder.id, name: folder.name }];
     setPath(newPath);
@@ -249,11 +250,14 @@ export default function UserFilesPage() {
   };
 
   const breadcrumbNav = (idx: number) => {
+    if (idx === path.length - 1) return;
+    setSelected(new Set());
+    setSearchQuery('');
     const newPath = path.slice(0, idx + 1);
     setPath(newPath);
     const url = new URL(window.location.href);
     url.searchParams.set('folder', newPath[newPath.length - 1].id);
-    window.history.pushState({ path: newPath }, '', url);
+    window.history.replaceState({ path: newPath }, '', url);
   };
 
   // Universal download trigger - works on both web and Android WebView
@@ -696,8 +700,13 @@ export default function UserFilesPage() {
     if (showMoveModal)          { setShowMoveModal(false); return true; }
     if (zipNameModal)           { setZipNameModal(false); return true; }
     if (path.length > 1) {
+      setSelected(new Set());
+      setSearchQuery('');
       const newPath = path.slice(0, -1);
       setPath(newPath);
+      const url = new URL(window.location.href);
+      url.searchParams.set('folder', newPath[newPath.length - 1].id);
+      window.history.replaceState({ path: newPath }, '', url);
       loadFiles(newPath[newPath.length - 1].id);
       return true;
     }
@@ -827,7 +836,7 @@ export default function UserFilesPage() {
 
       <div className="glass-card rounded-2xl overflow-hidden min-h-[400px]">
         {loading ? (
-          <div className="py-24 flex flex-col items-center justify-center text-white space-y-3">
+          <div className="py-24 flex flex-col items-center justify-center text-white space-y-3 min-h-[400px]">
             <div className="relative flex items-center justify-center">
               <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
               <CloudLogo size={24} className="absolute animate-pulse" />
