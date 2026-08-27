@@ -2932,32 +2932,45 @@ function AdminFilesContent() {
 function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, actionLoading, initialPath }: any) {
   const [folders, setFolders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [currentPath, setCurrentPath] = useState<any[]>(initialPath && initialPath.length > 0 ? initialPath : [{ id: ROOT_ID, name: 'Root' }]);
+  const [currentPath, setCurrentPath] = useState<any[]>([]);
 
   useEffect(() => {
     if (show) {
-      if (initialPath && initialPath.length > 0) {
-        setCurrentPath(initialPath);
-      } else {
-        setCurrentPath([{ id: ROOT_ID, name: 'Root' }]);
+      let startPath = initialPath && initialPath.length > 0 ? initialPath : [{ id: ROOT_ID, name: 'Root' }];
+      
+      // If the first file to move is a folder that matches the last item in startPath,
+      // it means we are moving the folder we are currently inside of!
+      // Its actual parent is startPath.slice(0, -1)!
+      if (filesToMove && filesToMove.length > 0) {
+        const firstMoveId = filesToMove[0].id;
+        if (startPath[startPath.length - 1]?.id === firstMoveId && startPath.length > 1) {
+          startPath = startPath.slice(0, -1);
+        }
       }
+      
+      setCurrentPath(startPath);
     }
-  }, [show]);
+  }, [show, initialPath, filesToMove]);
 
   const loadFolders = async (parentId: string) => {
     setLoading(true);
     try {
       const res = await api.get(`/files?parentId=${parentId}`);
-      setFolders(res.data.filter((f: any) => f.mimeType === 'application/vnd.google-apps.folder' && !filesToMove.some((m: any) => m.id === f.id)));
+      setFolders(res.data.filter((f: any) => 
+        (f.mimeType === 'application/vnd.google-apps.folder' || f.type === 'application/vnd.google-apps.folder') &&
+        !filesToMove.some((m: any) => m.id === f.id)
+      ));
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
 
-  useEffect(() => { if (show) loadFolders(currentPath[currentPath.length - 1].id); }, [show, currentPath]);
+  useEffect(() => { if (show && currentPath.length > 0) loadFolders(currentPath[currentPath.length - 1].id); }, [show, currentPath]);
 
-  if (!show) return null;
+  if (!show || currentPath.length === 0) return null;
 
-  const isCurrentFolder = currentPath[currentPath.length - 1].id === currentFolderId;
+  const targetFolderId = currentPath[currentPath.length - 1]?.id;
+  const itemParentId = filesToMove && filesToMove[0]?.parentId ? filesToMove[0].parentId : currentFolderId;
+  const isCurrentFolder = targetFolderId === itemParentId || targetFolderId === currentFolderId;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
