@@ -87,6 +87,7 @@ export default function UserFilesPage() {
   const [downloadStatus, setDownloadStatus] = useState<{ show: boolean; fileName: string; status: 'loading' | 'success' | 'error' }>({
     show: false, fileName: '', status: 'loading'
   });
+  const [actionLoading, setActionLoading] = useState(false);
 
   const { pullDistance, isRefreshing, isPulling } = usePullToRefresh(async () => {
     if (!searchQuery) {
@@ -661,16 +662,23 @@ export default function UserFilesPage() {
   };
 
   const handleMove = async (targetId: string, idsToMove?: string[]) => {
+    if (actionLoading) return;
     const ids = idsToMove || movingIds;
     if (ids.length === 0) return;
+    setActionLoading(true);
     try {
       await api.put('/files/move', { fileIds: ids, targetParentId: targetId });
       setMovingIds([]);
+      setSelected(new Set());
+      setShowMoveModal(false);
       addToast('File moved successfully');
+      fetchStats();
       await loadFiles(currentFolder.id);
     } catch (e) { 
       console.error(e);
       addToast('Error moving file', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -1392,7 +1400,108 @@ export default function UserFilesPage() {
         )}
       </AnimatePresence>
 
+      {/* Move Modal */}
+      <MoveFilesModal
+        show={showMoveModal}
+        onClose={() => { setShowMoveModal(false); setMovingIds([]); }}
+        onMove={handleMove}
+        currentFolderId={currentFolder.id}
+        filesToMove={files.filter(f => movingIds.includes(f.id))}
+        actionLoading={actionLoading}
+        initialPath={path}
+      />
+
     </motion.div>
     </>
+  );
+}
+
+function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, actionLoading, initialPath }: any) {
+  const [folders, setFolders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [currentPath, setCurrentPath] = useState<any[]>(initialPath && initialPath.length > 0 ? initialPath : [{ id: ROOT_ID, name: 'Root' }]);
+
+  useEffect(() => {
+    if (show) {
+      if (initialPath && initialPath.length > 0) {
+        setCurrentPath(initialPath);
+      } else {
+        setCurrentPath([{ id: ROOT_ID, name: 'Root' }]);
+      }
+    }
+  }, [show]);
+
+  const loadFolders = async (parentId: string) => {
+    setLoading(true);
+    try {
+      const res = await api.get(`/files?parentId=${parentId}`);
+      setFolders(res.data.filter((f: any) => f.mimeType === 'application/vnd.google-apps.folder' && !filesToMove.some((m: any) => m.id === f.id)));
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { if (show) loadFolders(currentPath[currentPath.length - 1].id); }, [show, currentPath]);
+
+  if (!show) return null;
+
+  const isCurrentFolder = currentPath[currentPath.length - 1].id === currentFolderId;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        className="glass-card w-[95vw] sm:max-w-md p-6 rounded-2xl flex flex-col max-h-[80vh]">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-semibold text-lg">Move to...</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="flex items-center gap-1 mb-4 overflow-x-auto pb-2 no-scrollbar">
+          {currentPath.map((p, i) => (
+            <button key={i} onClick={() => setCurrentPath(currentPath.slice(0, i + 1))}
+              className="text-xs text-gray-400 hover:text-white whitespace-nowrap">
+              {i > 0 && ' / '} {p.name}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto space-y-1 mb-6 pr-2 custom-scrollbar">
+          {loading ? (
+            <div className="py-8 text-center text-gray-500">Loading...</div>
+          ) : (
+            <>
+              {currentPath.length > 1 && (
+                <button onClick={() => setCurrentPath(currentPath.slice(0, -1))}
+                  className="flex items-center gap-3 w-full px-3 py-2 text-sm text-purple-400 hover:bg-purple-500/10 rounded-xl transition-colors text-left border border-dashed border-purple-500/20 mb-2">
+                  <ChevronRight className="w-4 h-4 rotate-180" />
+                  <span>Go back to parent</span>
+                </button>
+              )}
+              {folders.length === 0 ? (
+                <div className="py-8 text-center text-gray-500">No sub-folders here</div>
+              ) : (
+                folders.map(f => (
+                  <button key={f.id} onClick={() => setCurrentPath([...currentPath, { id: f.id, name: f.name }])}
+                    className="flex items-center gap-3 w-full px-3 py-2 text-sm text-gray-300 hover:bg-white/5 rounded-xl transition-colors text-left group">
+                    <Folder className="w-4 h-4 text-yellow-400" />
+                    <span className="flex-1 truncate">{f.name}</span>
+                    <ChevronRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400" />
+                  </button>
+                ))
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="flex gap-2 justify-end">
+          <button onClick={onClose} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors text-sm disabled:opacity-50">Cancel</button>
+          <button onClick={() => onMove(currentPath[currentPath.length - 1].id)}
+            disabled={actionLoading || isCurrentFolder}
+            className="px-6 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center gap-2">
+            {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+            {actionLoading ? 'Moving...' : isCurrentFolder ? 'Current Location' : 'Move Here'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
   );
 }

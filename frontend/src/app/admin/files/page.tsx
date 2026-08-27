@@ -2120,6 +2120,7 @@ function AdminFilesContent() {
         currentFolderId={currentFolder.id}
         filesToMove={files.filter(f => movingIds.includes(f.id))}
         actionLoading={actionLoading}
+        initialPath={path}
       />
 
       {/* Activity Logs Modal */}
@@ -2928,10 +2929,20 @@ function AdminFilesContent() {
   );
 }
 
-function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, actionLoading }: any) {
+function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, actionLoading, initialPath }: any) {
   const [folders, setFolders] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [currentPath, setCurrentPath] = useState<any[]>([{ id: ROOT_ID, name: 'Root' }]);
+  const [currentPath, setCurrentPath] = useState<any[]>(initialPath && initialPath.length > 0 ? initialPath : [{ id: ROOT_ID, name: 'Root' }]);
+
+  useEffect(() => {
+    if (show) {
+      if (initialPath && initialPath.length > 0) {
+        setCurrentPath(initialPath);
+      } else {
+        setCurrentPath([{ id: ROOT_ID, name: 'Root' }]);
+      }
+    }
+  }, [show]);
 
   const loadFolders = async (parentId: string) => {
     setLoading(true);
@@ -2945,6 +2956,8 @@ function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, a
   useEffect(() => { if (show) loadFolders(currentPath[currentPath.length - 1].id); }, [show, currentPath]);
 
   if (!show) return null;
+
+  const isCurrentFolder = currentPath[currentPath.length - 1].id === currentFolderId;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -2995,10 +3008,10 @@ function MoveFilesModal({ show, onClose, onMove, currentFolderId, filesToMove, a
         <div className="flex gap-2 justify-end">
           <button onClick={onClose} disabled={actionLoading} className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-colors text-sm disabled:opacity-50">Cancel</button>
           <button onClick={() => onMove(currentPath[currentPath.length - 1].id)}
-            disabled={actionLoading || currentPath[currentPath.length - 1].id === currentFolderId}
+            disabled={actionLoading || isCurrentFolder}
             className="px-6 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm flex items-center gap-2">
             {actionLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-            {actionLoading ? 'Moving...' : 'Move Here'}
+            {actionLoading ? 'Moving...' : isCurrentFolder ? 'Current Location' : 'Move Here'}
           </button>
         </div>
       </motion.div>
