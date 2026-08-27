@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Shield, Edit2, Check, X, Key, AlertCircle, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import CloudLogo from '@/components/CloudLogo';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -112,8 +113,21 @@ export default function ProfilePage() {
 
   if (!userData) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+      <div className="min-h-[70vh] flex flex-col items-center justify-center text-white">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center gap-4 p-8 rounded-3xl glass border border-white/10 shadow-2xl max-w-xs w-full text-center"
+        >
+          <div className="relative flex items-center justify-center">
+            <div className="w-14 h-14 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+            <CloudLogo size={28} className="absolute animate-pulse" />
+          </div>
+          <div>
+            <h4 className="text-base font-bold text-white tracking-tight">Loading Profile...</h4>
+            <p className="text-xs text-gray-400 mt-1">Retrieving user credentials</p>
+          </div>
+        </motion.div>
       </div>
     );
   }
