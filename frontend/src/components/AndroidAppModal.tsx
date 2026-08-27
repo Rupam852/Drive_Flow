@@ -1,53 +1,37 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Smartphone, Download, X, Sparkles, ShieldCheck } from 'lucide-react';
+import { Smartphone, Download, X, Sparkles } from 'lucide-react';
 
-export default function AndroidAppModal() {
-  const [isOpen, setIsOpen] = useState(false);
+interface AndroidAppModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    // Do NOT show inside native Android app
-    const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
-    if (isNative) return;
-
-    // Check if dismissed/prompted in current login session
-    const isPrompted = sessionStorage.getItem('driveflow_app_prompt_dismissed');
-    if (!isPrompted) {
-      // Mark as prompted immediately so reloading the page (F5) will NOT show the popup again
-      sessionStorage.setItem('driveflow_app_prompt_dismissed', 'true');
-      const timer = setTimeout(() => setIsOpen(true), 800);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  const handleClose = () => {
-    setIsOpen(false);
-    sessionStorage.setItem('driveflow_app_prompt_dismissed', 'true');
-  };
-
+export default function AndroidAppModal({ isOpen, onClose }: AndroidAppModalProps) {
   const handleDownload = () => {
     window.open('https://neo-files-transfer.pages.dev/download/723586892fd0', '_blank');
-    handleClose();
+    onClose();
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 z-[300] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          onClick={onClose}
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: "spring", stiffness: 350, damping: 25 }}
+            onClick={(e) => e.stopPropagation()}
             className="bg-[#0f172a]/95 border border-emerald-500/30 rounded-3xl shadow-[0_0_50px_rgba(16,185,129,0.15)] w-full max-w-md p-6 relative overflow-hidden text-center group"
           >
             {/* Close X Button */}
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all z-10"
               aria-label="Close popup"
             >
@@ -75,10 +59,10 @@ export default function AndroidAppModal() {
             {/* Buttons */}
             <div className="flex items-center gap-3">
               <button
-                onClick={handleClose}
+                onClick={onClose}
                 className="flex-1 py-3 px-4 rounded-xl border border-white/10 bg-white/5 text-gray-300 hover:text-white hover:bg-white/10 text-xs font-semibold transition-all"
               >
-                Maybe Later
+                Close
               </button>
               <button
                 onClick={handleDownload}

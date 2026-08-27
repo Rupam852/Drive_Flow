@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, FolderOpen, LogOut, Menu, X,
-  HardDrive,
+  HardDrive, Smartphone,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
@@ -22,6 +22,8 @@ const navItems = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showAndroidModal, setShowAndroidModal] = useState(false);
+  const [isNativeApp, setIsNativeApp] = useState(false);
   const [mounted, setMounted] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [authorized, setAuthorized] = useState(() => {
@@ -34,6 +36,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Combined Mount & Auth Check (Client-only)
   useEffect(() => {
     try {
+      setIsNativeApp(!!(window as any).Capacitor?.isNativePlatform?.());
       const token = localStorage.getItem('token_admin') || localStorage.getItem('token');
       if (token) {
         setAuthorized(true);
@@ -104,7 +107,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
-      <AndroidAppModal />
+      <AndroidAppModal isOpen={showAndroidModal} onClose={() => setShowAndroidModal(false)} />
 
       {/* Smooth Logout Transition Overlay */}
       <AnimatePresence>
@@ -193,13 +196,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main content — offset on desktop to account for fixed sidebar */}
       <div className="flex flex-col min-h-screen lg:pl-64">
         {/* Top bar */}
-        <header className="sticky top-0 z-10 h-16 glass border-b border-white/10 flex items-center px-4 lg:px-6 gap-4">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-400 hover:text-white p-1">
-            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-          <h2 className="text-white font-semibold">
-            {navItems.find(n => n.href === pathname)?.label || 'Dashboard'}
-          </h2>
+        <header className="sticky top-0 z-10 h-16 glass border-b border-white/10 flex items-center justify-between px-4 lg:px-6">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-400 hover:text-white p-1">
+              {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+            <h2 className="text-white font-semibold">
+              {navItems.find(n => n.href === pathname)?.label || 'Dashboard'}
+            </h2>
+          </div>
+
+          {/* Website Only - Android App Download Button */}
+          {!isNativeApp && (
+            <button
+              onClick={() => setShowAndroidModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-500/40 text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-sm"
+              title="Download Android App"
+            >
+              <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
+              <span className="hidden sm:inline">Android App</span>
+              <span className="sm:hidden">App</span>
+            </button>
+          )}
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
