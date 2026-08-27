@@ -60,6 +60,14 @@ export default function UserFilesPage() {
   const [previewFile, setPreviewFile] = useState<DriveFile | null>(null);
   const [previewToken, setPreviewToken] = useState<string>('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const breadcrumbRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll breadcrumbs to active item on folder change
+  useEffect(() => {
+    if (breadcrumbRef.current) {
+      breadcrumbRef.current.scrollLeft = breadcrumbRef.current.scrollWidth;
+    }
+  }, [path]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [stats, setStats] = useState<any>(null);
@@ -735,21 +743,34 @@ export default function UserFilesPage() {
           )}
           <div className="min-w-0">
             <h2 className="text-2xl font-bold text-white">My Files</h2>
-            <div className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[70vw] sm:max-w-sm">
+            <div 
+              ref={breadcrumbRef}
+              className="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar max-w-[75vw] sm:max-w-md scroll-smooth py-0.5"
+            >
               {searchQuery ? (
-                <span className="text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
+                <span className="text-xs sm:text-sm text-purple-400 font-medium flex items-center gap-2 whitespace-nowrap">
                   <Search className="w-4 h-4" /> Search results for "{searchQuery}"
                 </span>
               ) : (
-                path.map((p, i) => (
-                  <span key={i} className="flex items-center gap-1 shrink-0">
-                    {i > 0 && <ChevronRight className="w-3 h-3 text-gray-500 shrink-0" />}
-                    <button onClick={() => breadcrumbNav(i)}
-                      className={`text-sm transition-colors whitespace-nowrap ${i === path.length - 1 ? 'text-white font-medium' : 'text-gray-400 hover:text-white'}`}>
-                      {i === 0 ? <Home className="w-4 h-4" /> : p.name}
-                    </button>
-                  </span>
-                ))
+                path.map((p, i) => {
+                  const isLast = i === path.length - 1;
+                  return (
+                    <span key={p.id || i} className="flex items-center gap-1 shrink-0">
+                      {i > 0 && <ChevronRight className="w-3.5 h-3.5 text-gray-500 shrink-0" />}
+                      <button
+                        onClick={() => breadcrumbNav(i)}
+                        title={p.name || 'Root'}
+                        className={`text-xs sm:text-sm transition-all rounded-lg px-2 py-0.5 flex items-center gap-1 max-w-[120px] sm:max-w-[180px]
+                          ${isLast
+                            ? 'bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30'
+                            : 'text-gray-400 hover:text-white hover:bg-white/10'}`}
+                      >
+                        {i === 0 ? <Home className="w-3.5 h-3.5 shrink-0" /> : null}
+                        <span className="truncate">{i === 0 ? (p.name || 'Root') : p.name}</span>
+                      </button>
+                    </span>
+                  );
+                })
               )}
             </div>
           </div>
