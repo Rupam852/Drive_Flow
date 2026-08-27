@@ -2148,9 +2148,16 @@ function AdminFilesContent() {
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
                 {loadingLogs ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />
-                  ))
+                  <div className="py-20 flex flex-col items-center justify-center text-white space-y-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+                      <CloudLogo size={24} className="absolute animate-pulse" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-white tracking-tight">Fetching Activity Logs...</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Loading recent system events</p>
+                    </div>
+                  </div>
                 ) : logs.length === 0 ? (
                   <div className="py-20 text-center text-gray-500 italic">No activities recorded yet</div>
                 ) : (
@@ -2255,9 +2262,16 @@ function AdminFilesContent() {
               {/* File List */}
               <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
                 {loadingTrash ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />
-                  ))
+                  <div className="py-20 flex flex-col items-center justify-center text-white space-y-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-12 h-12 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
+                      <CloudLogo size={24} className="absolute animate-pulse" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-white tracking-tight">Fetching Trash Bin...</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Loading deleted items</p>
+                    </div>
+                  </div>
                 ) : (!Array.isArray(trashFiles) || trashFiles.length === 0) ? (
                   <div className="py-20 text-center text-gray-500 italic">Trash is empty</div>
                 ) : (
@@ -2343,9 +2357,16 @@ function AdminFilesContent() {
               {/* User List */}
               <div className="flex-1 overflow-y-auto p-3 space-y-2 no-scrollbar">
                 {loadingUsers ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-20 bg-white/5 rounded-2xl animate-pulse" />
-                  ))
+                  <div className="py-20 flex flex-col items-center justify-center text-white space-y-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-12 h-12 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                      <CloudLogo size={24} className="absolute animate-pulse" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-white tracking-tight">Fetching Users...</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Loading user accounts</p>
+                    </div>
+                  </div>
                 ) : users.length === 0 ? (
                   <div className="py-20 text-center text-gray-500 italic">No users found</div>
                 ) : (
@@ -2431,9 +2452,16 @@ function AdminFilesContent() {
               
               <div className="flex-1 overflow-y-auto p-4 space-y-6 no-scrollbar bg-black/20">
                 {loadingDuplicates ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="h-24 bg-white/5 rounded-2xl animate-pulse" />
-                  ))
+                  <div className="py-20 flex flex-col items-center justify-center text-white space-y-3">
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                      <CloudLogo size={24} className="absolute animate-pulse" />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-bold text-white tracking-tight">Scanning Duplicates...</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Checking duplicate files</p>
+                    </div>
+                  </div>
                 ) : duplicates.length === 0 ? (
                   <div className="py-20 text-center flex flex-col items-center gap-4">
                     <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center border border-emerald-500/20">
