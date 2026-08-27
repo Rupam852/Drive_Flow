@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle, Clock, Mail, Trash2, Search, RefreshCw } from 'lucide-react';
 import api from '@/lib/api';
+import CloudLogo from '@/components/CloudLogo';
 
 interface User {
   _id: string;
@@ -112,7 +113,20 @@ export default function AdminUsersPage() {
             <tbody>
               <AnimatePresence>
                 {loading ? (
-                  <tr><td colSpan={5} className="py-16 text-center text-gray-500">Loading users...</td></tr>
+                  <tr>
+                    <td colSpan={5} className="py-20 text-center">
+                      <div className="flex flex-col items-center justify-center space-y-3">
+                        <div className="relative flex items-center justify-center">
+                          <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+                          <CloudLogo size={24} className="absolute animate-pulse" />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-bold text-white tracking-tight">Fetching Users...</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Syncing user database</p>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
                 ) : filtered.length === 0 ? (
                   <tr><td colSpan={5} className="py-16 text-center text-gray-500">No users found</td></tr>
                 ) : (

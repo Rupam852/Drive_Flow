@@ -8,6 +8,7 @@ import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { Capacitor } from '@capacitor/core';
 import { Filesystem, Directory } from '@capacitor/filesystem';
+import CloudLogo from '@/components/CloudLogo';
 
 
 interface DriveFile {
@@ -818,10 +819,15 @@ export default function UserFilesPage() {
 
       <div className="glass-card rounded-2xl overflow-hidden min-h-[400px]">
         {loading ? (
-          <div className={`p-6 ${viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4' : 'space-y-3'}`}>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className={`bg-white/5 animate-pulse rounded-xl ${viewMode === 'grid' ? 'h-32' : 'h-12'}`} />
-            ))}
+          <div className="py-24 flex flex-col items-center justify-center text-white space-y-3">
+            <div className="relative flex items-center justify-center">
+              <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin"></div>
+              <CloudLogo size={24} className="absolute animate-pulse" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-bold text-white tracking-tight">Fetching files...</p>
+              <p className="text-xs text-gray-400 mt-0.5">Syncing drive directory</p>
+            </div>
           </div>
         ) : filteredFiles.length === 0 ? (
           <div className="py-20 text-center text-gray-500 flex flex-col items-center gap-3">
