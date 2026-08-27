@@ -2120,23 +2120,23 @@ function AdminFilesContent() {
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
               className="glass-card max-w-2xl w-full max-h-[80vh] flex flex-col rounded-3xl overflow-hidden shadow-2xl">
-              <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <MoreVertical className="w-5 h-5 text-purple-400" /> System Activity
+              <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between gap-3 bg-white/5 flex-wrap sm:flex-nowrap">
+                <h3 className="text-lg sm:text-xl font-bold text-white flex items-center gap-2">
+                  <MoreVertical className="w-5 h-5 text-purple-400 shrink-0" /> System Activity
                 </h3>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button onClick={fetchLogs} disabled={loadingLogs}
                     className="p-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white rounded-xl transition-all border border-white/10 disabled:opacity-50" title="Refresh Logs">
                     <RefreshCw className={`w-4 h-4 ${loadingLogs ? 'animate-spin' : ''}`} />
                   </button>
                   {logs.length > 0 && (
                     <button onClick={handleClearLogs}
-                      className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all text-xs font-bold uppercase tracking-widest border border-red-500/20">
+                      className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all text-xs font-bold uppercase tracking-wider border border-red-500/20 whitespace-nowrap">
                       Clear All
                     </button>
                   )}
-                  <button onClick={() => setShowLogs(false)} className="text-gray-400 hover:text-white p-2 hover:bg-white/5 rounded-full transition-all">
-                    <X className="w-6 h-6" />
+                  <button onClick={() => setShowLogs(false)} className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all">
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>

@@ -433,35 +433,36 @@ export default function AdminDashboard() {
             className="bg-[#0f172a]/95 border border-white/10 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] relative"
           >
             {/* Modal Header */}
-            <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-inner">
-                  <Activity className="w-5 h-5" />
+            <div className="p-4 sm:p-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white/[0.02] relative">
+              <div className="flex items-start sm:items-center gap-3 pr-10 sm:pr-0 min-w-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 shrink-0 shadow-inner mt-0.5 sm:mt-0">
+                  <Activity className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-white">System Activity Logs</h3>
-                    <span className="px-2.5 py-0.5 text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base sm:text-lg font-bold text-white leading-tight">System Activity Logs</h3>
+                    <span className="px-2.5 py-0.5 text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-full shrink-0">
                       {allLogs.length}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-0.5">Real-time audit trail of all user and admin activities</p>
+                  <p className="text-xs text-gray-400 mt-1 leading-relaxed">Real-time audit trail of all user and admin activities</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
                 {allLogs.length > 0 && (
                   <button
                     onClick={() => setShowClearConfirmModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs font-semibold transition-all active:scale-95"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
                     title="Clear all activity logs"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
                     <span>Clear Logs</span>
                   </button>
                 )}
                 <button
                   onClick={() => setShowLogsModal(false)}
-                  className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-all"
+                  className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-all absolute right-3 top-3 sm:static"
                 >
                   <X className="w-5 h-5" />
                 </button>
