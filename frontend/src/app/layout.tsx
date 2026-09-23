@@ -19,11 +19,11 @@ export const metadata: Metadata = {
   description: "Secure and modern file management system",
   icons: {
     icon: [
-      { url: '/icon.svg?v=3', type: 'image/svg+xml' },
-      { url: '/favicon.ico?v=3', sizes: 'any' },
+      { url: '/icon.svg?v=4', type: 'image/svg+xml' },
+      { url: '/favicon.ico?v=4', sizes: 'any' },
     ],
-    shortcut: '/icon.svg?v=3',
-    apple: '/icon.svg?v=3',
+    shortcut: '/icon.svg?v=4',
+    apple: '/icon.svg?v=4',
   },
 };
 
@@ -39,10 +39,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" />
-        <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
-        <link rel="shortcut icon" href="/icon.svg?v=3" />
-        <link rel="apple-touch-icon" href="/icon.svg?v=3" />
+        <link rel="icon" href="/icon.svg?v=4" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.ico?v=4" sizes="any" />
+        <link rel="shortcut icon" href="/icon.svg?v=4" />
+        <link rel="apple-touch-icon" href="/icon.svg?v=4" />
         <meta name="theme-color" content="#080711" />
         <script
           dangerouslySetInnerHTML={{
