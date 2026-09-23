@@ -51,28 +51,29 @@
 }
 
 .light {
+  /* Soft White Color Palette */
   --background: #f8fafc;
   --foreground: #0f172a;
-  --color-surface-val: rgba(255, 255, 255, 0.85);
-  --color-surface-hover-val: rgba(241, 245, 249, 0.95);
+  --color-surface-val: rgba(255, 255, 255, 0.94);
+  --color-surface-hover-val: #f1f5f9;
   --color-muted-val: #64748b;
-  --color-border-val: rgba(0, 0, 0, 0.08);
+  --color-border-val: #e2e8f0;
 
-  --glass-card-bg: rgba(255, 255, 255, 0.85);
-  --glass-card-border: rgba(226, 232, 240, 0.9);
-  --glass-card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.03);
+  --glass-card-bg: #ffffff;
+  --glass-card-border: #e2e8f0;
+  --glass-card-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
 
-  --soft-glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.88) 100%);
-  --soft-glass-border: rgba(226, 232, 240, 0.8);
-  --soft-glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+  --soft-glass-bg: #ffffff;
+  --soft-glass-border: #e2e8f0;
+  --soft-glass-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
 
-  --gradient-bg-1: #f8fafc;
-  --gradient-bg-2: #eef2ff;
-  --gradient-bg-3: #f1f5f9;
+  --gradient-bg-1: #fafaf9;
+  --gradient-bg-2: #f1f5f9;
+  --gradient-bg-3: #f8fafc;
   --gradient-bg-4: #faf5ff;
 
-  --input-bg: rgba(255, 255, 255, 0.95);
-  --input-border: rgba(203, 213, 225, 0.9);
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
   --input-text: #0f172a;
   --input-placeholder: #94a3b8;
 
@@ -98,7 +99,7 @@ body {
   overflow-x: hidden;
   padding-bottom: env(safe-area-inset-bottom);
   margin: 0;
-  transition: background-color 0.25s ease, color 0.25s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ── Glassmorphism Utilities ── */
@@ -202,97 +203,252 @@ header[class*="fixed"] {
   touch-action: manipulation;
 }
 
-/* ── Light Mode Automatic Component Refinements ── */
-.light .glass-card,
-.light .soft-glass-card {
+/* ══════════════════════════════════════════════════════════════
+   LIGHT MODE OPTIMIZATIONS (Soft White, Sharp Text, High-Contrast Buttons)
+   ══════════════════════════════════════════════════════════════ */
+
+/* 1. Global Headings and Base Typography */
+.light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
   color: #0f172a;
 }
 
-/* Headings and generic titles inside cards in light mode */
-.light h1:not([class*="text-purple"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-amber"]):not([class*="text-red"]),
-.light h2:not([class*="text-purple"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-amber"]):not([class*="text-red"]),
-.light h3:not([class*="text-purple"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-amber"]):not([class*="text-red"]),
-.light h4:not([class*="text-purple"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-amber"]):not([class*="text-red"]) {
+/* 2. Text-White Default to Slate-900 in Light Mode */
+.light .text-white {
   color: #0f172a;
 }
 
-/* Cards & containers containing hardcoded text-white where background is light */
-.light .glass-card > div > div > .text-white,
-.light .glass-card .text-3xl.font-bold.text-white,
-.light .glass-card h1.text-white,
-.light .glass-card h2.text-white,
-.light .glass-card h3.text-white,
-.light .glass-card h4.text-white,
-.light .glass-card p.text-white,
-.light .glass-card span.text-white,
-.light .glass header .text-white,
-.light aside.glass .text-white,
-.light aside.glass h1.text-white {
-  color: #0f172a;
-}
-
-/* Inputs in light mode */
-.light input:not([type="checkbox"]):not([type="radio"]),
-.light select,
-.light textarea {
-  background-color: var(--input-bg) !important;
-  color: var(--input-text) !important;
-  border-color: var(--input-border) !important;
-}
-.light input::placeholder,
-.light textarea::placeholder {
-  color: var(--input-placeholder) !important;
-}
-
-/* Sidebar and Header adjustments in light mode */
-.light aside.glass {
-  background: rgba(255, 255, 255, 0.94);
-  border-color: rgba(226, 232, 240, 0.9);
-}
-.light header.glass {
-  background: rgba(255, 255, 255, 0.88);
-  border-color: rgba(226, 232, 240, 0.9);
-}
-
-/* Secondary muted text in light mode */
-.light .text-gray-400,
-.light .text-gray-500 {
-  color: #64748b;
-}
-
-.light .text-gray-300 {
-  color: #475569;
-}
-
-/* Borders in light mode */
-.light .border-white\/10,
-.light .border-white\/5,
-.light .border-white\/20 {
-  border-color: rgba(226, 232, 240, 0.85);
-}
-
-/* Hover backgrounds in light mode */
-.light .hover\:bg-white\/5:hover {
-  background-color: rgba(0, 0, 0, 0.04);
-}
-.light .hover\:bg-white\/10:hover {
-  background-color: rgba(0, 0, 0, 0.07);
-}
-.light .hover\:text-white:hover {
-  color: #0f172a;
-}
-
-/* Preserve white text on solid colored buttons & badges */
-.light [class*="bg-purple-"] .text-white,
-.light [class*="bg-indigo-"] .text-white,
-.light [class*="bg-blue-"] .text-white,
-.light [class*="bg-emerald-"] .text-white,
-.light [class*="bg-red-"] .text-white,
-.light [class*="bg-gradient-"] .text-white,
+/* 3. SOLID COLORED BUTTONS & BADGES MUST RETAIN CRISP WHITE TEXT */
 .light button[class*="bg-purple-"],
 .light button[class*="bg-indigo-"],
 .light button[class*="bg-blue-"],
 .light button[class*="bg-emerald-"],
-.light button[class*="bg-red-"] {
+.light button[class*="bg-red-"],
+.light button[class*="bg-violet-"],
+.light button.bg-emerald-500,
+.light button.bg-emerald-600,
+.light button.bg-purple-500,
+.light button.bg-purple-600,
+.light button.bg-blue-600,
+.light button.bg-red-600,
+.light [class*="bg-gradient-"] .text-white,
+.light [class*="bg-purple-"] .text-white,
+.light [class*="bg-emerald-"] .text-white,
+.light [class*="bg-blue-"] .text-white,
+.light [class*="bg-red-"] .text-white,
+.light [class*="bg-violet-"] .text-white,
+.light .bg-purple-600 .text-white,
+.light .bg-purple-500 .text-white,
+.light .bg-emerald-600 .text-white,
+.light .bg-emerald-500 .text-white,
+.light .bg-blue-600 .text-white,
+.light .bg-red-600 .text-white {
   color: #ffffff !important;
+}
+
+/* 4. Text Contrast for Grays */
+.light .text-gray-300 {
+  color: #334155 !important;
+}
+.light .text-gray-400 {
+  color: #64748b !important;
+}
+.light .text-gray-500 {
+  color: #64748b !important;
+}
+
+/* 5. Subdued Backgrounds & Ghost Elements */
+.light .bg-white\/5 {
+  background-color: #f1f5f9 !important;
+  color: #334155 !important;
+}
+.light .bg-white\/10 {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+.light .bg-black\/20,
+.light .bg-black\/25,
+.light .bg-black\/30,
+.light .bg-black\/40 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* 6. Borders in Light Mode */
+.light .border-white\/5,
+.light .border-white\/10,
+.light .border-white\/20,
+.light .border-white\/30 {
+  border-color: #e2e8f0 !important;
+}
+
+/* 7. Hover States in Light Mode */
+.light .hover\:bg-white\/5:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+.light .hover\:bg-white\/10:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+.light .hover\:bg-white\/20:hover {
+  background-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+.light .hover\:text-white:hover {
+  color: #7c3aed !important;
+}
+
+/* 8. Input Fields in Light Mode */
+.light input:not([type="checkbox"]):not([type="radio"]),
+.light select,
+.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+.light input:not([type="checkbox"]):not([type="radio"]):focus,
+.light select:focus,
+.light textarea:focus {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
+}
+.light input::placeholder,
+.light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* 9. Sidebar & Header Layout in Light Mode */
+.light aside.glass {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 2px 0 16px rgba(15, 23, 42, 0.04) !important;
+}
+.light header.glass {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03) !important;
+}
+
+/* 10. Nav Items in Sidebar */
+.light nav a.text-gray-400 {
+  color: #475569 !important;
+}
+.light nav a.text-gray-400:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+.light aside button.text-gray-400 {
+  color: #64748b !important;
+}
+.light aside button.text-gray-400:hover {
+  background-color: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+/* 11. Status Badges & Tag Chips */
+.light .text-emerald-300,
+.light .text-emerald-400 {
+  color: #059669 !important;
+}
+.light .bg-emerald-500\/10,
+.light .bg-emerald-500\/20 {
+  background-color: #ecfdf5 !important;
+  border-color: #a7f3d0 !important;
+}
+
+.light .text-red-300,
+.light .text-red-400 {
+  color: #dc2626 !important;
+}
+.light .bg-red-500\/10,
+.light .bg-red-500\/20 {
+  background-color: #fef2f2 !important;
+  border-color: #fecaca !important;
+}
+
+.light .text-yellow-300,
+.light .text-yellow-400 {
+  color: #d97706 !important;
+}
+.light .bg-yellow-500\/10,
+.light .bg-yellow-500\/20 {
+  background-color: #fffbeb !important;
+  border-color: #fde68a !important;
+}
+
+.light .text-purple-300,
+.light .text-purple-400 {
+  color: #7c3aed !important;
+}
+.light .bg-purple-500\/10,
+.light .bg-purple-500\/20 {
+  background-color: #f5f3ff !important;
+  border-color: #ddd6fe !important;
+}
+
+.light .text-blue-300,
+.light .text-blue-400 {
+  color: #2563eb !important;
+}
+.light .bg-blue-500\/10,
+.light .bg-blue-500\/20 {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+}
+
+.light .text-cyan-300,
+.light .text-cyan-400 {
+  color: #0284c7 !important;
+}
+
+/* 12. File Manager Tables & Cards in Light Mode */
+.light table thead tr {
+  background-color: #f8fafc !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+.light table thead th {
+  color: #64748b !important;
+}
+.light table tbody tr {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+.light table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* File Grid Items */
+.light .glass-card .p-4.rounded-3xl.border,
+.light [draggable].p-4.rounded-3xl.border {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+}
+.light [draggable].p-4.rounded-3xl.border:hover {
+  background-color: #faf5ff !important;
+  border-color: #c084fc !important;
+}
+.light [draggable] .w-12.h-12.bg-white\/5 {
+  background-color: #f1f5f9 !important;
+}
+
+/* 13. Modals and Overlays in Light Mode */
+.light .fixed .glass-card,
+.light .fixed .bg-\[\#0f172a\]\/95,
+.light .fixed .bg-\[\#0f172a\] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.15) !important;
+}
+
+/* 14. SVG Donut Chart Background Track */
+.light svg circle.text-white\/5 {
+  color: #e2e8f0 !important;
+}
+
+/* 15. Checkboxes in Light Mode */
+.light .bg-black\/40 {
+  background-color: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
 }
