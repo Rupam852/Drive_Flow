@@ -2142,7 +2142,7 @@ function AdminFilesContent() {
                   </button>
                   {logs.length > 0 && (
                     <button onClick={handleClearLogs}
-                      className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all text-xs font-bold uppercase tracking-wider border border-red-500/20 whitespace-nowrap">
+                      className="px-3 py-1.5 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 text-red-700 dark:text-red-400 rounded-xl transition-all text-xs font-bold uppercase tracking-wider border border-red-200 dark:border-red-500/20 whitespace-nowrap cursor-pointer">
                       Clear All
                     </button>
                   )}
@@ -2314,7 +2314,7 @@ function AdminFilesContent() {
                       {/* Actions */}
                       <div className="flex items-center gap-1 shrink-0">
                         <button onClick={(e) => { e.stopPropagation(); restoreFile(file.id); }}
-                          className="px-3 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-500/40 transition-all text-[10px] font-bold active:scale-90">
+                          className="px-3 py-1.5 bg-purple-50 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-500/40 transition-all text-[10px] font-bold active:scale-90 cursor-pointer">
                           Restore
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); handleDeletePermanently([file.id]); }}

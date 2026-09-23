@@ -475,11 +475,11 @@ export default function AdminDashboard() {
                 {allLogs.length > 0 && (
                   <button
                     onClick={() => setShowClearConfirmModal(true)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 text-xs font-semibold transition-all active:scale-95 whitespace-nowrap cursor-pointer shadow-sm"
                     title="Clear all activity logs"
                   >
-                    <Trash2 className="w-3.5 h-3.5 shrink-0" />
-                    <span>Clear Logs</span>
+                    <Trash2 className="w-3.5 h-3.5 shrink-0 text-red-600 dark:text-red-400" />
+                    <span className="text-red-700 dark:text-red-400">Clear Logs</span>
                   </button>
                 )}
                 <button
@@ -587,30 +587,30 @@ export default function AdminDashboard() {
             exit={{ opacity: 0, scale: 0.9, y: 15 }}
             transition={{ type: "spring", stiffness: 350, damping: 25 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-[#0f172a]/95 border border-red-500/30 rounded-3xl shadow-2xl w-full max-w-md p-6 text-center relative overflow-hidden"
+            className="bg-white/95 dark:bg-[#0f172a]/95 border border-red-500/30 rounded-3xl shadow-2xl w-full max-w-md p-6 text-center relative overflow-hidden"
           >
-            <div className="w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 mx-auto mb-4 shadow-inner">
+            <div className="w-14 h-14 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-500 dark:text-red-400 mx-auto mb-4 shadow-inner">
               <Trash2 className="w-7 h-7" />
             </div>
             
-            <h3 className="text-xl font-bold text-white mb-2 tracking-tight">Clear All Activity Logs?</h3>
-            <p className="text-xs text-gray-300 leading-relaxed mb-6">
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">Clear All Activity Logs?</h3>
+            <p className="text-xs text-slate-600 dark:text-gray-300 leading-relaxed mb-6">
               Are you sure you want to permanently clear all system activity logs? This action cannot be undone.
             </p>
 
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowClearConfirmModal(false)}
-                className="flex-1 py-3 px-4 rounded-xl border border-white/10 bg-white/5 text-gray-300 hover:text-white hover:bg-white/10 text-xs font-semibold transition-all"
+                className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 text-xs font-semibold transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmClearLogs}
-                className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 active:scale-95"
+                className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
               >
-                <Trash2 className="w-4 h-4" />
-                <span>Yes, Clear All</span>
+                <Trash2 className="w-4 h-4 text-white" />
+                <span className="text-white">Yes, Clear All</span>
               </button>
             </div>
           </motion.div>
