@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-primary: #8b5cf6;
   --color-primary-dark: #a78bfa;
   --color-secondary: #ec4899;
-  --color-background: #080711;
-  --color-surface: rgba(18, 16, 32, 0.6);
-  --color-surface-hover: rgba(30, 27, 54, 0.85);
-  --color-foreground: #f8fafc;
-  --color-muted: #94a3b8;
-  --color-border: rgba(255, 255, 255, 0.08);
+  --color-background: var(--background);
+  --color-surface: var(--color-surface-val);
+  --color-surface-hover: var(--color-surface-hover-val);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--color-muted-val);
+  --color-border: var(--color-border-val);
   --color-soft-purple: #c084fc;
   --color-soft-mint: #34d399;
   --color-soft-rose: #f472b6;
@@ -18,9 +20,64 @@
   --font-mono: var(--font-geist-mono);
 }
 
-:root {
+:root, .dark {
   --background: #080711;
   --foreground: #f8fafc;
+  --color-surface-val: rgba(18, 16, 32, 0.6);
+  --color-surface-hover-val: rgba(30, 27, 54, 0.85);
+  --color-muted-val: #94a3b8;
+  --color-border-val: rgba(255, 255, 255, 0.08);
+
+  --glass-card-bg: rgba(15, 23, 42, 0.75);
+  --glass-card-border: rgba(255, 255, 255, 0.1);
+  --glass-card-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+
+  --soft-glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%);
+  --soft-glass-border: rgba(255, 255, 255, 0.08);
+  --soft-glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+
+  --gradient-bg-1: #05040a;
+  --gradient-bg-2: #0f0b21;
+  --gradient-bg-3: #080614;
+  --gradient-bg-4: #0f0b21;
+
+  --input-bg: rgba(0, 0, 0, 0.25);
+  --input-border: rgba(255, 255, 255, 0.1);
+  --input-text: #ffffff;
+  --input-placeholder: #64748b;
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.15);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.25);
+}
+
+.light {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --color-surface-val: rgba(255, 255, 255, 0.85);
+  --color-surface-hover-val: rgba(241, 245, 249, 0.95);
+  --color-muted-val: #64748b;
+  --color-border-val: rgba(0, 0, 0, 0.08);
+
+  --glass-card-bg: rgba(255, 255, 255, 0.85);
+  --glass-card-border: rgba(226, 232, 240, 0.9);
+  --glass-card-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.03);
+
+  --soft-glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.88) 100%);
+  --soft-glass-border: rgba(226, 232, 240, 0.8);
+  --soft-glass-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+
+  --gradient-bg-1: #f8fafc;
+  --gradient-bg-2: #eef2ff;
+  --gradient-bg-3: #f1f5f9;
+  --gradient-bg-4: #faf5ff;
+
+  --input-bg: rgba(255, 255, 255, 0.95);
+  --input-border: rgba(203, 213, 225, 0.9);
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+
+  --scrollbar-thumb: rgba(0, 0, 0, 0.15);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.25);
 }
 
 /* ── Base ── */
@@ -29,9 +86,7 @@
 }
 
 html {
-  /* Prevent horizontal overflow on mobile */
   overflow-x: hidden;
-  /* Better font rendering on phones */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -41,33 +96,33 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   overflow-x: hidden;
-  /* Safe area for phones with home indicator */
   padding-bottom: env(safe-area-inset-bottom);
   margin: 0;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 /* ── Glassmorphism Utilities ── */
 .glass {
-  background: var(--color-surface);
+  background: var(--color-surface-val);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-val);
 }
 
 .glass-card {
-  background: rgba(15, 23, 42, 0.75);
+  background: var(--glass-card-bg);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--glass-card-border);
+  box-shadow: var(--glass-card-shadow);
 }
 
 .soft-glass-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(255, 255, 255, 0.03) 100%);
+  background: var(--soft-glass-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--soft-glass-border);
+  box-shadow: var(--soft-glass-shadow);
 }
 
 .native-touch-active {
@@ -80,11 +135,11 @@ body {
 
 /* ── Hide scrollbar but keep scroll functionality ── */
 .no-scrollbar {
-  -ms-overflow-style: none;    /* IE and Edge */
-  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 .no-scrollbar::-webkit-scrollbar {
-  display: none;               /* Chrome, Safari, Opera */
+  display: none;
 }
 
 /* ── Scrollbar styling ── */
@@ -96,16 +151,16 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ── Dynamic animated gradient background ── */
 .bg-gradient-dynamic {
-  background: linear-gradient(-45deg, #05040a, #0f0b21, #080614, #0f0b21);
+  background: linear-gradient(-45deg, var(--gradient-bg-1), var(--gradient-bg-2), var(--gradient-bg-3), var(--gradient-bg-4));
   background-size: 400% 400%;
   animation: gradientBG 15s ease infinite;
 }
@@ -127,7 +182,6 @@ label,
   cursor: pointer !important;
 }
 
-/* ── Prevent text selection on interactive elements ── */
 button {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -139,12 +193,106 @@ header[class*="fixed"] {
   padding-top: env(safe-area-inset-top);
 }
 
-/* ── Android WebView: prevent default long-press behavior on file cards ── */
-/* This stops the browser from showing text-select / context menu on hold */
+/* ── Android WebView ── */
 .no-long-press {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+}
+
+/* ── Light Mode Automatic Component Refinements ── */
+.light .glass-card,
+.light .soft-glass-card {
+  color: #0f172a;
+}
+
+/* Headings and generic titles inside cards in light mode */
+.light h1:not([class*="text-purple"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-amber"]):not([class*="text-red"]),
+.light h2:not([class*="text-purple"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-amber"]):not([class*="text-red"]),
+.light h3:not([class*="text-purple"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-amber"]):not([class*="text-red"]),
+.light h4:not([class*="text-purple"]):not([class*="text-indigo"]):not([class*="text-emerald"]):not([class*="text-blue"]):not([class*="text-amber"]):not([class*="text-red"]) {
+  color: #0f172a;
+}
+
+/* Cards & containers containing hardcoded text-white where background is light */
+.light .glass-card > div > div > .text-white,
+.light .glass-card .text-3xl.font-bold.text-white,
+.light .glass-card h1.text-white,
+.light .glass-card h2.text-white,
+.light .glass-card h3.text-white,
+.light .glass-card h4.text-white,
+.light .glass-card p.text-white,
+.light .glass-card span.text-white,
+.light .glass header .text-white,
+.light aside.glass .text-white,
+.light aside.glass h1.text-white {
+  color: #0f172a;
+}
+
+/* Inputs in light mode */
+.light input:not([type="checkbox"]):not([type="radio"]),
+.light select,
+.light textarea {
+  background-color: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border-color: var(--input-border) !important;
+}
+.light input::placeholder,
+.light textarea::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+/* Sidebar and Header adjustments in light mode */
+.light aside.glass {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(226, 232, 240, 0.9);
+}
+.light header.glass {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(226, 232, 240, 0.9);
+}
+
+/* Secondary muted text in light mode */
+.light .text-gray-400,
+.light .text-gray-500 {
+  color: #64748b;
+}
+
+.light .text-gray-300 {
+  color: #475569;
+}
+
+/* Borders in light mode */
+.light .border-white\/10,
+.light .border-white\/5,
+.light .border-white\/20 {
+  border-color: rgba(226, 232, 240, 0.85);
+}
+
+/* Hover backgrounds in light mode */
+.light .hover\:bg-white\/5:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+.light .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.07);
+}
+.light .hover\:text-white:hover {
+  color: #0f172a;
+}
+
+/* Preserve white text on solid colored buttons & badges */
+.light [class*="bg-purple-"] .text-white,
+.light [class*="bg-indigo-"] .text-white,
+.light [class*="bg-blue-"] .text-white,
+.light [class*="bg-emerald-"] .text-white,
+.light [class*="bg-red-"] .text-white,
+.light [class*="bg-gradient-"] .text-white,
+.light button[class*="bg-purple-"],
+.light button[class*="bg-indigo-"],
+.light button[class*="bg-blue-"],
+.light button[class*="bg-emerald-"],
+.light button[class*="bg-red-"] {
+  color: #ffffff !important;
 }

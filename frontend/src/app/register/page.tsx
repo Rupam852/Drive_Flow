@@ -6,6 +6,7 @@ import { Eye, EyeOff, Lock, Mail, User, AlertCircle, CheckCircle2, Loader2, Shie
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -271,6 +272,11 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-[100dvh] w-full min-w-full flex items-center justify-center p-4 bg-gradient-dynamic relative overflow-hidden">
+      {/* Theme Toggle Top Right */}
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--color-primary)] rounded-full blur-[120px] opacity-30 pointer-events-none z-0" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[var(--color-secondary)] rounded-full blur-[120px] opacity-20 pointer-events-none" />
 

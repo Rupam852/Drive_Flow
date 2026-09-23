@@ -9,6 +9,7 @@ import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import CloudLogo from '@/components/CloudLogo';
 import AndroidAppModal from '@/components/AndroidAppModal';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const navItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: LayoutDashboard },
@@ -192,18 +193,21 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
             <h2 className="text-white font-semibold">{navItems.find(n => n.href === pathname)?.label || 'DriveFlow'}</h2>
           </div>
 
-          {/* Website Only - Android App Download Button */}
-          {!isNativeApp && (
-            <button
-              onClick={() => setShowAndroidModal(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-500/40 text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-sm"
-              title="Download Android App"
-            >
-              <Smartphone className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span className="hidden sm:inline">Android App</span>
-              <span className="sm:hidden">App</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Website Only - Android App Download Button */}
+            {!isNativeApp && (
+              <button
+                onClick={() => setShowAndroidModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-500/40 text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-sm"
+                title="Download Android App"
+              >
+                <Smartphone className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                <span className="hidden sm:inline">Android App</span>
+                <span className="sm:hidden">App</span>
+              </button>
+            )}
+            <ThemeToggle />
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">

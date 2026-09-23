@@ -27,6 +27,7 @@ app-universal-release.apk
 service-account.json
 credentials.json
 
-# ── OS Files ──
+# ── OS & Temp Files ──
 .DS_Store
 Thumbs.db
+*.log
