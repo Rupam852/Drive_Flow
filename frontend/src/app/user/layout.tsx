@@ -132,19 +132,21 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <AndroidAppModal isOpen={showAndroidModal} onClose={() => setShowAndroidModal(false)} />
-      <AppUpdaterModal
-        isOpen={showUpdaterModal}
-        onClose={() => setShowUpdaterModal(false)}
-        currentVersion={currentVersion}
-        latestVersion={latestVersion}
-        hasUpdate={hasUpdate}
-        downloadUrl={downloadUrl}
-        isChecking={isChecking}
-        statusMessage={statusMessage}
-        autoCheckEnabled={autoCheckEnabled}
-        onCheckForUpdates={() => checkForUpdates(true)}
-        onToggleAutoCheck={toggleAutoCheck}
-      />
+      {isNativeApp && (
+        <AppUpdaterModal
+          isOpen={showUpdaterModal}
+          onClose={() => setShowUpdaterModal(false)}
+          currentVersion={currentVersion}
+          latestVersion={latestVersion}
+          hasUpdate={hasUpdate}
+          downloadUrl={downloadUrl}
+          isChecking={isChecking}
+          statusMessage={statusMessage}
+          autoCheckEnabled={autoCheckEnabled}
+          onCheckForUpdates={() => checkForUpdates(true)}
+          onToggleAutoCheck={toggleAutoCheck}
+        />
+      )}
 
       {/* Smooth Logout Transition Overlay */}
       <AnimatePresence>
@@ -217,29 +219,31 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
             </Link>
           ))}
 
-          {/* App Update Button (Right below Profile) */}
-          <button
-            onClick={() => {
-              setShowUpdaterModal(true);
-              setSidebarOpen(false);
-            }}
-            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group"
-          >
-            <div className="flex items-center gap-3">
-              <RefreshCw className={`w-5 h-5 flex-shrink-0 ${isChecking ? 'animate-spin text-blue-500' : 'group-hover:rotate-45 transition-transform duration-300'}`} />
-              <span className="font-medium leading-none">App Update</span>
-            </div>
-            {hasUpdate ? (
-              <span className="flex h-2.5 w-2.5 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-              </span>
-            ) : (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/50 dark:bg-white/5 text-slate-500 dark:text-gray-400">
-                {currentVersion}
-              </span>
-            )}
-          </button>
+          {/* App Update Button (Right below Profile - ONLY on Android Mobile App) */}
+          {isNativeApp && (
+            <button
+              onClick={() => {
+                setShowUpdaterModal(true);
+                setSidebarOpen(false);
+              }}
+              className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <RefreshCw className={`w-5 h-5 flex-shrink-0 ${isChecking ? 'animate-spin text-blue-500' : 'group-hover:rotate-45 transition-transform duration-300'}`} />
+                <span className="font-medium leading-none">App Update</span>
+              </div>
+              {hasUpdate ? (
+                <span className="flex h-2.5 w-2.5 relative">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/50 dark:bg-white/5 text-slate-500 dark:text-gray-400">
+                  {currentVersion}
+                </span>
+              )}
+            </button>
+          )}
         </nav>
 
         <div className="p-4 border-t border-white/10">
@@ -261,7 +265,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               aria-label="Toggle navigation menu"
             >
               {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              {hasUpdate && !sidebarOpen && (
+              {isNativeApp && hasUpdate && !sidebarOpen && (
                 <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 ring-2 ring-white dark:ring-[#080711]"></span>

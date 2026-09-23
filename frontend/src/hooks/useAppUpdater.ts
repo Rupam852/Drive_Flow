@@ -108,9 +108,9 @@ export function useAppUpdater() {
     }
   }, []);
 
-  // Automatic check on app launch if enabled (default ON)
+  // Automatic check on app launch if enabled (default ON) - ONLY on native Android app
   useEffect(() => {
-    if (autoCheckEnabled) {
+    if (Capacitor.isNativePlatform() && autoCheckEnabled) {
       checkForUpdates(false);
     }
   }, [autoCheckEnabled, checkForUpdates]);
