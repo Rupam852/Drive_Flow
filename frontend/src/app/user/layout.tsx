@@ -158,12 +158,12 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         className={`fixed top-0 left-0 z-30 h-full w-64 glass border-r border-white/10 flex flex-col transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="p-6 border-b border-white/10">
+        <div className="p-6 border-b border-slate-200/60 dark:border-white/10">
           <div className="flex items-center gap-3">
             <CloudLogo size={38} />
             <div>
-              <h1 className="font-bold text-white text-lg leading-none">DriveFlow</h1>
-              <span className="text-xs text-purple-400">My Storage</span>
+              <h1 className="font-bold text-slate-900 dark:text-white text-lg leading-none">DriveFlow</h1>
+              <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">My Storage</span>
             </div>
           </div>
         </div>

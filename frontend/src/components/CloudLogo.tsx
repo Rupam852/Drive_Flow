@@ -4,9 +4,15 @@ interface CloudLogoProps {
   className?: string;
   size?: number;
   strokeWidth?: number;
+  withBackground?: boolean;
 }
 
-export default function CloudLogo({ className = '', size = 40, strokeWidth = 2 }: CloudLogoProps) {
+export default function CloudLogo({
+  className = '',
+  size = 40,
+  strokeWidth = 2,
+  withBackground = false,
+}: CloudLogoProps) {
   return (
     <svg
       width={size}
@@ -24,18 +30,25 @@ export default function CloudLogo({ className = '', size = 40, strokeWidth = 2 }
         </filter>
       </defs>
 
-      {/* Styled Rounded Box Background */}
-      {/* Uses Tailwind class to support dark/light modes automatically */}
-      <rect
-        width="100"
-        height="100"
-        rx="24"
-        className="fill-sky-100/90 dark:fill-slate-900/90 stroke-sky-200/50 dark:stroke-slate-800/50"
-        strokeWidth="1.5"
-      />
+      {/* Styled Rounded Box Background - only shown if withBackground is true */}
+      {withBackground && (
+        <rect
+          width="100"
+          height="100"
+          rx="24"
+          className="fill-sky-100/90 dark:fill-slate-900/90 stroke-sky-200/50 dark:stroke-slate-800/50"
+          strokeWidth="1.5"
+        />
+      )}
 
-      {/* Cloud Structure Graphics perfectly centered inside a scaled group */}
-      <g transform="translate(10, 10) scale(0.8)">
+      {/* Cloud Structure Graphics - transparent PNG style floating structure */}
+      <g
+        transform={
+          withBackground
+            ? 'translate(10, 10) scale(0.8)'
+            : 'translate(50, 48) scale(1.05) translate(-48.5, -48.5)'
+        }
+      >
         {/* Cloud Outline */}
         <path
           d="M25 65C13.9543 65 5 56.0457 5 45C5 34.619 12.9238 26.0827 23.0567 25.1054C25.8016 14.8872 35.0345 7.5 46 7.5C57.4851 7.5 66.9744 15.6582 68.8522 26.4385C70.1837 25.819 71.6749 25.4688 73.25 25.4688C83.6053 25.4688 92 33.8634 92 44.2188C92 53.7198 84.973 61.5831 75.7265 62.7758"

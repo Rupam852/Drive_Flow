@@ -164,13 +164,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         {/* Logo */}
-        <Link href="/admin/dashboard" className="p-6 border-b border-white/10 hover:bg-white/5 transition-colors block"
+        <Link href="/admin/dashboard" className="p-6 border-b border-slate-200/60 dark:border-white/10 hover:bg-slate-100/50 dark:hover:bg-white/5 transition-colors block"
           onClick={() => setSidebarOpen(false)}>
           <div className="flex items-center gap-3">
             <CloudLogo size={38} />
             <div>
-              <h1 className="font-bold text-white text-lg leading-none">DriveFlow</h1>
-              <span className="text-xs text-purple-400">Admin Panel</span>
+              <h1 className="font-bold text-slate-900 dark:text-white text-lg leading-none">DriveFlow</h1>
+              <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">Admin Panel</span>
             </div>
           </div>
         </Link>
