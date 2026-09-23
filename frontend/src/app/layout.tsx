@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import AppUpdateProvider from "@/components/AppUpdateProvider";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 const geistSans = Geist({
@@ -66,9 +65,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
-          <AppUpdateProvider>
-            {children}
-          </AppUpdateProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>
