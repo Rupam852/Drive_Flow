@@ -1,6 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { registerPlugin, Capacitor } from '@capacitor/core';
+
+interface AppUpdateNotificationPlugin {
+  requestNotificationPermission(): Promise<{ granted: boolean; requested: boolean }>;
+  showUpdateNotification(options: { version: string; title?: string; body?: string; downloadUrl: string }): Promise<{ success: boolean }>;
+}
+
+const AppUpdateNotification = registerPlugin<AppUpdateNotificationPlugin>('AppUpdateNotification');
 
 export const CURRENT_APP_VERSION = 'v1.0.1';
 export const API_VERSION_URL = 'https://neo-files-transfer-p3ot.onrender.com/api/version/apk_f13b660ad8d24108';
@@ -61,6 +69,18 @@ export function useAppUpdater() {
 
       if (newer) {
         setStatusMessage(`New update ${serverVer} is available!`);
+        if (Capacitor.isNativePlatform()) {
+          try {
+            await AppUpdateNotification.showUpdateNotification({
+              version: serverVer,
+              title: `New Update Available: ${serverVer}`,
+              body: `DriveFlow ${serverVer} is available! Tap to download and install.`,
+              downloadUrl: targetUrl,
+            });
+          } catch (e) {
+            console.warn('Native notification failed:', e);
+          }
+        }
       } else {
         setStatusMessage('Your app is up to date.');
       }
@@ -78,6 +98,13 @@ export function useAppUpdater() {
     setAutoCheckEnabled(enabled);
     if (typeof window !== 'undefined') {
       localStorage.setItem('auto_check_update', enabled ? 'true' : 'false');
+    }
+  }, []);
+
+  // Request notification permission on app mount for Android 13+ & existing users
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      AppUpdateNotification.requestNotificationPermission().catch(() => {});
     }
   }, []);
 

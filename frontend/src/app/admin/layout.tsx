@@ -65,6 +65,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [router]);
 
+  // Listen for native status bar notification tap event to open Updater
+  useEffect(() => {
+    const handleOpenUpdater = () => {
+      setShowUpdaterModal(true);
+    };
+    window.addEventListener('open-app-updater', handleOpenUpdater);
+    return () => window.removeEventListener('open-app-updater', handleOpenUpdater);
+  }, []);
+
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {
     if (sidebarOpen) {
