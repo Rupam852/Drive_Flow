@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, FolderOpen, LogOut, Menu, X, HardDrive, User as UserIcon, Smartphone } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, LogOut, Menu, X, HardDrive, User as UserIcon, Smartphone, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import CloudLogo from '@/components/CloudLogo';
 import AndroidAppModal from '@/components/AndroidAppModal';
 import ThemeToggle from '@/components/ThemeToggle';
+import AppUpdaterModal from '@/components/AppUpdaterModal';
+import { useAppUpdater } from '@/hooks/useAppUpdater';
 
 const navItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: LayoutDashboard },
@@ -20,10 +22,23 @@ const navItems = [
 export default function UserLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showAndroidModal, setShowAndroidModal] = useState(false);
+  const [showUpdaterModal, setShowUpdaterModal] = useState(false);
   const [isNativeApp, setIsNativeApp] = useState(false);
   const [mounted, setMounted] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSessionExpired, setIsSessionExpired] = useState(false);
+
+  const {
+    currentVersion,
+    latestVersion,
+    hasUpdate,
+    downloadUrl,
+    isChecking,
+    statusMessage,
+    autoCheckEnabled,
+    checkForUpdates,
+    toggleAutoCheck,
+  } = useAppUpdater();
   const [authorized, setAuthorized] = useState(() => {
     if (typeof window === 'undefined') return true;
     return !!(localStorage.getItem('token_user') || localStorage.getItem('token'));
@@ -108,6 +123,19 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <AndroidAppModal isOpen={showAndroidModal} onClose={() => setShowAndroidModal(false)} />
+      <AppUpdaterModal
+        isOpen={showUpdaterModal}
+        onClose={() => setShowUpdaterModal(false)}
+        currentVersion={currentVersion}
+        latestVersion={latestVersion}
+        hasUpdate={hasUpdate}
+        downloadUrl={downloadUrl}
+        isChecking={isChecking}
+        statusMessage={statusMessage}
+        autoCheckEnabled={autoCheckEnabled}
+        onCheckForUpdates={() => checkForUpdates(true)}
+        onToggleAutoCheck={toggleAutoCheck}
+      />
 
       {/* Smooth Logout Transition Overlay */}
       <AnimatePresence>
@@ -179,6 +207,30 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               <span className="font-medium leading-none">{label}</span>
             </Link>
           ))}
+
+          {/* App Update Button (Right below Profile) */}
+          <button
+            onClick={() => {
+              setShowUpdaterModal(true);
+              setSidebarOpen(false);
+            }}
+            className="flex items-center justify-between w-full px-4 py-3 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-all cursor-pointer group"
+          >
+            <div className="flex items-center gap-3">
+              <RefreshCw className={`w-5 h-5 flex-shrink-0 ${isChecking ? 'animate-spin text-blue-500' : 'group-hover:rotate-45 transition-transform duration-300'}`} />
+              <span className="font-medium leading-none">App Update</span>
+            </div>
+            {hasUpdate ? (
+              <span className="flex h-2.5 w-2.5 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+              </span>
+            ) : (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-200/50 dark:bg-white/5 text-slate-500 dark:text-gray-400">
+                {currentVersion}
+              </span>
+            )}
+          </button>
         </nav>
 
         <div className="p-4 border-t border-white/10">
@@ -194,8 +246,18 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
       <div className="flex flex-col min-h-screen lg:pl-64">
         <header className="sticky top-0 z-10 h-16 glass border-b border-white/10 flex items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="lg:hidden text-gray-400 hover:text-white p-1">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="lg:hidden text-gray-400 hover:text-white p-1 relative"
+              aria-label="Toggle navigation menu"
+            >
               {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {hasUpdate && !sidebarOpen && (
+                <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 ring-2 ring-white dark:ring-[#080711]"></span>
+                </span>
+              )}
             </button>
             <h2 className="text-white font-semibold">{navItems.find(n => n.href === pathname)?.label || 'DriveFlow'}</h2>
           </div>
