@@ -217,32 +217,116 @@ header[class*="fixed"] {
   color: #0f172a;
 }
 
-/* 3. SOLID COLORED BUTTONS & BADGES MUST RETAIN CRISP WHITE TEXT */
-.light button[class*="bg-purple-"],
-.light button[class*="bg-indigo-"],
-.light button[class*="bg-blue-"],
-.light button[class*="bg-emerald-"],
-.light button[class*="bg-red-"],
-.light button[class*="bg-violet-"],
-.light button.bg-emerald-500,
-.light button.bg-emerald-600,
-.light button.bg-purple-500,
+/* 3. ONLY SOLID SATURATED BUTTONS RETAIN WHITE TEXT */
 .light button.bg-purple-600,
+.light button.bg-purple-700,
 .light button.bg-blue-600,
+.light button.bg-blue-700,
+.light button.bg-emerald-600,
 .light button.bg-red-600,
-.light [class*="bg-gradient-"] .text-white,
-.light [class*="bg-purple-"] .text-white,
-.light [class*="bg-emerald-"] .text-white,
-.light [class*="bg-blue-"] .text-white,
-.light [class*="bg-red-"] .text-white,
-.light [class*="bg-violet-"] .text-white,
-.light .bg-purple-600 .text-white,
-.light .bg-purple-500 .text-white,
-.light .bg-emerald-600 .text-white,
-.light .bg-emerald-500 .text-white,
-.light .bg-blue-600 .text-white,
-.light .bg-red-600 .text-white {
+.light [class*="bg-gradient-to-"] button,
+.light [class*="bg-gradient-to-"] .text-white,
+.light button.bg-gradient-dynamic,
+.light .bg-purple-600 > .text-white,
+.light .bg-emerald-600 > .text-white,
+.light .bg-blue-600 > .text-white,
+.light .bg-red-600 > .text-white {
   color: #ffffff !important;
+}
+
+/* 4. TINTED / OUTLINE ACTION BUTTONS & BADGES (CRITICAL FIX FOR REJECT, APPROVE, ANDROID BUTTONS) */
+
+/* Red Tinted Buttons & Badges (Reject, Danger, Delete) */
+.light [class*="bg-red-500/"],
+.light [class*="bg-red-400/"],
+.light button[class*="bg-red-500/"],
+.light button[class*="bg-red-400/"] {
+  background-color: #fee2e2 !important;
+  border-color: #fca5a5 !important;
+  color: #dc2626 !important;
+}
+.light [class*="bg-red-500/"] *,
+.light button[class*="bg-red-500/"] * {
+  color: #dc2626 !important;
+}
+.light [class*="bg-red-500/"]:hover,
+.light button[class*="bg-red-500/"]:hover {
+  background-color: #fecaca !important;
+  border-color: #f87171 !important;
+  color: #b91c1c !important;
+}
+
+/* Emerald/Green Tinted Buttons & Badges (Approve, Android App, Success) */
+.light [class*="bg-emerald-500/"],
+.light [class*="bg-emerald-400/"],
+.light button[class*="bg-emerald-500/"],
+.light button[class*="bg-emerald-400/"] {
+  background-color: #d1fae5 !important;
+  border-color: #6ee7b7 !important;
+  color: #047857 !important;
+}
+.light [class*="bg-emerald-500/"] *,
+.light button[class*="bg-emerald-500/"] * {
+  color: #047857 !important;
+}
+.light [class*="bg-emerald-500/"]:hover,
+.light button[class*="bg-emerald-500/"]:hover {
+  background-color: #a7f3d0 !important;
+  border-color: #34d399 !important;
+  color: #065f46 !important;
+}
+
+/* Yellow/Amber Tinted Buttons & Badges (Pending, Warnings) */
+.light [class*="bg-yellow-500/"],
+.light [class*="bg-amber-500/"],
+.light button[class*="bg-yellow-500/"],
+.light button[class*="bg-amber-500/"] {
+  background-color: #fef3c7 !important;
+  border-color: #fde68a !important;
+  color: #b45309 !important;
+}
+.light [class*="bg-yellow-500/"] *,
+.light button[class*="bg-yellow-500/"] * {
+  color: #b45309 !important;
+}
+.light [class*="bg-yellow-500/"]:hover,
+.light button[class*="bg-yellow-500/"]:hover {
+  background-color: #fde68a !important;
+  color: #92400e !important;
+}
+
+/* Purple/Violet Tinted Buttons & Badges */
+.light [class*="bg-purple-500/"],
+.light button[class*="bg-purple-500/"] {
+  background-color: #ede9fe !important;
+  border-color: #ddd6fe !important;
+  color: #6d28d9 !important;
+}
+.light [class*="bg-purple-500/"] *,
+.light button[class*="bg-purple-500/"] * {
+  color: #6d28d9 !important;
+}
+.light [class*="bg-purple-500/"]:hover,
+.light button[class*="bg-purple-500/"]:hover {
+  background-color: #ddd6fe !important;
+  color: #5b21b6 !important;
+}
+
+/* Blue Tinted Buttons & Badges */
+.light [class*="bg-blue-500/"],
+.light button[class*="bg-blue-500/"] {
+  background-color: #dbeafe !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+.light [class*="bg-blue-500/"] *,
+.light button[class*="bg-blue-500/"] * {
+  color: #1d4ed8 !important;
+}
+.light [class*="bg-blue-500/"]:hover,
+.light button[class*="bg-blue-500/"]:hover {
+  background-color: #bfdbfe !important;
+  color: #1e40af !important;
 }
 
 /* 4. Text Contrast for Grays */

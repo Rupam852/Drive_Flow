@@ -198,12 +198,12 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
             {!isNativeApp && (
               <button
                 onClick={() => setShowAndroidModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-300 hover:bg-emerald-500/20 hover:border-emerald-500/40 text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-sm"
                 title="Download Android App"
               >
-                <Smartphone className="w-4 h-4 text-emerald-500 dark:text-emerald-400 shrink-0" />
-                <span className="hidden sm:inline">Android App</span>
-                <span className="sm:hidden">App</span>
+                <Smartphone className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="hidden sm:inline text-emerald-700 dark:text-emerald-300">Android App</span>
+                <span className="sm:hidden text-emerald-700 dark:text-emerald-300">App</span>
               </button>
             )}
             <ThemeToggle />

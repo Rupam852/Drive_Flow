@@ -18,13 +18,13 @@ interface User {
 
 const StatusBadge = ({ status }: { status: string }) => {
   const map: Record<string, { color: string; icon: any; label: string }> = {
-    approved: { color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', icon: CheckCircle2, label: 'Approved' },
-    rejected: { color: 'bg-red-500/20 text-red-300 border-red-500/30', icon: XCircle, label: 'Rejected' },
-    pending: { color: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30', icon: Clock, label: 'Pending' },
+    approved: { color: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30', icon: CheckCircle2, label: 'Approved' },
+    rejected: { color: 'bg-red-500/15 text-red-700 dark:text-red-300 border-red-500/30', icon: XCircle, label: 'Rejected' },
+    pending: { color: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30', icon: Clock, label: 'Pending' },
   };
   const { color, icon: Icon, label } = map[status] || map.pending;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium ${color}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-semibold ${color}`}>
       <Icon className="w-3.5 h-3.5" />{label}
     </span>
   );
@@ -171,9 +171,9 @@ export default function AdminUsersPage() {
                             <button
                               onClick={() => updateStatus(user._id, 'approve')}
                               disabled={!!actionLoading}
-                              className="px-3 py-1.5 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/30 transition-colors flex items-center gap-1"
+                              className="px-3 py-1.5 text-xs bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/25 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
                             >
-                              {actionLoading === user._id + 'approve' ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> : <CheckCircle2 className="w-3 h-3" />}
+                              {actionLoading === user._id + 'approve' ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> : <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />}
                               Approve
                             </button>
                           )}
@@ -181,9 +181,9 @@ export default function AdminUsersPage() {
                               <button
                                 onClick={() => updateStatus(user._id, 'reject')}
                                 disabled={!!actionLoading}
-                                className="px-3 py-1.5 text-xs bg-red-500/20 text-red-300 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors flex items-center gap-1"
+                                className="px-3 py-1.5 text-xs bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/30 rounded-lg hover:bg-red-500/25 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
                               >
-                                {actionLoading === user._id + 'reject' ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> : <XCircle className="w-3 h-3" />}
+                                {actionLoading === user._id + 'reject' ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> : <XCircle className="w-3 h-3 text-red-600 dark:text-red-400" />}
                                 Reject
                               </button>
                             )}
@@ -191,9 +191,9 @@ export default function AdminUsersPage() {
                               <button
                                 onClick={() => updateStatus(user._id, 'pending')}
                                 disabled={!!actionLoading}
-                                className="px-3 py-1.5 text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 rounded-lg hover:bg-yellow-500/30 transition-colors flex items-center gap-1"
+                                className="px-3 py-1.5 text-xs bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-lg hover:bg-amber-500/25 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
                               >
-                                {actionLoading === user._id + 'pending' ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> : <Clock className="w-3 h-3" />}
+                                {actionLoading === user._id + 'pending' ? <span className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin inline-block" /> : <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />}
                                 Pending
                               </button>
                             )}
