@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 import LoadingScreen from '@/components/LoadingScreen';
 import ThemeToggle from '@/components/ThemeToggle';
+import { isSessionExpired, clearExpiredSession } from '@/hooks/useInactivityTimeout';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -37,10 +38,16 @@ export default function LoginPage() {
         return;
       }
 
-      const role = localStorage.getItem('role');
-      const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
+      const role = localStorage.getItem('role') as 'user' | 'admin' | null;
+      const token = role ? (localStorage.getItem(`token_${role}`) || localStorage.getItem('token')) : null;
       
       if (role && token) {
+        if (isSessionExpired(role)) {
+          clearExpiredSession(role);
+          setError('Your login session expired. Please log in again to continue.');
+          setLoading(false);
+          return;
+        }
         router.replace(role === 'admin' ? '/admin/dashboard' : '/user/dashboard');
       } else {
         setLoading(false);

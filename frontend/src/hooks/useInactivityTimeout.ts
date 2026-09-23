@@ -76,3 +76,29 @@ export function useInactivityTimeout(
     };
   }, [role, handleLogout]);
 }
+
+export function isSessionExpired(role: 'user' | 'admin'): boolean {
+  if (typeof window === 'undefined') return false;
+  const isNative = !!(window as any).Capacitor;
+  if (isNative) return false;
+
+  const timeoutLimit = role === 'admin' ? 60 * 60 * 1000 : 30 * 60 * 1000;
+  const lastActiveKey = `lastActiveTime_${role}`;
+  const lastActive = localStorage.getItem(lastActiveKey);
+  if (!lastActive) return false;
+
+  const diff = Date.now() - parseInt(lastActive, 10);
+  return diff > timeoutLimit;
+}
+
+export function clearExpiredSession(role: 'user' | 'admin') {
+  if (typeof window === 'undefined') return;
+  const tokenKey = role === 'admin' ? 'token_admin' : 'token_user';
+  const lastActiveKey = `lastActiveTime_${role}`;
+  localStorage.removeItem(tokenKey);
+  localStorage.removeItem(lastActiveKey);
+  if (localStorage.getItem('role') === role) {
+    localStorage.removeItem('role');
+    localStorage.removeItem('token');
+  }
+}

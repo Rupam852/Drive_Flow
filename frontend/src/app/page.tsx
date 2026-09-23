@@ -4,15 +4,25 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { HardDrive } from 'lucide-react';
 import api from '@/lib/api';
+import { isSessionExpired, clearExpiredSession } from '@/hooks/useInactivityTimeout';
 
 export default function Home() {
   const router = useRouter();
   const [isFading, setIsFading] = useState(false);
 
   useEffect(() => {
-    const role = localStorage.getItem('role');
-    const token = localStorage.getItem(`token_${role}`) || localStorage.getItem('token');
-    const targetPath = (role && token) ? (role === 'admin' ? '/admin/dashboard' : '/user/dashboard') : '/login';
+    const role = localStorage.getItem('role') as 'user' | 'admin' | null;
+    const token = role ? (localStorage.getItem(`token_${role}`) || localStorage.getItem('token')) : null;
+
+    let targetPath = '/login';
+    if (role && token) {
+      if (isSessionExpired(role)) {
+        clearExpiredSession(role);
+        targetPath = '/login?expired=true';
+      } else {
+        targetPath = role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
+      }
+    }
 
     // 1. Prefetch destination page in background
     router.prefetch(targetPath);
