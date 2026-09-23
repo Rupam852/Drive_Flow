@@ -23,6 +23,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   const [isNativeApp, setIsNativeApp] = useState(false);
   const [mounted, setMounted] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSessionExpired, setIsSessionExpired] = useState(false);
   const [authorized, setAuthorized] = useState(() => {
     if (typeof window === 'undefined') return true;
     return !!(localStorage.getItem('token_user') || localStorage.getItem('token'));
@@ -73,18 +74,20 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     }
   }, 0, [sidebarOpen, pathname, router]);
 
-  const handleLogout = () => {
+  const handleLogout = (isExpired: boolean = false) => {
     if (isLoggingOut) return;
+    if (isExpired === true) setIsSessionExpired(true);
     setIsLoggingOut(true);
     setTimeout(() => {
       localStorage.removeItem('token_user');
+      localStorage.removeItem('lastActiveTime_user');
       sessionStorage.removeItem('driveflow_app_prompt_dismissed');
       // Only remove generic role if it matches user
       if (localStorage.getItem('role') === 'user') {
         localStorage.removeItem('role');
         localStorage.removeItem('token');
       }
-      router.replace('/login');
+      router.replace(isExpired === true ? '/login?expired=true' : '/login');
     }, 600);
   };
 
@@ -128,8 +131,12 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
               </div>
 
               <div>
-                <h4 className="text-base font-bold text-white tracking-wide">Logging Out...</h4>
-                <p className="text-xs text-gray-400 mt-1">Clearing session & redirecting safely</p>
+                <h4 className="text-base font-bold text-white tracking-wide">
+                  {isSessionExpired ? 'Session Expired' : 'Logging Out...'}
+                </h4>
+                <p className="text-xs text-gray-400 mt-1">
+                  {isSessionExpired ? 'Logged out due to 30 minutes of inactivity' : 'Clearing session & redirecting safely'}
+                </p>
               </div>
             </motion.div>
           </motion.div>
@@ -175,7 +182,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
         </nav>
 
         <div className="p-4 border-t border-white/10">
-          <button onClick={handleLogout}
+          <button onClick={() => handleLogout(false)}
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:bg-red-500/10 hover:text-red-400 transition-all w-full">
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>
