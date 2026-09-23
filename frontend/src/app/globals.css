@@ -230,7 +230,9 @@ header[class*="fixed"] {
 .light .bg-purple-600 > .text-white,
 .light .bg-emerald-600 > .text-white,
 .light .bg-blue-600 > .text-white,
-.light .bg-red-600 > .text-white {
+.light .bg-red-600 > .text-white,
+.light [class*="rounded-full"] span.text-white,
+.light [class*="rounded-3xl"] span.text-white {
   color: #ffffff !important;
 }
 

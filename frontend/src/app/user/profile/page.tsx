@@ -184,12 +184,12 @@ export default function ProfilePage() {
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-blue-900 via-indigo-950 to-purple-900 flex items-center justify-center border border-white/10 text-white font-extrabold text-3xl">
-              {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center border border-white/20 shadow-lg shadow-purple-500/20 text-white font-extrabold text-3xl select-none">
+              <span className="text-white !text-white font-extrabold">{userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}</span>
             </div>
           )}
           <div className="text-center sm:text-left space-y-1">
-            <h3 className="text-xl font-bold text-white">{userData.name}</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{userData.name}</h3>
           </div>
         </div>
 

@@ -30,6 +30,19 @@ const StatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+const getAvatarGradient = (name: string = '') => {
+  const gradients = [
+    'from-violet-500 to-purple-600',
+    'from-blue-500 to-indigo-600',
+    'from-emerald-500 to-teal-600',
+    'from-amber-500 to-orange-600',
+    'from-rose-500 to-pink-600',
+    'from-cyan-500 to-blue-600',
+  ];
+  const charCode = (name.charCodeAt(0) || 0) % gradients.length;
+  return gradients[charCode];
+};
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,20 +157,20 @@ export default function AdminUsersPage() {
                             <img 
                               src={user.profilePic} 
                               alt={user.name} 
-                              className="w-8 h-8 shrink-0 rounded-full object-cover border border-white/10"
+                              className="w-8 h-8 shrink-0 rounded-full object-cover border border-slate-200 dark:border-white/10"
                               referrerPolicy="no-referrer"
                             />
                           ) : (
-                            <div className="w-8 h-8 shrink-0 rounded-full bg-gradient-to-tr from-blue-900 via-indigo-950 to-purple-900 flex items-center justify-center border border-white/10 text-white text-sm font-bold">
-                              {user.name[0].toUpperCase()}
+                            <div className={`w-8 h-8 shrink-0 rounded-full bg-gradient-to-tr ${getAvatarGradient(user.name)} flex items-center justify-center border border-white/20 shadow-sm text-white text-sm font-bold select-none`}>
+                              <span className="text-white !text-white font-bold">{user.name ? user.name[0].toUpperCase() : 'U'}</span>
                             </div>
                           )}
-                          <span className="text-white font-medium">{user.name}</span>
+                          <span className="text-slate-900 dark:text-white font-medium">{user.name}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center gap-2 text-gray-300">
-                          <Mail className="w-3.5 h-3.5 text-gray-500" />
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-gray-300">
+                          <Mail className="w-3.5 h-3.5 text-slate-400 dark:text-gray-500" />
                           {user.email}
                         </div>
                       </td>
