@@ -14,10 +14,12 @@ const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const fileRoutes_1 = __importDefault(require("./routes/fileRoutes"));
 const errorMiddleware_1 = require("./middleware/errorMiddleware");
 const authController_1 = require("./controllers/authController");
+const logger_1 = require("./utils/logger");
 dotenv_1.default.config();
 // Connect to database
 (0, db_1.default)().then(() => {
     (0, authController_1.seedAdmin)();
+    (0, logger_1.trimExcessLogs)();
 });
 const app = (0, express_1.default)();
 // Enable trust proxy for rate limiting behind Render load balancer

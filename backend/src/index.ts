@@ -9,12 +9,14 @@ import userRoutes from './routes/userRoutes';
 import fileRoutes from './routes/fileRoutes';
 import { errorHandler } from './middleware/errorMiddleware';
 import { seedAdmin } from './controllers/authController';
+import { trimExcessLogs } from './utils/logger';
 
 dotenv.config();
 
 // Connect to database
 connectDB().then(() => {
   seedAdmin();
+  trimExcessLogs();
 });
 
 const app = express();
