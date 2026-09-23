@@ -1,13 +1,26 @@
 import { useEffect } from 'react';
 
+export function isNativeMobileApp(): boolean {
+  if (typeof window === 'undefined') return false;
+  const cap = (window as any).Capacitor;
+  if (!cap) return false;
+  if (typeof cap.isNativePlatform === 'function') {
+    return cap.isNativePlatform();
+  }
+  if (typeof cap.getPlatform === 'function') {
+    const platform = cap.getPlatform();
+    return platform === 'android' || platform === 'ios';
+  }
+  return true;
+}
+
 export function useInactivityTimeout(
   role: 'user' | 'admin',
   handleLogout: (isExpired?: boolean) => void
 ) {
   useEffect(() => {
-    // 1. Detect if running inside Capacitor Android app vs Web Browser
-    const isNative = typeof window !== 'undefined' && !!(window as any).Capacitor;
-    if (isNative) return; // Skip auto-logout for native mobile app
+    // Android App Safety Guard: NEVER auto-logout on mobile app
+    if (isNativeMobileApp()) return;
 
     // User: 30 minutes, Admin: 1 hour (60 minutes)
     const timeoutLimit = role === 'admin' ? 60 * 60 * 1000 : 30 * 60 * 1000;
@@ -79,8 +92,8 @@ export function useInactivityTimeout(
 
 export function isSessionExpired(role: 'user' | 'admin'): boolean {
   if (typeof window === 'undefined') return false;
-  const isNative = !!(window as any).Capacitor;
-  if (isNative) return false;
+  // Android App Safety Guard: NEVER expire session on mobile app
+  if (isNativeMobileApp()) return false;
 
   const timeoutLimit = role === 'admin' ? 60 * 60 * 1000 : 30 * 60 * 1000;
   const lastActiveKey = `lastActiveTime_${role}`;
