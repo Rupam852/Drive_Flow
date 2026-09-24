@@ -9,7 +9,7 @@ import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { App } from '@capacitor/app';
 
 // Current Hardcoded Version of the Client APK
-const CURRENT_APP_VERSION = '1.0.3';
+const CURRENT_APP_VERSION = '1.0.4';
 
 interface AppUpdateContextType {
   currentVersion: string;
