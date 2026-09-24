@@ -406,37 +406,41 @@ export default function AdminNotificationsPage() {
             <button
               type="button"
               onClick={() => setSendInApp(!sendInApp)}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs transition-all cursor-pointer ${
                 sendInApp
-                  ? 'bg-purple-50 dark:bg-purple-500/15 border-purple-500 text-purple-900 dark:text-purple-300 shadow-sm ring-1 ring-purple-500/40'
+                  ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-500 text-slate-900 dark:text-white shadow-xs ring-1 ring-emerald-500/30'
                   : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:border-slate-400'
               }`}
             >
               <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                sendInApp ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-400 bg-white dark:border-gray-600 dark:bg-white/5'
+                sendInApp ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-400 bg-white dark:border-gray-600 dark:bg-white/5'
               }`}>
                 {sendInApp && <Check className="w-3 h-3 text-white stroke-[3]" />}
               </div>
-              <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span className="text-slate-900 dark:text-white">In-App Bell Alert (Phone & Web)</span>
+              <Bell className={`w-4 h-4 ${sendInApp ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-500'}`} />
+              <span className={`font-semibold ${sendInApp ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-gray-400'}`}>
+                In-App Bell Alert (Phone & Web)
+              </span>
             </button>
 
             <button
               type="button"
               onClick={() => setSendEmail(!sendEmail)}
-              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs transition-all cursor-pointer ${
                 sendEmail
-                  ? 'bg-indigo-50 dark:bg-indigo-500/15 border-indigo-500 text-indigo-900 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-500/40'
+                  ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-500 text-slate-900 dark:text-white shadow-xs ring-1 ring-emerald-500/30'
                   : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:border-slate-400'
               }`}
             >
               <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                sendEmail ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-400 bg-white dark:border-gray-600 dark:bg-white/5'
+                sendEmail ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-400 bg-white dark:border-gray-600 dark:bg-white/5'
               }`}>
                 {sendEmail && <Check className="w-3 h-3 text-white stroke-[3]" />}
               </div>
-              <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-slate-900 dark:text-white">Email Notification (Gmail/Inbox)</span>
+              <Mail className={`w-4 h-4 ${sendEmail ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-gray-500'}`} />
+              <span className={`font-semibold ${sendEmail ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-gray-400'}`}>
+                Email Notification (Gmail/Inbox)
+              </span>
             </button>
           </div>
         </div>
