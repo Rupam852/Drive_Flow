@@ -12,6 +12,7 @@ const db_1 = __importDefault(require("./config/db"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const fileRoutes_1 = __importDefault(require("./routes/fileRoutes"));
+const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
 const errorMiddleware_1 = require("./middleware/errorMiddleware");
 const authController_1 = require("./controllers/authController");
 const logger_1 = require("./utils/logger");
@@ -96,6 +97,7 @@ app.get('/api/auth/health', async (_req, res) => {
 app.use('/api/auth', authLimiter, authRoutes_1.default);
 app.use('/api/users', userRoutes_1.default);
 app.use('/api/files', fileRoutes_1.default);
+app.use('/api/notifications', notificationRoutes_1.default);
 // Error Middleware
 app.use(errorMiddleware_1.errorHandler);
 const PORT = parseInt(process.env.PORT || '5000', 10);
