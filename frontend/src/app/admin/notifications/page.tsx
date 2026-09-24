@@ -37,7 +37,7 @@ const TEMPLATES = [
   {
     name: '🚀 App Update Announcement',
     subject: '🚀 New App Update Available: Download Latest DriveFlow Version',
-    message: `Hello,\n\nA brand new update for the DriveFlow Android App is now available for download!\n\n🌟 What's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery and retry\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\n📲 How to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update' to install instantly.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
+    message: `Hello,\n\nA brand new update for the DriveFlow Android App is now available for download!\n\n🌟 What's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery and retry\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\n📲 How to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update' to install instantly.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://neo-files-transfer.pages.dev/download/723586892fd0\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
   },
   {
     name: '📢 New Feature',
@@ -86,6 +86,7 @@ export default function AdminNotificationsPage() {
   const [message, setMessage] = useState('');
   const [attachedLink, setAttachedLink] = useState('');
   const [linkInserted, setLinkInserted] = useState(false);
+  const [selectedTemplateName, setSelectedTemplateName] = useState<string | null>(null);
   
   // Channels
   const [sendInApp, setSendInApp] = useState(true);
@@ -169,10 +170,11 @@ export default function AdminNotificationsPage() {
 
   // Apply template preset
   const handleApplyTemplate = (tmpl: typeof TEMPLATES[0]) => {
+    setSelectedTemplateName(tmpl.name);
     setSubject(tmpl.subject);
     setMessage(tmpl.message);
     if (tmpl.name.includes('App Update')) {
-      setAttachedLink('https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk');
+      setAttachedLink('https://neo-files-transfer.pages.dev/download/723586892fd0');
     }
     setResultStatus(null);
   };
@@ -721,19 +723,20 @@ export default function AdminNotificationsPage() {
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {TEMPLATES.map(tmpl => {
-            const isAppUpdate = tmpl.name.includes('App Update');
+            const isSelected = selectedTemplateName === tmpl.name;
             return (
               <button
                 key={tmpl.name}
                 type="button"
                 onClick={() => handleApplyTemplate(tmpl)}
-                className={`shrink-0 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
-                  isAppUpdate
-                    ? 'bg-purple-100/90 dark:bg-purple-500/20 border-purple-400 dark:border-purple-500/50 text-purple-900 dark:text-purple-300 ring-1 ring-purple-400/40'
-                    : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:border-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50/50'
+                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs transition-all active:scale-95 cursor-pointer shadow-xs ${
+                  isSelected
+                    ? 'bg-purple-600 dark:bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-500/30 font-bold scale-[1.02]'
+                    : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:border-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50/50 font-semibold'
                 }`}
               >
-                {tmpl.name}
+                {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3] shrink-0" />}
+                <span>{tmpl.name}</span>
               </button>
             );
           })}
@@ -891,6 +894,7 @@ export default function AdminNotificationsPage() {
                   setSubject('');
                   setMessage('');
                   setAttachedLink('');
+                  setSelectedTemplateName(null);
                   setResultStatus(null);
                 }}
                 disabled={isSubmitting || (!subject && !message)}
