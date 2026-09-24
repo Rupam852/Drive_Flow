@@ -9,6 +9,8 @@ import {
 import Link from 'next/link';
 import api from '@/lib/api';
 
+import { emitNotificationSync, NOTIFICATION_SYNC_EVENT, NotificationSyncPayload } from '@/lib/notificationState';
+
 export interface InAppNotification {
   _id: string;
   title: string;
@@ -32,8 +34,13 @@ export default function NotificationBell() {
     if (!silent) setLoading(true);
     try {
       const res = await api.get('/notifications');
-      setNotifications(res.data.notifications || []);
-      setUnreadCount(res.data.unreadCount || 0);
+      const list: InAppNotification[] = res.data.notifications || [];
+      const count = typeof res.data.unreadCount === 'number'
+        ? res.data.unreadCount
+        : list.filter(n => !n.isRead).length;
+      setNotifications(list);
+      setUnreadCount(count);
+      emitNotificationSync({ type: 'set_count', unreadCount: count });
     } catch (err) {
       // Ignore if unauthenticated or offline
     } finally {
@@ -43,6 +50,29 @@ export default function NotificationBell() {
 
   useEffect(() => {
     fetchNotifications();
+
+    // Listen for global notification sync events from other pages/components
+    const handleSync = (e: Event) => {
+      const customEvent = e as CustomEvent<NotificationSyncPayload>;
+      const detail = customEvent.detail;
+      if (!detail) return;
+
+      if (detail.type === 'set_count' && typeof detail.unreadCount === 'number') {
+        setUnreadCount(detail.unreadCount);
+        if (detail.unreadCount === 0) {
+          setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        }
+      } else if (detail.type === 'clear') {
+        setUnreadCount(0);
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      } else if (detail.type === 'decrement') {
+        setUnreadCount(prev => Math.max(0, prev - (detail.delta || 1)));
+      } else if (detail.type === 'refetch') {
+        fetchNotifications(true);
+      }
+    };
+
+    window.addEventListener(NOTIFICATION_SYNC_EVENT, handleSync);
 
     // Periodic light polling (every 45s) when window is active
     const interval = setInterval(() => {
@@ -60,32 +90,43 @@ export default function NotificationBell() {
     document.addEventListener('mousedown', handleClickOutside);
 
     return () => {
+      window.removeEventListener(NOTIFICATION_SYNC_EVENT, handleSync);
       clearInterval(interval);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
 
-  // Mark single notification as read
+  // Mark single notification as read (Instant Optimistic UI update)
   const handleMarkAsRead = async (id: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
+    
+    // Immediate UI update so the red dot updates or vanishes instantly
+    setNotifications(prev => {
+      const updated = prev.map(n => (n._id === id ? { ...n, isRead: true } : n));
+      const remaining = updated.filter(n => !n.isRead).length;
+      setUnreadCount(remaining);
+      emitNotificationSync({ type: 'set_count', unreadCount: remaining });
+      return updated;
+    });
+
     try {
       await api.put(`/notifications/${id}/read`);
-      setNotifications(prev =>
-        prev.map(n => (n._id === id ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (err) {
       console.error('Failed to mark notification as read:', err);
     }
   };
 
-  // Mark all as read
+  // Mark all as read (Instant Optimistic UI update)
   const handleMarkAllAsRead = async () => {
     setActionLoading('read-all');
+    
+    // Immediate UI update so red dot is removed instantly
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    setUnreadCount(0);
+    emitNotificationSync({ type: 'set_count', unreadCount: 0 });
+
     try {
       await api.put('/notifications/read-all');
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      setUnreadCount(0);
     } catch (err) {
       console.error('Failed to mark all as read:', err);
     } finally {
@@ -93,17 +134,22 @@ export default function NotificationBell() {
     }
   };
 
-  // Dismiss / delete notification
+  // Dismiss / delete notification (Instant Optimistic UI update)
   const handleDismiss = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setActionLoading(id);
+
+    // Immediate UI update
+    setNotifications(prev => {
+      const updated = prev.filter(n => n._id !== id);
+      const remaining = updated.filter(n => !n.isRead).length;
+      setUnreadCount(remaining);
+      emitNotificationSync({ type: 'set_count', unreadCount: remaining });
+      return updated;
+    });
+
     try {
       await api.delete(`/notifications/${id}/dismiss`);
-      const target = notifications.find(n => n._id === id);
-      setNotifications(prev => prev.filter(n => n._id !== id));
-      if (target && !target.isRead) {
-        setUnreadCount(prev => Math.max(0, prev - 1));
-      }
     } catch (err) {
       console.error('Failed to dismiss notification:', err);
     } finally {

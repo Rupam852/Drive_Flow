@@ -9,6 +9,8 @@ import {
 import Link from 'next/link';
 import api from '@/lib/api';
 
+import { emitNotificationSync, NOTIFICATION_SYNC_EVENT, NotificationSyncPayload } from '@/lib/notificationState';
+
 interface InAppNotification {
   _id: string;
   title: string;
@@ -29,7 +31,10 @@ export default function UserNotificationsPage() {
     setLoading(true);
     try {
       const res = await api.get('/notifications');
-      setNotifications(res.data.notifications || []);
+      const list: InAppNotification[] = res.data.notifications || [];
+      const unread = list.filter(n => !n.isRead).length;
+      setNotifications(list);
+      emitNotificationSync({ type: 'set_count', unreadCount: unread });
     } catch (err) {
       console.error('Failed to load notifications:', err);
     } finally {
@@ -39,24 +44,50 @@ export default function UserNotificationsPage() {
 
   useEffect(() => {
     fetchNotifications();
+
+    const handleSync = (e: Event) => {
+      const customEvent = e as CustomEvent<NotificationSyncPayload>;
+      const detail = customEvent.detail;
+      if (!detail) return;
+
+      if (detail.type === 'clear' || (detail.type === 'set_count' && detail.unreadCount === 0)) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      } else if (detail.type === 'refetch') {
+        fetchNotifications();
+      }
+    };
+
+    window.addEventListener(NOTIFICATION_SYNC_EVENT, handleSync);
+    return () => window.removeEventListener(NOTIFICATION_SYNC_EVENT, handleSync);
   }, []);
 
-  const handleMarkAsRead = async (id: string) => {
+  // Mark as seen immediately (optimistic UI update)
+  const handleMarkAsRead = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    // Instant update so red dot is removed or decremented immediately without page reload
+    setNotifications(prev => {
+      const updated = prev.map(n => (n._id === id ? { ...n, isRead: true } : n));
+      const remaining = updated.filter(n => !n.isRead).length;
+      emitNotificationSync({ type: 'set_count', unreadCount: remaining });
+      return updated;
+    });
+
     try {
       await api.put(`/notifications/${id}/read`);
-      setNotifications(prev =>
-        prev.map(n => (n._id === id ? { ...n, isRead: true } : n))
-      );
     } catch (err) {
       console.error('Failed to mark read:', err);
     }
   };
 
+  // Mark all as seen immediately
   const handleMarkAllAsRead = async () => {
     setActionLoading('read-all');
+    // Instant update
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    emitNotificationSync({ type: 'set_count', unreadCount: 0 });
+
     try {
       await api.put('/notifications/read-all');
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (err) {
       console.error('Failed to mark all as read:', err);
     } finally {
@@ -64,11 +95,20 @@ export default function UserNotificationsPage() {
     }
   };
 
-  const handleDismiss = async (id: string) => {
+  // Dismiss notification
+  const handleDismiss = async (id: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     setActionLoading(id);
+    // Instant update
+    setNotifications(prev => {
+      const updated = prev.filter(n => n._id !== id);
+      const remaining = updated.filter(n => !n.isRead).length;
+      emitNotificationSync({ type: 'set_count', unreadCount: remaining });
+      return updated;
+    });
+
     try {
       await api.delete(`/notifications/${id}/dismiss`);
-      setNotifications(prev => prev.filter(n => n._id !== id));
     } catch (err) {
       console.error('Failed to dismiss notification:', err);
     } finally {
@@ -188,22 +228,23 @@ export default function UserNotificationsPage() {
               key={item._id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`p-4 sm:p-5 rounded-2xl border transition-all relative group ${
+              onClick={() => !item.isRead && handleMarkAsRead(item._id)}
+              className={`p-4 sm:p-5 rounded-2xl border transition-all relative group cursor-pointer ${
                 item.isRead
                   ? 'bg-white dark:bg-[#0f111a] border-slate-200 dark:border-white/10'
-                  : 'bg-purple-50/50 dark:bg-purple-950/20 border-purple-300 dark:border-purple-500/30 shadow-sm'
+                  : 'bg-red-50/20 dark:bg-purple-950/20 border-red-200/60 dark:border-purple-500/30 shadow-sm'
               }`}
             >
               {/* Left Accent indicator for unread */}
               {!item.isRead && (
-                <span className="absolute left-0 top-3 bottom-3 w-1 bg-purple-600 rounded-r" />
+                <span className="absolute left-0 top-3 bottom-3 w-1 bg-red-500 rounded-r" />
               )}
 
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     {!item.isRead && (
-                      <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
                     )}
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
                       {item.title}
@@ -225,7 +266,8 @@ export default function UserNotificationsPage() {
                   <div className="flex items-center gap-1.5">
                     {!item.isRead && (
                       <button
-                        onClick={() => handleMarkAsRead(item._id)}
+                        type="button"
+                        onClick={(e) => handleMarkAsRead(item._id, e)}
                         className="px-2.5 py-1 rounded-lg bg-white dark:bg-white/10 border border-slate-200 dark:border-white/15 text-purple-600 dark:text-purple-400 text-xs font-semibold hover:bg-purple-50 dark:hover:bg-purple-500/20 transition-all flex items-center gap-1 cursor-pointer"
                         title="Mark as read"
                       >
@@ -234,7 +276,8 @@ export default function UserNotificationsPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => handleDismiss(item._id)}
+                      type="button"
+                      onClick={(e) => handleDismiss(item._id, e)}
                       disabled={actionLoading === item._id}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                       title="Delete from my inbox"

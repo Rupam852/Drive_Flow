@@ -16,6 +16,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import NotificationBell from '@/components/NotificationBell';
 import AppUpdaterModal from '@/components/AppUpdaterModal';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
+import { NOTIFICATION_SYNC_EVENT, NotificationSyncPayload } from '@/lib/notificationState';
 
 
 const navItems = [
@@ -33,6 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [mounted, setMounted] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSessionExpired, setIsSessionExpired] = useState(false);
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
 
   const {
     currentVersion,
@@ -74,6 +76,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
     window.addEventListener('open-app-updater', handleOpenUpdater);
     return () => window.removeEventListener('open-app-updater', handleOpenUpdater);
+  }, []);
+
+  // Listen for global notification sync events to update menu badges in real-time
+  useEffect(() => {
+    const handleSync = (e: Event) => {
+      const customEvent = e as CustomEvent<NotificationSyncPayload>;
+      const detail = customEvent.detail;
+      if (!detail) return;
+
+      if (detail.type === 'set_count' && typeof detail.unreadCount === 'number') {
+        setUnreadNotifs(detail.unreadCount);
+      } else if (detail.type === 'clear') {
+        setUnreadNotifs(0);
+      } else if (detail.type === 'decrement') {
+        setUnreadNotifs(prev => Math.max(0, prev - (detail.delta || 1)));
+      }
+    };
+
+    window.addEventListener(NOTIFICATION_SYNC_EVENT, handleSync);
+    return () => window.removeEventListener(NOTIFICATION_SYNC_EVENT, handleSync);
   }, []);
 
   // Lock body scroll when sidebar is open on mobile
@@ -226,13 +248,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   router.push(href);
                 }
               }}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all border cursor-pointer
+              className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all border cursor-pointer
                 ${pathname === href
                   ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-[var(--color-primary)]/30 font-semibold'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white border-transparent'}`}
             >
-              <Icon className="w-5 h-5 flex-shrink-0" />
-              <span className="font-medium leading-none">{label}</span>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  {label === 'Notifications' && unreadNotifs > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-[#080711]" />
+                  )}
+                </div>
+                <span className="font-medium leading-none">{label}</span>
+              </div>
+              {label === 'Notifications' && unreadNotifs > 0 && (
+                <span className="flex h-4 min-w-4 px-1.5 items-center justify-center rounded-full bg-red-500 text-[10px] font-extrabold text-white shadow-sm">
+                  {unreadNotifs > 9 ? '9+' : unreadNotifs}
+                </span>
+              )}
             </Link>
           ))}
 
@@ -284,7 +318,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               aria-label="Toggle navigation menu"
             >
               {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              {isNativeApp && hasUpdate && !sidebarOpen && (
+              {/* Show red indicator on hamburger if update available or unread notifications */}
+              {!sidebarOpen && ((isNativeApp && hasUpdate) || unreadNotifs > 0) && (
                 <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 ring-2 ring-white dark:ring-[#080711]"></span>
