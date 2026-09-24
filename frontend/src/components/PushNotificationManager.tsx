@@ -86,11 +86,26 @@ export default function PushNotificationManager() {
 
         await PushNotifications.addListener(
           'pushNotificationActionPerformed',
-          (action: ActionPerformed) => {
+          async (action: ActionPerformed) => {
             console.log('[Push] Notification tapped/actionPerformed:', action);
             const data = action.notification.data;
-            const targetUrl = data?.url || '/user/notifications';
+            const notifId = data?.notificationId;
+            const targetUrl = data?.url || (notifId ? `/user/notifications?id=${notifId}` : '/user/notifications');
 
+            // 1. Clear notification from Android system tray
+            try {
+              await PushNotifications.removeAllDeliveredNotifications();
+            } catch {}
+
+            // 2. Mark notification as read immediately in backend and decrement badge
+            if (notifId) {
+              try {
+                await api.put(`/notifications/${notifId}/read`);
+              } catch {}
+              emitNotificationSync({ type: 'decrement', delta: 1 });
+            }
+
+            // 3. Navigate to notification screen
             try {
               router.push(targetUrl);
             } catch {

@@ -38,18 +38,23 @@ function UserNotificationsContent() {
     setLoading(true);
     try {
       const res = await api.get('/notifications');
-      const list: InAppNotification[] = res.data.notifications || [];
-      const unread = list.filter(n => !n.isRead).length;
-      setNotifications(list);
-      emitNotificationSync({ type: 'set_count', unreadCount: unread });
+      let list: InAppNotification[] = res.data.notifications || [];
 
-      // If targeted notification ID is present in query parameters, open it automatically
+      // If targeted notification ID is present in query parameters, mark it as read immediately
       if (targetId) {
         const found = list.find(n => n._id === targetId);
         if (found) {
-          openFullNotification(found);
+          setSelectedNotification({ ...found, isRead: true });
+          if (!found.isRead) {
+            list = list.map(n => n._id === targetId ? { ...n, isRead: true } : n);
+            api.put(`/notifications/${targetId}/read`).catch(console.error);
+          }
         }
       }
+
+      const unread = list.filter(n => !n.isRead).length;
+      setNotifications(list);
+      emitNotificationSync({ type: 'set_count', unreadCount: unread });
     } catch (err) {
       console.error('Failed to load notifications:', err);
     } finally {
@@ -85,9 +90,7 @@ function UserNotificationsContent() {
       return updated;
     });
 
-    if (selectedNotification && selectedNotification._id === id) {
-      setSelectedNotification(prev => (prev ? { ...prev, isRead: true } : null));
-    }
+    setSelectedNotification(prev => (prev && prev._id === id ? { ...prev, isRead: true } : prev));
 
     try {
       await api.put(`/notifications/${id}/read`);
@@ -98,7 +101,7 @@ function UserNotificationsContent() {
 
   // Open Full Notification modal and AUTOMATICALLY mark it as seen
   const openFullNotification = (item: InAppNotification) => {
-    setSelectedNotification(item);
+    setSelectedNotification({ ...item, isRead: true });
     if (!item.isRead) {
       handleMarkAsRead(item._id);
     }

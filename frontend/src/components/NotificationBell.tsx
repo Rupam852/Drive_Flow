@@ -48,7 +48,7 @@ export default function NotificationBell() {
 
     // Periodic light polling (every 45s) when window is active
     const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && window.location.pathname !== '/user/notifications') {
         fetchUnreadCount();
       }
     }, 45000);
