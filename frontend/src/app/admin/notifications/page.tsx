@@ -438,23 +438,23 @@ export default function AdminNotificationsPage() {
               }}
               className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'all'
-                  ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-600 dark:border-purple-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-purple-500/25'
-                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-purple-400 hover:bg-slate-50/70 shadow-xs'
+                  ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-emerald-500/20'
+                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-slate-400 hover:bg-slate-50/70 shadow-xs'
               }`}
             >
-              <div className={`p-2 rounded-lg shrink-0 border ${
+              <div className={`p-2.5 rounded-xl shrink-0 border transition-colors ${
                 recipientMode === 'all'
-                  ? 'bg-purple-600 border-purple-600 text-white shadow-sm'
+                  ? 'bg-emerald-100 dark:bg-emerald-500/25 border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 shadow-xs'
                   : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400'
               }`}>
-                <Users className="w-5 h-5" />
+                <Users className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div>
                 <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
                   <span>All Users</span>
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
                     recipientMode === 'all'
-                      ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/30'
+                      ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
                       : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
                   }`}>
                     Broadcast
@@ -465,7 +465,7 @@ export default function AdminNotificationsPage() {
                 </p>
               </div>
               {recipientMode === 'all' && (
-                <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
+                <span className="absolute top-3 right-3 text-emerald-600 dark:text-emerald-400">
                   <Check className="w-4 h-4 stroke-[3]" />
                 </span>
               )}
@@ -480,23 +480,23 @@ export default function AdminNotificationsPage() {
               }}
               className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'single'
-                  ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-600 dark:border-purple-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-purple-500/25'
-                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-purple-400 hover:bg-slate-50/70 shadow-xs'
+                  ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-emerald-500/20'
+                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-slate-400 hover:bg-slate-50/70 shadow-xs'
               }`}
             >
-              <div className={`p-2 rounded-lg shrink-0 border ${
+              <div className={`p-2.5 rounded-xl shrink-0 border transition-colors ${
                 recipientMode === 'single'
-                  ? 'bg-purple-600 border-purple-600 text-white shadow-sm'
+                  ? 'bg-emerald-100 dark:bg-emerald-500/25 border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 shadow-xs'
                   : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400'
               }`}>
-                <User className="w-5 h-5" />
+                <User className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div>
                 <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
                   <span>Specific User</span>
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
                     recipientMode === 'single'
-                      ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-500/30'
+                      ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
                       : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
                   }`}>
                     Direct
@@ -507,7 +507,7 @@ export default function AdminNotificationsPage() {
                 </p>
               </div>
               {recipientMode === 'single' && (
-                <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
+                <span className="absolute top-3 right-3 text-emerald-600 dark:text-emerald-400">
                   <Check className="w-4 h-4 stroke-[3]" />
                 </span>
               )}
@@ -522,23 +522,23 @@ export default function AdminNotificationsPage() {
               }}
               className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'selected'
-                  ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-600 dark:border-purple-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-purple-500/25'
-                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-purple-400 hover:bg-slate-50/70 shadow-xs'
+                  ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-emerald-500/20'
+                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-slate-400 hover:bg-slate-50/70 shadow-xs'
               }`}
             >
-              <div className={`p-2 rounded-lg shrink-0 border ${
+              <div className={`p-2.5 rounded-xl shrink-0 border transition-colors ${
                 recipientMode === 'selected'
-                  ? 'bg-purple-600 border-purple-600 text-white shadow-sm'
+                  ? 'bg-emerald-100 dark:bg-emerald-500/25 border-emerald-300 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-300 shadow-xs'
                   : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400'
               }`}>
-                <ShieldCheck className="w-5 h-5" />
+                <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div>
                 <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
                   <span>Selected Users</span>
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
                     recipientMode === 'selected'
-                      ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/30'
+                      ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
                       : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
                   }`}>
                     Custom ({selectedUserIds.length})
@@ -549,7 +549,7 @@ export default function AdminNotificationsPage() {
                 </p>
               </div>
               {recipientMode === 'selected' && (
-                <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
+                <span className="absolute top-3 right-3 text-emerald-600 dark:text-emerald-400">
                   <Check className="w-4 h-4 stroke-[3]" />
                 </span>
               )}
@@ -626,7 +626,7 @@ export default function AdminNotificationsPage() {
                             }}
                             className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-colors cursor-pointer ${
                               selectedUserId === u._id
-                                ? 'bg-purple-500/10 text-purple-600 dark:text-purple-300 font-semibold'
+                                ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 font-semibold'
                                 : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-gray-200'
                             }`}
                           >
@@ -649,7 +649,7 @@ export default function AdminNotificationsPage() {
                               </div>
                             </div>
                             {selectedUserId === u._id && (
-                              <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                             )}
                           </button>
                         ))
@@ -672,7 +672,7 @@ export default function AdminNotificationsPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedUserIds(users.map(u => u._id))}
-                    className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
+                    className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
                   >
                     Select All
                   </button>
@@ -694,7 +694,7 @@ export default function AdminNotificationsPage() {
                   placeholder="Filter users..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xs"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
                 />
               </div>
 
@@ -708,12 +708,12 @@ export default function AdminNotificationsPage() {
                       onClick={() => toggleSelectUser(u._id)}
                       className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-500 text-slate-900 dark:text-white shadow-xs ring-1 ring-purple-500/30'
-                          : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-purple-400 hover:bg-purple-50/40 shadow-xs'
+                          ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 text-slate-900 dark:text-white shadow-xs ring-1 ring-emerald-500/30'
+                          : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-slate-400 hover:bg-slate-50/70 shadow-xs'
                       }`}
                     >
                       <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-400 dark:border-gray-500 bg-white dark:bg-white/5'
+                        isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-400 dark:border-gray-500 bg-white dark:bg-white/5'
                       }`}>
                         {isSelected && <Check className="w-3 h-3 stroke-[3] text-white" />}
                       </div>
