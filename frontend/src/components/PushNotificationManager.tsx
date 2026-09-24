@@ -46,20 +46,24 @@ export default function PushNotificationManager() {
           return;
         }
 
-        // 3. Register with Google FCM
-        await PushNotifications.register();
-
-        // 4. Token Registration Handler
+        // 3. Setup Listeners BEFORE calling register() to prevent race conditions
         await PushNotifications.addListener('registration', async (token: Token) => {
           if (!isMounted) return;
-          console.log('[Push] FCM Registration Token:', token.value?.substring(0, 15) + '...');
+          console.log('[Push] FCM Registration Token received:', token.value?.substring(0, 15) + '...');
 
           try {
+            const authToken = localStorage.getItem('token_user') || localStorage.getItem('token');
+            const headers: Record<string, string> = {};
+            if (authToken) {
+              headers['Authorization'] = `Bearer ${authToken}`;
+            }
+
             // Save device token to backend
             await api.post('/notifications/device-token', {
               token: token.value,
               platform: Capacitor.getPlatform(),
-            });
+            }, { headers });
+
             localStorage.setItem('driveflow_fcm_token', token.value);
             console.log('[Push] Device token successfully registered with backend.');
           } catch (err: any) {
@@ -67,12 +71,10 @@ export default function PushNotificationManager() {
           }
         });
 
-        // 5. Registration Error Handler
         await PushNotifications.addListener('registrationError', (error: any) => {
           console.error('[Push] FCM Registration Error:', error);
         });
 
-        // 6. Foreground Notification Received Handler
         await PushNotifications.addListener(
           'pushNotificationReceived',
           (notification: PushNotificationSchema) => {
@@ -82,7 +84,6 @@ export default function PushNotificationManager() {
           }
         );
 
-        // 7. Notification Tap / Action Handler (When user clicks notification in status bar)
         await PushNotifications.addListener(
           'pushNotificationActionPerformed',
           (action: ActionPerformed) => {
@@ -90,7 +91,6 @@ export default function PushNotificationManager() {
             const data = action.notification.data;
             const targetUrl = data?.url || '/user/notifications';
 
-            // Navigate to notifications screen
             try {
               router.push(targetUrl);
             } catch {
@@ -98,6 +98,9 @@ export default function PushNotificationManager() {
             }
           }
         );
+
+        // 4. Register with Google FCM (fires the 'registration' listener above)
+        await PushNotifications.register();
       } catch (err: any) {
         console.warn('[Push] Push notification setup error:', err?.message || err);
       }

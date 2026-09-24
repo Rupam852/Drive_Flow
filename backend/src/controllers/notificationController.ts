@@ -4,7 +4,7 @@ import { User } from '../models/User';
 import { DeviceToken } from '../models/DeviceToken';
 import { logActivity } from '../utils/logger';
 import { sendCustomEmail } from '../utils/mailer';
-import { sendPushNotification } from '../utils/firebase';
+import { sendPushNotification, getFirebaseStatus } from '../utils/firebase';
 
 // @desc    Get in-app notifications for the logged-in user
 // @route   GET /api/notifications
@@ -227,17 +227,22 @@ export const createAdminNotification = async (req: Request, res: Response) => {
     }
 
     // Send Real-Time Android Push Notification to System Status Bar
-    sendPushNotification({
-      title: title.trim(),
-      body: message.trim(),
-      targetUserIds: type === 'selected' || type === 'single' ? targetUsers : undefined,
-      data: {
-        notificationId: newNotification._id.toString(),
-        url: '/user/notifications',
-      },
-    }).catch(err => {
+    let pushResult: any = null;
+    try {
+      pushResult = await sendPushNotification({
+        title: title.trim(),
+        body: message.trim(),
+        targetUserIds: type === 'selected' || type === 'single' ? targetUsers : undefined,
+        data: {
+          notificationId: newNotification._id.toString(),
+          url: '/user/notifications',
+        },
+      });
+      console.log('[Admin Notification Push Result]:', pushResult);
+    } catch (err: any) {
       console.error('[Firebase Push Notification Error]:', err);
-    });
+      pushResult = { success: false, error: err?.message };
+    }
 
     try {
       await logActivity(
@@ -252,6 +257,7 @@ export const createAdminNotification = async (req: Request, res: Response) => {
     res.status(201).json({
       success: true,
       notification: newNotification,
+      pushResult,
       message: 'In-app notification published successfully.',
     });
   } catch (error) {
@@ -292,13 +298,29 @@ export const deleteAdminNotification = async (req: Request, res: Response) => {
   }
 };
 
+import jwt from 'jsonwebtoken';
+
 // @desc    Register or update an FCM push device token
 // @route   POST /api/notifications/device-token
 // @access  Public / Optional Auth
 export const registerDeviceToken = async (req: Request, res: Response) => {
   try {
-    const { token, platform = 'android' } = req.body;
-    const userId = (req as any).user?._id;
+    const { token, platform = 'android' } = req.body || {};
+    let userId = (req as any).user?._id;
+
+    // Optional auth token resolution from header
+    if (!userId && req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      try {
+        const rawToken = req.headers.authorization.split(' ')[1];
+        const secret = process.env.JWT_SECRET || 'fallback-secret';
+        const decoded: any = jwt.verify(rawToken, secret);
+        if (decoded && decoded.id) {
+          userId = decoded.id;
+        }
+      } catch {
+        // Ignore invalid token, still register device token
+      }
+    }
 
     if (!token || typeof token !== 'string' || token.trim().length < 10) {
       res.status(400).json({ message: 'Valid device token is required.' });
@@ -317,8 +339,26 @@ export const registerDeviceToken = async (req: Request, res: Response) => {
       { upsert: true, new: true }
     );
 
+    console.log(`[Push] Device token registered: ${cleanToken.substring(0, 15)}... (User: ${userId || 'anonymous'})`);
     res.json({ success: true, message: 'Device token registered successfully.' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc    Check Firebase push notification readiness & registered devices count
+// @route   GET /api/notifications/push-status
+// @access  Public
+export const getPushStatus = async (_req: Request, res: Response) => {
+  try {
+    const status = getFirebaseStatus();
+    const tokenCount = await DeviceToken.countDocuments();
+    res.json({
+      firebaseInitialized: status.isInitialized,
+      registeredDevicesCount: tokenCount,
+      hasEnvKey: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err?.message });
   }
 };

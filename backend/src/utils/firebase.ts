@@ -13,9 +13,17 @@ function initFirebase() {
   }
 
   try {
-    // 1. Check if FIREBASE_SERVICE_ACCOUNT is provided via environment variable (JSON string)
+    // 1. Check if FIREBASE_SERVICE_ACCOUNT is provided via environment variable (JSON string or base64)
     if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+      let raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+      if (!raw.startsWith('{')) {
+        try {
+          raw = Buffer.from(raw, 'base64').toString('utf8');
+        } catch {
+          // fallback to raw
+        }
+      }
+      const serviceAccount = JSON.parse(raw);
       initializeApp({
         credential: cert(serviceAccount),
       });
@@ -51,6 +59,12 @@ function initFirebase() {
 // Auto initialize on import
 initFirebase();
 
+export function getFirebaseStatus() {
+  return {
+    isInitialized: isFirebaseInitialized,
+  };
+}
+
 export interface PushNotificationPayload {
   title: string;
   body: string;
@@ -65,8 +79,8 @@ export interface PushNotificationPayload {
 export async function sendPushNotification(payload: PushNotificationPayload) {
   initFirebase();
   if (!isFirebaseInitialized) {
-    console.warn('[Firebase] Skipping push: Firebase not initialized');
-    return { success: false, sentCount: 0 };
+    console.warn('[Firebase] Skipping push: Firebase not initialized (missing service account credentials on server)');
+    return { success: false, sentCount: 0, reason: 'firebase_not_initialized' };
   }
 
   try {
@@ -89,7 +103,7 @@ export async function sendPushNotification(payload: PushNotificationPayload) {
 
     if (targetTokens.length === 0) {
       console.log('[Firebase] No registered device tokens found to send push notification.');
-      return { success: true, sentCount: 0 };
+      return { success: true, sentCount: 0, reason: 'no_tokens_found' };
     }
 
     const message: MulticastMessage = {
@@ -108,8 +122,8 @@ export async function sendPushNotification(payload: PushNotificationPayload) {
           channelId: 'driveflow_announcements',
           priority: 'high',
           sound: 'default',
-          clickAction: 'FLUTTER_NOTIFICATION_CLICK',
-          icon: 'ic_launcher',
+          defaultSound: true,
+          defaultVibrateTimings: true,
         },
       },
     };
