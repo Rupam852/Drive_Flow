@@ -1644,12 +1644,10 @@ function AdminFilesContent() {
           {selected.size > 0 ? (
             <div className="flex items-center gap-2 bg-purple-500/10 p-1 rounded-2xl border border-purple-500/20 shrink-0">
               <span className="text-xs text-purple-400 px-3 font-bold whitespace-nowrap">{selected.size} selected</span>
-              {currentFolder.id !== ROOT_ID && (
-                <button onClick={() => handleBulkDownload()}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap">
-                  <Download className="w-3.5 h-3.5" /> Download
-                </button>
-              )}
+              <button onClick={() => handleBulkDownload()}
+                className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap">
+                <Download className="w-3.5 h-3.5" /> Download
+              </button>
               <button onClick={() => { setMovingIds(Array.from(selected)); setShowMoveModal(true); }}
                 className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl transition-all text-xs font-bold whitespace-nowrap">
                 <Move className="w-3.5 h-3.5" /> Move
@@ -1848,7 +1846,7 @@ function AdminFilesContent() {
                     <td className="px-2 sm:px-4 py-3 text-gray-400 text-sm hidden md:table-cell whitespace-nowrap">{new Date(file.modifiedTime).toLocaleDateString()}</td>
                     <td className="px-2 sm:px-4 py-3">
                       <div className="flex items-center gap-2 sm:gap-3 transition-opacity">
-                        {currentFolder.id !== ROOT_ID && (
+                        {!(currentFolder.id === ROOT_ID && isFolder(file)) && (
                           <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }} title="Download"
                             className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                             <Download className="w-4 h-4" />
@@ -1945,7 +1943,7 @@ function AdminFilesContent() {
                 </div>
                 {/* Grid Hover Actions */}
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 rounded-3xl flex items-center justify-center gap-2 transition-all">
-                  {currentFolder.id !== ROOT_ID && (
+                  {!(currentFolder.id === ROOT_ID && isFolder(file)) && (
                     <button onClick={e => { e.stopPropagation(); handleDownload(file); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Download"><Download className="w-4 h-4" /></button>
                   )}
                   <button onClick={e => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Rename"><Pencil className="w-4 h-4" /></button>

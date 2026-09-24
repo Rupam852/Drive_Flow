@@ -909,7 +909,7 @@ export default function UserFilesPage() {
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-sm font-medium whitespace-nowrap">{fmt(file.size, isFolder(file))}</td>
                     <td className="px-6 py-4 text-right">
-                      {currentFolder.id !== ROOT_ID && (
+                      {!(currentFolder.id === ROOT_ID && isFolder(file)) && (
                         <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }}
                           onPointerDown={(e) => e.stopPropagation()}
                           className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
@@ -1152,15 +1152,11 @@ export default function UserFilesPage() {
             <span className="text-white font-medium text-sm whitespace-nowrap">
               <span className="text-purple-400 font-bold">{selected.size}</span> selected
             </span>
-            {currentFolder.id !== ROOT_ID && (
-              <>
-                <div className="w-px h-6 bg-white/20" />
-                <button onClick={handleBulkDownload} className="flex items-center gap-2 text-white hover:text-purple-400 transition-colors whitespace-nowrap">
-                  <Download className="w-5 h-5" />
-                  <span className="text-sm font-medium">Download All</span>
-                </button>
-              </>
-            )}
+            <div className="w-px h-6 bg-white/20" />
+            <button onClick={handleBulkDownload} className="flex items-center gap-2 text-white hover:text-purple-400 transition-colors whitespace-nowrap">
+              <Download className="w-5 h-5" />
+              <span className="text-sm font-medium">Download All</span>
+            </button>
             <button onClick={() => setSelected(new Set())} className="flex items-center gap-2 text-gray-400 hover:text-red-400 transition-colors ml-2" title="Clear selection">
               <X className="w-5 h-5" />
             </button>
