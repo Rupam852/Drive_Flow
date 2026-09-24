@@ -235,7 +235,7 @@ export const createAdminNotification = async (req: Request, res: Response) => {
         targetUserIds: type === 'selected' || type === 'single' ? targetUsers : undefined,
         data: {
           notificationId: newNotification._id.toString(),
-          url: '/user/notifications',
+          url: `/user/notifications?id=${newNotification._id.toString()}`,
         },
       });
       console.log('[Admin Notification Push Result]:', pushResult);

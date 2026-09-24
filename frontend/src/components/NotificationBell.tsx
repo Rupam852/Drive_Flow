@@ -7,6 +7,7 @@ import {
   Sparkles, RefreshCw, AlertCircle, Info, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
 import { emitNotificationSync, NOTIFICATION_SYNC_EVENT, NotificationSyncPayload } from '@/lib/notificationState';
@@ -22,6 +23,7 @@ export interface InAppNotification {
 }
 
 export default function NotificationBell() {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<InAppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -277,7 +279,11 @@ export default function NotificationBell() {
                   notifications.map(item => (
                     <div
                       key={item._id}
-                      onClick={() => !item.isRead && handleMarkAsRead(item._id)}
+                      onClick={() => {
+                        if (!item.isRead) handleMarkAsRead(item._id);
+                        setIsOpen(false);
+                        router.push(`/user/notifications?id=${item._id}`);
+                      }}
                       className={`p-3.5 transition-all text-left relative group cursor-pointer ${
                         item.isRead
                           ? 'bg-transparent hover:bg-slate-50/60 dark:hover:bg-white/[0.02]'
@@ -303,43 +309,25 @@ export default function NotificationBell() {
                         </span>
                       </div>
 
-                      <p className="text-[11px] text-slate-600 dark:text-gray-300 mt-1 line-clamp-3 leading-relaxed whitespace-pre-line">
+                      <p className="text-[11px] text-slate-600 dark:text-gray-300 mt-1 line-clamp-2 leading-relaxed">
                         {item.message}
                       </p>
 
                       {/* Optional Action Link / Buttons */}
                       <div className="mt-2 flex items-center justify-between gap-2 pt-1">
-                        {item.link ? (
-                          <a
-                            href={item.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!item.isRead) handleMarkAsRead(item._id);
-                            }}
-                            className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:underline"
-                          >
-                            <span>Open Link</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        ) : <span />}
+                        <span className="inline-flex items-center text-[10px] font-semibold text-purple-600 dark:text-purple-400 group-hover:underline">
+                          View details
+                          <ChevronRight className="w-3 h-3 ml-0.5" />
+                        </span>
 
                         {/* Dismiss / Delete Button */}
                         <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                          {!item.isRead && (
-                            <button
-                              type="button"
-                              onClick={(e) => handleMarkAsRead(item._id, e)}
-                              className="p-1 rounded-md text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                              title="Mark as read"
-                            >
-                              <Check className="w-3.5 h-3.5" />
-                            </button>
-                          )}
                           <button
                             type="button"
-                            onClick={(e) => handleDismiss(item._id, e)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDismiss(item._id, e);
+                            }}
                             disabled={actionLoading === item._id}
                             className="p-1 rounded-md text-slate-400 hover:text-red-500 transition-colors"
                             title="Delete notification"
