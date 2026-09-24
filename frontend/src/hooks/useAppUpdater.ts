@@ -6,9 +6,10 @@ import { registerPlugin, Capacitor } from '@capacitor/core';
 interface AppUpdateNotificationPlugin {
   requestNotificationPermission(): Promise<{ granted: boolean; requested: boolean }>;
   showUpdateNotification(options: { version: string; title?: string; body?: string; downloadUrl: string }): Promise<{ success: boolean }>;
+  showAnnouncementNotification(options: { title: string; body?: string; url?: string; notificationId?: string }): Promise<{ success: boolean }>;
 }
 
-const AppUpdateNotification = registerPlugin<AppUpdateNotificationPlugin>('AppUpdateNotification');
+export const AppUpdateNotification = registerPlugin<AppUpdateNotificationPlugin>('AppUpdateNotification');
 
 export const CURRENT_APP_VERSION = 'v1.0.3';
 export const API_VERSION_URL = 'https://neo-files-transfer-p3ot.onrender.com/api/version/apk_f13b660ad8d24108';

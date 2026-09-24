@@ -6,6 +6,7 @@ import { Capacitor } from '@capacitor/core';
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
 import api from '@/lib/api';
 import { emitNotificationSync } from '@/lib/notificationState';
+import { AppUpdateNotification } from '@/hooks/useAppUpdater';
 
 export default function PushNotificationManager() {
   const router = useRouter();
@@ -15,6 +16,23 @@ export default function PushNotificationManager() {
     if (!Capacitor.isNativePlatform()) return;
 
     let isMounted = true;
+
+    // Listen for custom open-push-notification dispatched from MainActivity
+    const handleOpenPushNotification = (e: Event) => {
+      const customEvent = e as CustomEvent<{ url?: string; notificationId?: string }>;
+      const detail = customEvent.detail;
+      const targetUrl = detail?.url || (detail?.notificationId ? `/user/notifications?id=${detail.notificationId}` : '/user/notifications');
+      if (detail?.notificationId) {
+        api.put(`/notifications/${detail.notificationId}/read`).catch(() => {});
+        emitNotificationSync({ type: 'decrement', delta: 1 });
+      }
+      try {
+        router.push(targetUrl);
+      } catch {
+        window.location.href = targetUrl;
+      }
+    };
+    window.addEventListener('open-push-notification', handleOpenPushNotification);
 
     const setupPushNotifications = async () => {
       try {
@@ -77,10 +95,22 @@ export default function PushNotificationManager() {
 
         await PushNotifications.addListener(
           'pushNotificationReceived',
-          (notification: PushNotificationSchema) => {
+          async (notification: PushNotificationSchema) => {
             console.log('[Push] Notification received in foreground:', notification);
             // Instantly sync in-app bell and badges
             emitNotificationSync({ type: 'refetch' });
+
+            // Show a heads-up status bar notification on Android even when app is open
+            try {
+              await AppUpdateNotification.showAnnouncementNotification({
+                title: notification.title || 'DriveFlow Announcement',
+                body: notification.body || '',
+                url: notification.data?.url || '/user/notifications',
+                notificationId: notification.data?.notificationId || '',
+              });
+            } catch (err) {
+              console.warn('[Push] Failed to show foreground notification:', err);
+            }
           }
         );
 
@@ -125,6 +155,7 @@ export default function PushNotificationManager() {
 
     return () => {
       isMounted = false;
+      window.removeEventListener('open-push-notification', handleOpenPushNotification);
       if (Capacitor.isNativePlatform()) {
         PushNotifications.removeAllListeners().catch(() => {});
       }

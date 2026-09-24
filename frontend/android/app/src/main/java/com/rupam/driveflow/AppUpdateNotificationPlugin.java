@@ -112,4 +112,67 @@ public class AppUpdateNotificationPlugin extends Plugin {
             call.reject("Failed to show notification: " + e.getMessage());
         }
     }
+
+    @PluginMethod
+    public void showAnnouncementNotification(PluginCall call) {
+        String title = call.getString("title", "DriveFlow Update");
+        String body = call.getString("body", "");
+        String url = call.getString("url", "/user/notifications");
+        String notificationId = call.getString("notificationId", "");
+
+        try {
+            Context context = getContext();
+            NotificationManager notificationManager =
+                    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+
+            if (notificationManager == null) {
+                call.reject("NotificationManager not available");
+                return;
+            }
+
+            String channelId = "driveflow_announcements";
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationChannel channel = new NotificationChannel(
+                        channelId,
+                        "DriveFlow Announcements",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+                channel.setDescription("Receive important updates and announcements from DriveFlow");
+                channel.enableVibration(true);
+                channel.enableLights(true);
+                notificationManager.createNotificationChannel(channel);
+            }
+
+            Intent intent = new Intent(context, MainActivity.class);
+            intent.setAction("ACTION_OPEN_NOTIFICATION");
+            intent.putExtra("url", url);
+            intent.putExtra("notificationId", notificationId);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+            int notifId = (int) System.currentTimeMillis();
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    context,
+                    notifId,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(title)
+                    .setContentText(body)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(body))
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent);
+
+            notificationManager.notify(notifId, builder.build());
+
+            JSObject ret = new JSObject();
+            ret.put("success", true);
+            call.resolve(ret);
+        } catch (Exception e) {
+            call.reject("Failed to show announcement notification: " + e.getMessage());
+        }
+    }
 }

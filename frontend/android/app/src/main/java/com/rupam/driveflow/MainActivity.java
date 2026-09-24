@@ -1,6 +1,8 @@
 package com.rupam.driveflow;
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -26,9 +28,11 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(AppUpdateNotificationPlugin.class);
         registerPlugin(NetworkHelperPlugin.class);
         super.onCreate(savedInstanceState);
+        createNotificationChannels();
         configureNativeWindow();
         checkAndRequestNotificationPermission();
         handleUpdateIntent(getIntent());
+        handleNotificationIntent(getIntent());
 
         // Re-enforce high refresh rate & hardware acceleration once WebView is initialized
         if (getBridge() != null && getBridge().getWebView() != null) {
@@ -60,6 +64,7 @@ public class MainActivity extends BridgeActivity {
         super.onNewIntent(intent);
         setIntent(intent);
         handleUpdateIntent(intent);
+        handleNotificationIntent(intent);
     }
 
     private void handleUpdateIntent(android.content.Intent intent) {
@@ -70,6 +75,42 @@ public class MainActivity extends BridgeActivity {
                         "window.dispatchEvent(new CustomEvent('open-app-updater'));",
                         null
                     );
+                }, 600);
+            }
+        }
+    }
+
+    private void createNotificationChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            if (manager != null) {
+                // High-priority announcement channel
+                NotificationChannel announcementChannel = new NotificationChannel(
+                        "driveflow_announcements",
+                        "DriveFlow Announcements",
+                        NotificationManager.IMPORTANCE_HIGH
+                );
+                announcementChannel.setDescription("Receive important updates and announcements from DriveFlow");
+                announcementChannel.enableLights(true);
+                announcementChannel.setLightColor(Color.parseColor("#7c3aed"));
+                announcementChannel.enableVibration(true);
+                announcementChannel.setShowBadge(true);
+                announcementChannel.setLockscreenVisibility(android.app.Notification.VISIBILITY_PUBLIC);
+                manager.createNotificationChannel(announcementChannel);
+            }
+        }
+    }
+
+    private void handleNotificationIntent(android.content.Intent intent) {
+        if (intent != null && "ACTION_OPEN_NOTIFICATION".equals(intent.getAction())) {
+            String url = intent.getStringExtra("url");
+            String notifId = intent.getStringExtra("notificationId");
+            if (getBridge() != null && getBridge().getWebView() != null) {
+                getBridge().getWebView().postDelayed(() -> {
+                    String targetUrl = url != null ? url : "/user/notifications";
+                    String idStr = notifId != null ? notifId : "";
+                    String script = "window.dispatchEvent(new CustomEvent('open-push-notification', { detail: { url: '" + targetUrl + "', notificationId: '" + idStr + "' } }));";
+                    getBridge().getWebView().evaluateJavascript(script, null);
                 }, 600);
             }
         }
@@ -94,6 +135,7 @@ public class MainActivity extends BridgeActivity {
         enableHighRefreshRate();
         enableHardwareAccelerationOnWebView();
         handleUpdateIntent(getIntent());
+        handleNotificationIntent(getIntent());
     }
 
     private void configureNativeWindow() {
