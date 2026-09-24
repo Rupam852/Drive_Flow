@@ -40,11 +40,6 @@ const TEMPLATES = [
     message: `Hello,\n\nA brand new update for the DriveFlow Android App (v1.0.2) is now available for download!\n\n🌟 What's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery and retry\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\n📲 How to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update' to install instantly.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
   },
   {
-    name: '⚡ Quick App Update Alert',
-    subject: 'Important: Please Update Your DriveFlow App to the Latest Version',
-    message: `Hello,\n\nWe have released an essential performance and stability update for the DriveFlow application.\n\nKey Improvements:\n• Enhanced network stability & auto-reconnect\n• Reduced battery usage and optimized cloud caching\n• Critical security enhancements and bug fixes\n\nPlease update your app today to ensure uninterrupted and secure access to your files:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk\n\nThank you for choosing DriveFlow!\n\nBest regards,\nDriveFlow Team`,
-  },
-  {
     name: '📢 New Feature',
     subject: 'Exciting New Features Are Live on DriveFlow! 🚀',
     message: `Hello,\n\nWe are thrilled to announce that brand new enhancements and performance upgrades have just rolled out to DriveFlow!\n\nWhat's new:\n• Faster upload speeds and enhanced cloud stability\n• Improved file preview and search capabilities\n• Seamless mobile app performance\n\nLog in now to explore the latest updates.\n\nBest regards,\nDriveFlow Team`,
