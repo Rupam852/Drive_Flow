@@ -35,9 +35,9 @@ interface AdminNotificationItem {
 
 const TEMPLATES = [
   {
-    name: '🚀 App Update (v1.0.2)',
-    subject: '🚀 New App Update Available: DriveFlow v1.0.2 is Here!',
-    message: `Hello,\n\nA brand new update for the DriveFlow Android App (v1.0.2) is now available for download!\n\n🌟 What's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery and retry\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\n📲 How to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update' to install instantly.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
+    name: '🚀 App Update Announcement',
+    subject: '🚀 New App Update Available: Download Latest DriveFlow Version',
+    message: `Hello,\n\nA brand new update for the DriveFlow Android App is now available for download!\n\n🌟 What's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery and retry\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\n📲 How to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update' to install instantly.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
   },
   {
     name: '📢 New Feature',
