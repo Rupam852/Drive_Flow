@@ -6,7 +6,7 @@ import {
   Bell, Mail, Send, Users, User, CheckCircle2, AlertTriangle,
   Search, X, Sparkles, RefreshCw, Eye, Edit3, ArrowRight,
   ShieldCheck, Info, Check, AlertCircle, ChevronDown,
-  Trash2, ExternalLink, Link2, CheckCheck
+  Trash2, ExternalLink, Link2, CheckCheck, Smartphone
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -85,6 +85,7 @@ export default function AdminNotificationsPage() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [attachedLink, setAttachedLink] = useState('');
+  const [linkInserted, setLinkInserted] = useState(false);
   
   // Channels
   const [sendInApp, setSendInApp] = useState(true);
@@ -265,6 +266,7 @@ export default function AdminNotificationsPage() {
           recipientType: recipientMode,
           subject: subject.trim(),
           message: message.trim(),
+          link: attachedLink.trim() || undefined,
         };
         if (recipientMode === 'single') payload.userId = selectedUserId;
         else if (recipientMode === 'selected') payload.userIds = selectedUserIds;
@@ -813,14 +815,39 @@ export default function AdminNotificationsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const downloadText = '\n\n📲 Official APK Download Link:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk';
-                    setMessage(prev => prev + downloadText);
-                    setAttachedLink('https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk');
+                    const downloadUrl = 'https://neo-files-transfer.pages.dev/download/723586892fd0';
+                    const downloadSnippet = `\n\n📲 Official DriveFlow Android App Download Link:\n${downloadUrl}`;
+
+                    if (!message.includes(downloadUrl)) {
+                      setMessage(prev => {
+                        if (!prev.trim()) {
+                          return `Hello,\n\nPlease download and install the official DriveFlow Android App for faster mobile file access, background uploads, and real-time alerts:\n${downloadUrl}`;
+                        }
+                        return prev + downloadSnippet;
+                      });
+                    }
+                    setAttachedLink(downloadUrl);
+                    setLinkInserted(true);
+                    setTimeout(() => setLinkInserted(false), 2500);
                   }}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all cursor-pointer active:scale-95"
-                  title="Insert official APK download link into message"
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-sm ${
+                    linkInserted
+                      ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
+                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/20'
+                  }`}
+                  title="Insert official APK download link into message draft and attach link"
                 >
-                  <span>+ Insert APK Link</span>
+                  {linkInserted ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>✓ APK Link Attached</span>
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="w-3.5 h-3.5" />
+                      <span>+ Insert APK Link</span>
+                    </>
+                  )}
                 </button>
                 <span className="text-[11px] text-slate-400 hidden sm:inline">
                   Formatted automatically
