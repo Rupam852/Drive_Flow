@@ -729,13 +729,13 @@ export default function AdminNotificationsPage() {
                 key={tmpl.name}
                 type="button"
                 onClick={() => handleApplyTemplate(tmpl)}
-                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs transition-all active:scale-95 cursor-pointer shadow-xs ${
+                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border text-xs transition-colors active:scale-95 cursor-pointer shadow-xs ${
                   isSelected
-                    ? 'bg-purple-600 dark:bg-purple-600 border-purple-600 text-white shadow-md shadow-purple-500/30 ring-2 ring-purple-500/30 font-bold scale-[1.02]'
-                    : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:border-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50/50 font-semibold'
+                    ? 'bg-emerald-50 dark:bg-emerald-500/15 border-emerald-500 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/30 font-bold'
+                    : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-white/10 font-medium'
                 }`}
               >
-                {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3] shrink-0" />}
+                {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 stroke-[3] shrink-0" />}
                 <span>{tmpl.name}</span>
               </button>
             );
