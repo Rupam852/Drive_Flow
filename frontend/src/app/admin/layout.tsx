@@ -220,10 +220,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map(({ label, href, icon: Icon }) => (
             <Link key={label} href={href}
-              onClick={() => setSidebarOpen(false)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all border
+              onClick={(e) => {
+                setSidebarOpen(false);
+                if (pathname !== href) {
+                  router.push(href);
+                }
+              }}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all border cursor-pointer
                 ${pathname === href
-                  ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-[var(--color-primary)]/30'
+                  ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-[var(--color-primary)]/30 font-semibold'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white border-transparent'}`}
             >
               <Icon className="w-5 h-5 flex-shrink-0" />
@@ -286,7 +291,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </span>
               )}
             </button>
-            <h2 className="text-white font-semibold">
+            <h2 className="text-slate-900 dark:text-white font-semibold">
               {navItems.find(n => n.href === pathname)?.label || 'Dashboard'}
             </h2>
           </div>

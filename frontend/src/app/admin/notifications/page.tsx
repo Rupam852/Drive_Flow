@@ -112,10 +112,13 @@ export default function AdminNotificationsPage() {
     setLoadingUsers(true);
     try {
       const res = await api.get('/users');
-      const filtered = (res.data || []).filter((u: UserItem) => u.role !== 'admin');
+      const filtered = Array.isArray(res.data)
+        ? res.data.filter((u: UserItem) => u.role !== 'admin')
+        : [];
       setUsers(filtered);
     } catch (err: any) {
       console.error('Failed to fetch users list:', err);
+      setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
@@ -126,9 +129,11 @@ export default function AdminNotificationsPage() {
     setLoadingAdminNotifs(true);
     try {
       const res = await api.get('/notifications/admin');
-      setAdminNotifications(res.data.notifications || []);
+      const list = Array.isArray(res.data?.notifications) ? res.data.notifications : [];
+      setAdminNotifications(list);
     } catch (err: any) {
       console.error('Failed to fetch admin notifications:', err);
+      setAdminNotifications([]);
     } finally {
       setLoadingAdminNotifs(false);
     }
@@ -721,36 +726,43 @@ export default function AdminNotificationsPage() {
         </div>
       </div>
 
+      {/* Mobile Tab Switcher */}
+      <div className="flex lg:hidden bg-slate-100 dark:bg-white/10 p-1 rounded-xl w-full max-w-xs mx-auto">
+        <button
+          type="button"
+          onClick={() => setActiveTab('compose')}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
+            activeTab === 'compose'
+              ? 'bg-white dark:bg-purple-600 text-slate-900 dark:text-white shadow-sm'
+              : 'text-slate-500 dark:text-gray-400'
+          }`}
+        >
+          Compose Form
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('preview')}
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all text-center cursor-pointer ${
+            activeTab === 'preview'
+              ? 'bg-white dark:bg-purple-600 text-slate-900 dark:text-white shadow-sm'
+              : 'text-slate-500 dark:text-gray-400'
+          }`}
+        >
+          Live Preview
+        </button>
+      </div>
+
       {/* Main Compose & Preview Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Compose Form (7 cols on lg) */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className={`lg:col-span-7 bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4 ${
+          activeTab === 'compose' ? 'block' : 'hidden lg:block'
+        }`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
               <Edit3 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
               3. Compose Message Content
             </h3>
-            {/* View Switcher for mobile */}
-            <div className="flex lg:hidden bg-slate-100 dark:bg-white/10 p-1 rounded-xl">
-              <button
-                type="button"
-                onClick={() => setActiveTab('compose')}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                  activeTab === 'compose' ? 'bg-white dark:bg-purple-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'
-                }`}
-              >
-                Compose
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('preview')}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                  activeTab === 'preview' ? 'bg-white dark:bg-purple-600 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'
-                }`}
-              >
-                Preview
-              </button>
-            </div>
           </div>
 
           {/* Subject Field */}
