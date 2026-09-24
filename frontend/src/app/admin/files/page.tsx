@@ -393,6 +393,21 @@ function AdminFilesContent() {
     }
   }, [searchQuery, currentFolder.id]);
 
+  // Auto-reload files upon network reconnect
+  useEffect(() => {
+    const handleReconnect = () => {
+      if (!searchQuery) {
+        loadFiles(currentFolder.id);
+      }
+    };
+    window.addEventListener('app:network-reconnected', handleReconnect);
+    window.addEventListener('online', handleReconnect);
+    return () => {
+      window.removeEventListener('app:network-reconnected', handleReconnect);
+      window.removeEventListener('online', handleReconnect);
+    };
+  }, [currentFolder.id, searchQuery]);
+
   // ── Sync Path with URL on Load ──────────────────────────────────
   useEffect(() => {
     const folderId = searchParams.get('folder');

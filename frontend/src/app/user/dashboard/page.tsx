@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { HardDrive, File, Folder, AlertCircle, TrendingUp } from 'lucide-react';
 import api from '@/lib/api';
@@ -43,34 +43,56 @@ export default function UserDashboard() {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const role = localStorage.getItem('role');
-        if (role !== 'user') {
-          router.replace('/login');
-          return;
-        }
-        setMounted(true);
-        
-        const statsRes = await api.get('/files/stats').catch(e => {
-          console.error('Stats fetch failed:', e);
-          return { data: null, error: e };
-        });
+  const load = useCallback(async () => {
+    try {
+      const role = localStorage.getItem('role');
+      if (role !== 'user') {
+        router.replace('/login');
+        return;
+      }
+      setMounted(true);
+      
+      const statsRes = await api.get('/files/stats').catch(e => {
+        console.error('Stats fetch failed:', e);
+        return { data: null, error: e };
+      });
 
-        if (!statsRes.data && (statsRes as any).error) {
+      if (!statsRes.data && (statsRes as any).error) {
+        if (typeof navigator === 'undefined' || navigator.onLine) {
           setError(`Connection Error: ${api.defaults.baseURL}`);
         }
+      }
 
-        if (statsRes.data) setStats(statsRes.data);
-      } catch (e: any) { 
-        console.error(e); 
+      if (statsRes.data) {
+        setStats(statsRes.data);
+        setError('');
+      }
+    } catch (e: any) { 
+      console.error(e); 
+      if (typeof navigator === 'undefined' || navigator.onLine) {
         setError('System Error: ' + (e.message || 'Unknown failure'));
       }
-      finally { setLoading(false); }
-    };
-    load();
+    }
+    finally { setLoading(false); }
   }, [router]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Automatically retry and refresh stats as soon as network is reconnected
+  useEffect(() => {
+    const handleReconnect = () => {
+      setError('');
+      load();
+    };
+    window.addEventListener('app:network-reconnected', handleReconnect);
+    window.addEventListener('online', handleReconnect);
+    return () => {
+      window.removeEventListener('app:network-reconnected', handleReconnect);
+      window.removeEventListener('online', handleReconnect);
+    };
+  }, [load]);
 
   if (!mounted || loading) {
     return (

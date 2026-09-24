@@ -99,11 +99,16 @@ export default function AdminDashboard() {
       ]);
 
       if (!statsRes.data && (statsRes as any).error) {
-        setError(`Connection Error: ${api.defaults.baseURL}`);
-        addToast('Connection to server failed', 'error');
+        if (typeof navigator === 'undefined' || navigator.onLine) {
+          setError(`Connection Error: ${api.defaults.baseURL}`);
+          addToast('Connection to server failed', 'error');
+        }
       }
 
-      if (statsRes.data) setStats(statsRes.data);
+      if (statsRes.data) {
+        setStats(statsRes.data);
+        setError('');
+      }
       if (usersRes.data) {
         setUserCount(usersRes.data.filter((u: any) => u.role !== 'admin').length);
       }
@@ -117,8 +122,10 @@ export default function AdminDashboard() {
       }
     } catch (e: any) {
       console.error('Dashboard load error:', e);
-      setError('System Error: ' + (e.message || 'Unknown failure'));
-      addToast('Deep refresh failed', 'error');
+      if (typeof navigator === 'undefined' || navigator.onLine) {
+        setError('System Error: ' + (e.message || 'Unknown failure'));
+        addToast('Deep refresh failed', 'error');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -138,6 +145,20 @@ export default function AdminDashboard() {
       router.replace('/login');
     }
   }, [router]);
+
+  // Automatically retry and refresh stats as soon as network is reconnected
+  useEffect(() => {
+    const handleReconnect = () => {
+      setError('');
+      load();
+    };
+    window.addEventListener('app:network-reconnected', handleReconnect);
+    window.addEventListener('online', handleReconnect);
+    return () => {
+      window.removeEventListener('app:network-reconnected', handleReconnect);
+      window.removeEventListener('online', handleReconnect);
+    };
+  }, []);
 
   if (!mounted) return null;
 

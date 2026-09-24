@@ -10,7 +10,7 @@ interface AppUpdateNotificationPlugin {
 
 const AppUpdateNotification = registerPlugin<AppUpdateNotificationPlugin>('AppUpdateNotification');
 
-export const CURRENT_APP_VERSION = 'v1.0.1';
+export const CURRENT_APP_VERSION = 'v1.0.2';
 export const API_VERSION_URL = 'https://neo-files-transfer-p3ot.onrender.com/api/version/apk_f13b660ad8d24108';
 export const DEFAULT_DOWNLOAD_URL = 'https://neo-files-transfer.pages.dev/download/723586892fd0';
 

@@ -186,7 +186,25 @@ export default function UserFilesPage() {
       loadFiles(currentFolder.id);
     }
     fetchStats();
+  }, [currentFolder.id, searchQuery]);
 
+  // Auto-reload files and stats upon network reconnect
+  useEffect(() => {
+    const handleReconnect = () => {
+      if (!searchQuery) {
+        loadFiles(currentFolder.id);
+      }
+      fetchStats();
+    };
+    window.addEventListener('app:network-reconnected', handleReconnect);
+    window.addEventListener('online', handleReconnect);
+    return () => {
+      window.removeEventListener('app:network-reconnected', handleReconnect);
+      window.removeEventListener('online', handleReconnect);
+    };
+  }, [currentFolder.id, searchQuery]);
+
+  useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       // If a modal is open, close it and stay on the page
       if (previewFile)       { setPreviewFile(null); setPreviewToken(''); return; }
