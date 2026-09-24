@@ -13,6 +13,7 @@ import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import CloudLogo from '@/components/CloudLogo';
 import AndroidAppModal from '@/components/AndroidAppModal';
 import ThemeToggle from '@/components/ThemeToggle';
+import NotificationBell from '@/components/NotificationBell';
 import AppUpdaterModal from '@/components/AppUpdaterModal';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
 
@@ -303,6 +304,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span className="sm:hidden text-emerald-700 dark:text-emerald-300">App</span>
               </button>
             )}
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell, Mail, Send, Users, User, CheckCircle2, AlertTriangle,
   Search, X, Sparkles, RefreshCw, Eye, Edit3, ArrowRight,
-  ShieldCheck, Info, Check, AlertCircle, ChevronDown
+  ShieldCheck, Info, Check, AlertCircle, ChevronDown,
+  Trash2, ExternalLink, Link2, CheckCheck
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -17,6 +18,19 @@ interface UserItem {
   status: 'pending' | 'approved' | 'rejected';
   profilePic?: string;
   createdAt: string;
+}
+
+interface AdminNotificationItem {
+  _id: string;
+  title: string;
+  message: string;
+  type: 'broadcast' | 'single' | 'selected';
+  link?: string;
+  createdAt: string;
+  readCount: number;
+  targetCount: number;
+  seenPercentage: number;
+  senderName: string;
 }
 
 const TEMPLATES = [
@@ -75,7 +89,17 @@ export default function AdminNotificationsPage() {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const [attachedLink, setAttachedLink] = useState('');
   
+  // Channels
+  const [sendInApp, setSendInApp] = useState(true);
+  const [sendEmail, setSendEmail] = useState(true);
+
+  // Active in-app notifications
+  const [adminNotifications, setAdminNotifications] = useState<AdminNotificationItem[]>([]);
+  const [loadingAdminNotifs, setLoadingAdminNotifs] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
   // UI Controls
   const [activeTab, setActiveTab] = useState<'compose' | 'preview'>('compose');
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,7 +117,6 @@ export default function AdminNotificationsPage() {
     setLoadingUsers(true);
     try {
       const res = await api.get('/users');
-      // Exclude admin accounts from general recipient lists
       const filtered = (res.data || []).filter((u: UserItem) => u.role !== 'admin');
       setUsers(filtered);
     } catch (err: any) {
@@ -103,8 +126,22 @@ export default function AdminNotificationsPage() {
     }
   };
 
+  // Fetch active in-app notifications for tracking
+  const fetchAdminNotifications = async () => {
+    setLoadingAdminNotifs(true);
+    try {
+      const res = await api.get('/notifications/admin');
+      setAdminNotifications(res.data.notifications || []);
+    } catch (err: any) {
+      console.error('Failed to fetch admin notifications:', err);
+    } finally {
+      setLoadingAdminNotifs(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchAdminNotifications();
   }, []);
 
   // Filtered users for search
@@ -133,6 +170,9 @@ export default function AdminNotificationsPage() {
   const handleApplyTemplate = (tmpl: typeof TEMPLATES[0]) => {
     setSubject(tmpl.subject);
     setMessage(tmpl.message);
+    if (tmpl.name.includes('App Update')) {
+      setAttachedLink('https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk');
+    }
     setResultStatus(null);
   };
 
@@ -143,14 +183,39 @@ export default function AdminNotificationsPage() {
     );
   };
 
+  // Recall / Delete notification from all users
+  const handleDeleteAdminNotification = async (id: string) => {
+    setDeletingId(id);
+    try {
+      await api.delete(`/notifications/admin/${id}`);
+      setAdminNotifications(prev => prev.filter(n => n._id !== id));
+      setResultStatus({
+        type: 'success',
+        text: 'Notification recalled and deleted from all users successfully.',
+      });
+    } catch (err: any) {
+      console.error('Failed to delete notification:', err);
+      setResultStatus({
+        type: 'error',
+        text: 'Failed to recall notification.',
+      });
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   // Validate form
   const validateForm = () => {
     if (!subject.trim()) {
-      setResultStatus({ type: 'error', text: 'Please enter an email subject line.' });
+      setResultStatus({ type: 'error', text: 'Please enter a notification subject/title.' });
       return false;
     }
     if (!message.trim()) {
       setResultStatus({ type: 'error', text: 'Please write your message body.' });
+      return false;
+    }
+    if (!sendInApp && !sendEmail) {
+      setResultStatus({ type: 'error', text: 'Please select at least one delivery channel (In-App or Email).' });
       return false;
     }
     if (recipientMode === 'single' && !selectedUserId) {
@@ -168,7 +233,6 @@ export default function AdminNotificationsPage() {
   const handleSendNotification = async () => {
     if (!validateForm()) return;
 
-    // If sending to all users, show confirm modal first
     if (recipientMode === 'all' && !showConfirmModal) {
       setShowConfirmModal(true);
       return;
@@ -179,39 +243,55 @@ export default function AdminNotificationsPage() {
     setResultStatus(null);
 
     try {
-      const payload: any = {
-        recipientType: recipientMode,
-        subject: subject.trim(),
-        message: message.trim(),
-      };
+      let inAppSuccess = false;
+      let emailSuccess = false;
 
-      if (recipientMode === 'single') {
-        payload.userId = selectedUserId;
-      } else if (recipientMode === 'selected') {
-        payload.userIds = selectedUserIds;
+      // 1. Dispatch In-App Notification (Phone/Web Bell)
+      if (sendInApp) {
+        await api.post('/notifications/admin', {
+          title: subject.trim(),
+          message: message.trim(),
+          type: recipientMode === 'all' ? 'broadcast' : recipientMode,
+          targetUsers: recipientMode === 'single' ? [selectedUserId] : selectedUserIds,
+          link: attachedLink.trim() || undefined,
+          sendEmail: false,
+        });
+        inAppSuccess = true;
       }
 
-      const res = await api.post('/users/notify', payload);
+      // 2. Dispatch Email
+      if (sendEmail) {
+        const payload: any = {
+          recipientType: recipientMode,
+          subject: subject.trim(),
+          message: message.trim(),
+        };
+        if (recipientMode === 'single') payload.userId = selectedUserId;
+        else if (recipientMode === 'selected') payload.userIds = selectedUserIds;
+
+        await api.post('/users/notify', payload);
+        emailSuccess = true;
+      }
+
+      const channelsUsed: string[] = [];
+      if (inAppSuccess) channelsUsed.push('🔔 In-App Bell');
+      if (emailSuccess) channelsUsed.push('📧 Email');
 
       setResultStatus({
         type: 'success',
-        text: res.data.message || `Successfully dispatched email to ${res.data.sentCount || recipientCount} recipient(s)!`,
-        details: res.data.failedEmails?.length 
-          ? `Note: ${res.data.failedEmails.length} recipient address(es) could not be delivered.`
-          : undefined,
+        text: `Successfully dispatched via ${channelsUsed.join(' and ')} to ${recipientCount} user(s)!`,
       });
 
-      // Clear or preserve fields
-      if (recipientMode === 'single') {
-        setSelectedUserId('');
-      } else if (recipientMode === 'selected') {
-        setSelectedUserIds([]);
-      }
+      if (recipientMode === 'single') setSelectedUserId('');
+      else if (recipientMode === 'selected') setSelectedUserIds([]);
       setSubject('');
       setMessage('');
+      setAttachedLink('');
+
+      fetchAdminNotifications();
     } catch (err: any) {
       console.error('Failed to send notification:', err);
-      const msg = err.response?.data?.message || err.message || 'Failed to dispatch email notification.';
+      const msg = err.response?.data?.message || err.message || 'Failed to dispatch notification.';
       setResultStatus({ type: 'error', text: msg });
     } finally {
       setIsSubmitting(false);
@@ -219,7 +299,7 @@ export default function AdminNotificationsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+    <div className="space-y-6 max-w-6xl mx-auto pb-16">
       {/* Top Banner & Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -228,11 +308,11 @@ export default function AdminNotificationsPage() {
               <Bell className="w-5 h-5" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-              Email Notifications & Broadcasts
+              Notification & Announcement Hub
             </h1>
           </div>
           <p className="text-sm text-slate-500 dark:text-gray-400">
-            Send official announcements to all registered users or direct individual messages via email.
+            Dispatch announcements via In-App Bell Notification and Email to all users or individual recipients.
           </p>
         </div>
 
@@ -243,10 +323,13 @@ export default function AdminNotificationsPage() {
             <span>{loadingUsers ? 'Loading...' : `${users.length} Registered Users`}</span>
           </div>
           <button
-            onClick={fetchUsers}
+            onClick={() => {
+              fetchUsers();
+              fetchAdminNotifications();
+            }}
             disabled={loadingUsers}
-            className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-            title="Refresh user list"
+            className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            title="Refresh data"
           >
             <RefreshCw className={`w-4 h-4 ${loadingUsers ? 'animate-spin text-purple-500' : ''}`} />
           </button>
@@ -287,282 +370,330 @@ export default function AdminNotificationsPage() {
         )}
       </AnimatePresence>
 
-      {/* Recipient Targeting Selector Tabs */}
-      <div className="bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
-          <Send className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-          1. Select Recipient Audience
-        </h3>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* Option 1: Broadcast to All */}
-          <button
-            type="button"
-            onClick={() => {
-              setRecipientMode('all');
-              setResultStatus(null);
-            }}
-            className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative ${
-              recipientMode === 'all'
-                ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
-                : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
-            }`}
-          >
-            <div className={`p-2 rounded-lg shrink-0 ${
-              recipientMode === 'all'
-                ? 'bg-purple-500 text-white'
-                : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
-            }`}>
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <span>All Users</span>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300">
-                  Broadcast
-                </span>
+      {/* Dispatch Channels & Target Audience */}
+      <div className="bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+        {/* Step 1: Channels Selection */}
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-2 flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+            1. Select Delivery Channels
+          </h3>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setSendInApp(!sendInApp)}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                sendInApp
+                  ? 'bg-purple-50 dark:bg-purple-500/15 border-purple-500 text-purple-900 dark:text-purple-300 shadow-sm ring-1 ring-purple-500/40'
+                  : 'bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400'
+              }`}
+            >
+              <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                sendInApp ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-300 dark:border-gray-600'
+              }`}>
+                {sendInApp && <Check className="w-3 h-3 stroke-[3]" />}
               </div>
-              <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
-                Sends an official announcement to all {users.length} verified users at once.
-              </p>
-            </div>
-            {recipientMode === 'all' && (
-              <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
-                <Check className="w-4 h-4 stroke-[3]" />
-              </span>
-            )}
-          </button>
+              <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span>In-App Bell Alert (Phone & Web)</span>
+            </button>
 
-          {/* Option 2: Single User */}
-          <button
-            type="button"
-            onClick={() => {
-              setRecipientMode('single');
-              setResultStatus(null);
-            }}
-            className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative ${
-              recipientMode === 'single'
-                ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
-                : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
-            }`}
-          >
-            <div className={`p-2 rounded-lg shrink-0 ${
-              recipientMode === 'single'
-                ? 'bg-purple-500 text-white'
-                : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
-            }`}>
-              <User className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <span>Specific User</span>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-300">
-                  Direct
-                </span>
+            <button
+              type="button"
+              onClick={() => setSendEmail(!sendEmail)}
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                sendEmail
+                  ? 'bg-indigo-50 dark:bg-indigo-500/15 border-indigo-500 text-indigo-900 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-500/40'
+                  : 'bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400'
+              }`}
+            >
+              <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                sendEmail ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-gray-600'
+              }`}>
+                {sendEmail && <Check className="w-3 h-3 stroke-[3]" />}
               </div>
-              <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
-                Send a personalized direct message to one particular user.
-              </p>
-            </div>
-            {recipientMode === 'single' && (
-              <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
-                <Check className="w-4 h-4 stroke-[3]" />
-              </span>
-            )}
-          </button>
-
-          {/* Option 3: Multiple Selected Users */}
-          <button
-            type="button"
-            onClick={() => {
-              setRecipientMode('selected');
-              setResultStatus(null);
-            }}
-            className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative ${
-              recipientMode === 'selected'
-                ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
-                : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
-            }`}
-          >
-            <div className={`p-2 rounded-lg shrink-0 ${
-              recipientMode === 'selected'
-                ? 'bg-purple-500 text-white'
-                : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
-            }`}>
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <span>Selected Users</span>
-                <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                  Custom ({selectedUserIds.length})
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
-                Hand-pick multiple users to receive this email batch.
-              </p>
-            </div>
-            {recipientMode === 'selected' && (
-              <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
-                <Check className="w-4 h-4 stroke-[3]" />
-              </span>
-            )}
-          </button>
+              <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span>Email Notification (Gmail/Inbox)</span>
+            </button>
+          </div>
         </div>
 
-        {/* User Picker for Single User Mode */}
-        {recipientMode === 'single' && (
-          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
-            <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-2">
-              Select Target Recipient:
-            </label>
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-left hover:border-purple-500/50 transition-colors"
-              >
-                {currentSingleUser ? (
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${getAvatarGradient(currentSingleUser.name)} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
-                      {currentSingleUser.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
-                        {currentSingleUser.name}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-gray-400">
-                        {currentSingleUser.email}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <span className="text-sm text-slate-400 dark:text-gray-500">
-                    Click to choose a user from the list...
+        {/* Step 2: Recipient Audience */}
+        <div className="pt-3 border-t border-slate-200 dark:border-white/10">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
+            <Send className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+            2. Select Recipient Audience
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {/* Option 1: Broadcast to All */}
+            <button
+              type="button"
+              onClick={() => {
+                setRecipientMode('all');
+                setResultStatus(null);
+              }}
+              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
+                recipientMode === 'all'
+                  ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
+                  : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className={`p-2 rounded-lg shrink-0 ${
+                recipientMode === 'all'
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
+              }`}>
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <span>All Users</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300">
+                    Broadcast
                   </span>
-                )}
-                <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {userDropdownOpen && (
-                <div className="absolute top-full left-0 right-0 mt-2 z-30 bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/15 rounded-2xl shadow-2xl p-3 max-h-72 overflow-y-auto">
-                  <div className="relative mb-2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      type="text"
-                      placeholder="Search name or email..."
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    {filteredUsers.length === 0 ? (
-                      <p className="text-xs text-center py-4 text-slate-400">No users found.</p>
-                    ) : (
-                      filteredUsers.map(u => (
-                        <button
-                          key={u._id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedUserId(u._id);
-                            setUserDropdownOpen(false);
-                            setSearchQuery('');
-                          }}
-                          className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-colors ${
-                            selectedUserId === u._id
-                              ? 'bg-purple-500/10 text-purple-600 dark:text-purple-300 font-semibold'
-                              : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-gray-200'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-7 h-7 rounded-full bg-gradient-to-tr ${getAvatarGradient(u.name)} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}>
-                              {u.name.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <p className="text-xs font-semibold leading-tight">{u.name}</p>
-                              <p className="text-[11px] text-slate-400">{u.email}</p>
-                            </div>
-                          </div>
-                          {selectedUserId === u._id && (
-                            <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                          )}
-                        </button>
-                      ))
-                    )}
-                  </div>
                 </div>
+                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
+                  Sends an official notice to all {users.length} verified users at once.
+                </p>
+              </div>
+              {recipientMode === 'all' && (
+                <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
+                  <Check className="w-4 h-4 stroke-[3]" />
+                </span>
               )}
-            </div>
-          </div>
-        )}
+            </button>
 
-        {/* User Picker for Multi-Select Mode */}
-        {recipientMode === 'selected' && (
-          <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <label className="text-xs font-semibold text-slate-700 dark:text-gray-300">
-                Choose Specific Recipients ({selectedUserIds.length} selected):
+            {/* Option 2: Single User */}
+            <button
+              type="button"
+              onClick={() => {
+                setRecipientMode('single');
+                setResultStatus(null);
+              }}
+              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
+                recipientMode === 'single'
+                  ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
+                  : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className={`p-2 rounded-lg shrink-0 ${
+                recipientMode === 'single'
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
+              }`}>
+                <User className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <span>Specific User</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                    Direct
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
+                  Send a personalized direct message to one particular user.
+                </p>
+              </div>
+              {recipientMode === 'single' && (
+                <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
+                  <Check className="w-4 h-4 stroke-[3]" />
+                </span>
+              )}
+            </button>
+
+            {/* Option 3: Multiple Selected Users */}
+            <button
+              type="button"
+              onClick={() => {
+                setRecipientMode('selected');
+                setResultStatus(null);
+              }}
+              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
+                recipientMode === 'selected'
+                  ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
+                  : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
+              }`}
+            >
+              <div className={`p-2 rounded-lg shrink-0 ${
+                recipientMode === 'selected'
+                  ? 'bg-purple-500 text-white'
+                  : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
+              }`}>
+                <ShieldCheck className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 font-bold text-sm">
+                  <span>Selected Users</span>
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                    Custom ({selectedUserIds.length})
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
+                  Hand-pick multiple users to receive this notification.
+                </p>
+              </div>
+              {recipientMode === 'selected' && (
+                <span className="absolute top-3 right-3 text-purple-600 dark:text-purple-400">
+                  <Check className="w-4 h-4 stroke-[3]" />
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* User Picker for Single User Mode */}
+          {recipientMode === 'single' && (
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-2">
+                Select Target Recipient:
               </label>
-              <div className="flex items-center gap-2">
+              <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setSelectedUserIds(users.map(u => u._id))}
-                  className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:underline"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-left hover:border-purple-500/50 transition-colors cursor-pointer"
                 >
-                  Select All
+                  {currentSingleUser ? (
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${getAvatarGradient(currentSingleUser.name)} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
+                        {currentSingleUser.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
+                          {currentSingleUser.name}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-gray-400">
+                          {currentSingleUser.email}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-slate-400 dark:text-gray-500">
+                      Click to choose a user from the list...
+                    </span>
+                  )}
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${userDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
-                <span className="text-slate-300 dark:text-gray-600">|</span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedUserIds([])}
-                  className="text-[11px] font-semibold text-slate-500 dark:text-gray-400 hover:underline"
-                >
-                  Clear
-                </button>
+
+                {userDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 z-30 bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/15 rounded-2xl shadow-2xl p-3 max-h-72 overflow-y-auto">
+                    <div className="relative mb-2">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search name or email..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      {filteredUsers.length === 0 ? (
+                        <p className="text-xs text-center py-4 text-slate-400">No users found.</p>
+                      ) : (
+                        filteredUsers.map(u => (
+                          <button
+                            key={u._id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedUserId(u._id);
+                              setUserDropdownOpen(false);
+                              setSearchQuery('');
+                            }}
+                            className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-colors cursor-pointer ${
+                              selectedUserId === u._id
+                                ? 'bg-purple-500/10 text-purple-600 dark:text-purple-300 font-semibold'
+                                : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <div className={`w-7 h-7 rounded-full bg-gradient-to-tr ${getAvatarGradient(u.name)} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}>
+                                {u.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold leading-tight">{u.name}</p>
+                                <p className="text-[11px] text-slate-400">{u.email}</p>
+                              </div>
+                            </div>
+                            {selectedUserId === u._id && (
+                              <Check className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Filter users..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto p-1">
-              {filteredUsers.map(u => {
-                const isSelected = selectedUserIds.includes(u._id);
-                return (
+          {/* User Picker for Multi-Select Mode */}
+          {recipientMode === 'selected' && (
+            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-white/10 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-semibold text-slate-700 dark:text-gray-300">
+                  Choose Specific Recipients ({selectedUserIds.length} selected):
+                </label>
+                <div className="flex items-center gap-2">
                   <button
-                    key={u._id}
                     type="button"
-                    onClick={() => toggleSelectUser(u._id)}
-                    className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all ${
-                      isSelected
-                        ? 'bg-purple-50 dark:bg-purple-500/15 border-purple-500 text-purple-900 dark:text-white'
-                        : 'bg-white dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5'
-                    }`}
+                    onClick={() => setSelectedUserIds(users.map(u => u._id))}
+                    className="text-[11px] font-semibold text-purple-600 dark:text-purple-400 hover:underline cursor-pointer"
                   >
-                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                      isSelected ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-300 dark:border-gray-600'
-                    }`}>
-                      {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                    </div>
-                    <div className="truncate flex-1">
-                      <p className="text-xs font-semibold truncate leading-tight">{u.name}</p>
-                      <p className="text-[10px] text-slate-400 truncate">{u.email}</p>
-                    </div>
+                    Select All
                   </button>
-                );
-              })}
+                  <span className="text-slate-300 dark:text-gray-600">|</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUserIds([])}
+                    className="text-[11px] font-semibold text-slate-500 dark:text-gray-400 hover:underline cursor-pointer"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Filter users..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto p-1">
+                {filteredUsers.map(u => {
+                  const isSelected = selectedUserIds.includes(u._id);
+                  return (
+                    <button
+                      key={u._id}
+                      type="button"
+                      onClick={() => toggleSelectUser(u._id)}
+                      className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-purple-50 dark:bg-purple-500/15 border-purple-500 text-purple-900 dark:text-white'
+                          : 'bg-white dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5'
+                      }`}
+                    >
+                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-300 dark:border-gray-600'
+                      }`}>
+                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                      </div>
+                      <div className="truncate flex-1">
+                        <p className="text-xs font-semibold truncate leading-tight">{u.name}</p>
+                        <p className="text-[10px] text-slate-400 truncate">{u.email}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Quick Templates Bar */}
@@ -602,7 +733,7 @@ export default function AdminNotificationsPage() {
           <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
               <Edit3 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-              2. Compose Message
+              3. Compose Message Content
             </h3>
             {/* View Switcher for mobile */}
             <div className="flex lg:hidden bg-slate-100 dark:bg-white/10 p-1 rounded-xl">
@@ -630,7 +761,7 @@ export default function AdminNotificationsPage() {
           {/* Subject Field */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
-              Email Subject Line:
+              Subject / Notification Title:
             </label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -648,11 +779,28 @@ export default function AdminNotificationsPage() {
             </div>
           </div>
 
+          {/* Attached Link Input (Optional) */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
+              Attached Action Link (Optional):
+            </label>
+            <div className="relative">
+              <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="url"
+                placeholder="https://... (e.g. APK download or announcement link)"
+                value={attachedLink}
+                onChange={e => setAttachedLink(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+              />
+            </div>
+          </div>
+
           {/* Message Body Field */}
           <div>
             <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
               <label className="text-xs font-semibold text-slate-700 dark:text-gray-300">
-                Email Body Text:
+                Message Body Text:
               </label>
               <div className="flex items-center gap-2">
                 <button
@@ -660,6 +808,7 @@ export default function AdminNotificationsPage() {
                   onClick={() => {
                     const downloadText = '\n\n📲 Official APK Download Link:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk';
                     setMessage(prev => prev + downloadText);
+                    setAttachedLink('https://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk');
                   }}
                   className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all cursor-pointer active:scale-95"
                   title="Insert official APK download link into message"
@@ -685,7 +834,7 @@ export default function AdminNotificationsPage() {
             <div className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
               <Info className="w-4 h-4 text-purple-500 shrink-0" />
               <span>
-                Target: <strong className="text-slate-700 dark:text-white">{recipientCount} user(s)</strong> via official DriveFlow mailer.
+                Target: <strong className="text-slate-700 dark:text-white">{recipientCount} user(s)</strong> via {sendInApp && sendEmail ? 'Bell & Email' : sendInApp ? 'In-App Bell' : 'Email'}.
               </span>
             </div>
 
@@ -695,10 +844,11 @@ export default function AdminNotificationsPage() {
                 onClick={() => {
                   setSubject('');
                   setMessage('');
+                  setAttachedLink('');
                   setResultStatus(null);
                 }}
                 disabled={isSubmitting || (!subject && !message)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all disabled:opacity-50"
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
               >
                 Clear
               </button>
@@ -712,17 +862,17 @@ export default function AdminNotificationsPage() {
                 {isSubmitting ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Dispatching Emails...</span>
+                    <span>Dispatching...</span>
                   </>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
                     <span>
                       {recipientMode === 'all'
-                        ? `Broadcast to All (${recipientCount})`
+                        ? `Publish to All (${recipientCount})`
                         : recipientMode === 'single'
-                        ? 'Send Direct Email'
-                        : `Send to Selected (${recipientCount})`}
+                        ? 'Send Direct Notice'
+                        : `Publish to Selected (${recipientCount})`}
                     </span>
                   </>
                 )}
@@ -731,37 +881,37 @@ export default function AdminNotificationsPage() {
           </div>
         </div>
 
-        {/* Right: Live Interactive Email Preview (5 cols on lg) */}
+        {/* Right: Live Interactive Preview (5 cols on lg) */}
         <div className={`lg:col-span-5 ${activeTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
           <div className="sticky top-20 bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-3">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                Live Recipient Inbox Preview
+                Live Recipient Preview
               </h3>
               <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-gray-300">
-                HTML Mockup
+                Mockup
               </span>
             </div>
 
             {/* Email Container Mockup */}
             <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-[#f8fafc] text-slate-800 overflow-hidden shadow-inner font-sans text-xs">
-              {/* Fake Email Client Top Header */}
+              {/* Fake Top Header */}
               <div className="bg-slate-100 border-b border-slate-200 p-2.5 flex items-center justify-between text-[11px] text-slate-600">
                 <div className="truncate">
-                  <span className="font-semibold text-slate-700">To: </span>
+                  <span className="font-semibold text-slate-700">Target: </span>
                   {recipientMode === 'single' && currentSingleUser
                     ? `${currentSingleUser.name} <${currentSingleUser.email}>`
                     : recipientMode === 'selected'
-                    ? `${selectedUserIds.length} Recipients`
+                    ? `${selectedUserIds.length} Selected Recipients`
                     : `All Verified Users (${users.length})`}
                 </div>
                 <span className="text-[10px] text-slate-400 shrink-0">Just now</span>
               </div>
 
-              {/* Email Content Box */}
+              {/* Content Box */}
               <div className="p-4 space-y-3 bg-white">
-                {/* Email Header Banner */}
+                {/* Header Banner */}
                 <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-xl p-4 text-center text-white">
                   <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider mb-1">
                     DriveFlow Official Notice
@@ -771,7 +921,7 @@ export default function AdminNotificationsPage() {
                   </h4>
                 </div>
 
-                {/* Email Message Box */}
+                {/* Message Box */}
                 <div className="space-y-2 text-slate-700 leading-relaxed text-[12px]">
                   <p className="font-semibold text-slate-900">
                     Hello {recipientMode === 'single' && currentSingleUser ? currentSingleUser.name : 'DriveFlow User'},
@@ -779,12 +929,22 @@ export default function AdminNotificationsPage() {
                   <div className="bg-slate-50 border-l-4 border-purple-500 rounded-r-lg p-3 text-slate-700 text-[12px] whitespace-pre-wrap leading-relaxed">
                     {message.trim() || 'Your composed message content will appear formatted here...'}
                   </div>
-                  <p className="text-[11px] text-slate-500 italic">
-                    This notification was dispatched by the DriveFlow Administrator.
+
+                  {attachedLink && (
+                    <div className="pt-1">
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-[11px] font-semibold">
+                        <span>Open Attached Link</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </span>
+                    </div>
+                  )}
+
+                  <p className="text-[11px] text-slate-500 italic pt-1">
+                    This notice was sent by the DriveFlow Administrator.
                   </p>
                 </div>
 
-                {/* Email Footer */}
+                {/* Footer */}
                 <div className="pt-3 border-t border-slate-100 text-center text-[10px] text-slate-400">
                   <p className="font-semibold text-slate-500">DriveFlow Cloud Storage & File Manager</p>
                   <p>© {new Date().getFullYear()} DriveFlow Inc. All rights reserved.</p>
@@ -793,6 +953,105 @@ export default function AdminNotificationsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Active In-App Announcements & Real-Time Seen Tracking */}
+      <div className="bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10 flex-wrap gap-2">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <CheckCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <span>Active In-App Announcements & Seen Tracking</span>
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
+              Track how many users have seen your notifications or recall/delete them with one click.
+            </p>
+          </div>
+          <button
+            onClick={fetchAdminNotifications}
+            disabled={loadingAdminNotifs}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingAdminNotifs ? 'animate-spin text-purple-500' : ''}`} />
+            <span>Refresh Stats</span>
+          </button>
+        </div>
+
+        {loadingAdminNotifs ? (
+          <div className="py-12 flex flex-col items-center justify-center gap-2 text-slate-400">
+            <RefreshCw className="w-5 h-5 animate-spin text-purple-500" />
+            <p className="text-xs">Loading announcements...</p>
+          </div>
+        ) : adminNotifications.length === 0 ? (
+          <div className="py-10 text-center text-slate-400">
+            <Bell className="w-8 h-8 opacity-40 mx-auto mb-2" />
+            <p className="text-xs font-medium">No active in-app announcements published yet.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 dark:divide-white/5 space-y-2">
+            {adminNotifications.map(item => (
+              <div
+                key={item._id}
+                className="pt-3 pb-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h4 className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
+                      {item.title}
+                    </h4>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 capitalize">
+                      {item.type}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {new Date(item.createdAt).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-1">
+                    {item.message}
+                  </p>
+                </div>
+
+                {/* Seen Progress Bar & Recall Button */}
+                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+                  {/* Seen Stats */}
+                  <div className="text-right">
+                    <div className="flex items-center gap-1.5 justify-end">
+                      <Eye className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {item.readCount} / {item.targetCount || 1} Seen ({item.seenPercentage}%)
+                      </span>
+                    </div>
+                    <div className="w-32 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden mt-1 ml-auto">
+                      <div
+                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        style={{ width: `${item.seenPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Recall / Delete from All Users */}
+                  <button
+                    onClick={() => handleDeleteAdminNotification(item._id)}
+                    disabled={deletingId === item._id}
+                    className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors border border-rose-200 dark:border-rose-900/30 cursor-pointer"
+                    title="Recall & Delete from all users"
+                  >
+                    {deletingId === item._id ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Confirmation Modal for All-User Broadcast */}
@@ -813,7 +1072,7 @@ export default function AdminNotificationsPage() {
                   Confirm Broadcast to All Users?
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
-                  You are about to send an email notification to <strong>{users.length} verified users</strong> at once. Please ensure the subject and message content are correct.
+                  You are about to publish a notification to <strong>{users.length} verified users</strong> via {sendInApp && sendEmail ? 'In-App Bell & Email' : sendInApp ? 'In-App Bell' : 'Email'}.
                 </p>
               </div>
 
@@ -830,17 +1089,17 @@ export default function AdminNotificationsPage() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleSendNotification}
-                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-lg shadow-purple-500/25 flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-lg shadow-purple-500/25 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
-                  <span>Confirm & Send Broadcast</span>
+                  <span>Confirm & Publish</span>
                 </button>
               </div>
             </motion.div>

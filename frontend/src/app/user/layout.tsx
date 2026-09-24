@@ -3,19 +3,21 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, FolderOpen, LogOut, Menu, X, HardDrive, User as UserIcon, Smartphone, RefreshCw } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, LogOut, Menu, X, HardDrive, User as UserIcon, Smartphone, RefreshCw, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { useInactivityTimeout } from '@/hooks/useInactivityTimeout';
 import CloudLogo from '@/components/CloudLogo';
 import AndroidAppModal from '@/components/AndroidAppModal';
 import ThemeToggle from '@/components/ThemeToggle';
+import NotificationBell from '@/components/NotificationBell';
 import AppUpdaterModal from '@/components/AppUpdaterModal';
 import { useAppUpdater } from '@/hooks/useAppUpdater';
 
 const navItems = [
   { label: 'Dashboard', href: '/user/dashboard', icon: LayoutDashboard },
   { label: 'My Files', href: '/user/files', icon: FolderOpen },
+  { label: 'Notifications', href: '/user/notifications', icon: Bell },
   { label: 'Profile', href: '/user/profile', icon: UserIcon },
 ];
 
@@ -288,6 +290,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                 <span className="sm:hidden text-emerald-700 dark:text-emerald-300">App</span>
               </button>
             )}
+            <NotificationBell />
             <ThemeToggle />
           </div>
         </header>

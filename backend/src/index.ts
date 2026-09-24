@@ -7,6 +7,7 @@ import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import fileRoutes from './routes/fileRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import { errorHandler } from './middleware/errorMiddleware';
 import { seedAdmin } from './controllers/authController';
 import { trimExcessLogs } from './utils/logger';
@@ -96,6 +97,7 @@ app.get('/api/auth/health', async (_req, res) => {
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/files', fileRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error Middleware
 app.use(errorHandler);
