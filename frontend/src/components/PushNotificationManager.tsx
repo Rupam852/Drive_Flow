@@ -22,10 +22,22 @@ export default function PushNotificationManager() {
       const customEvent = e as CustomEvent<{ url?: string; notificationId?: string }>;
       const detail = customEvent.detail;
       const targetUrl = detail?.url || (detail?.notificationId ? `/user/notifications?id=${detail.notificationId}` : '/user/notifications');
+
+      // 1. Clear notifications from Android system status tray
+      try {
+        PushNotifications.removeAllDeliveredNotifications();
+      } catch {}
+
+      // 2. Mark notification as read in backend & decrement local badge
       if (detail?.notificationId) {
         api.put(`/notifications/${detail.notificationId}/read`).catch(() => {});
         emitNotificationSync({ type: 'decrement', delta: 1 });
       }
+
+      // 3. Trigger refetch so notification list updates immediately
+      emitNotificationSync({ type: 'refetch' });
+
+      // 4. Navigate to destination
       try {
         router.push(targetUrl);
       } catch {

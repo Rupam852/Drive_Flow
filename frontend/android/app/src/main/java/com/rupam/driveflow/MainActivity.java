@@ -69,13 +69,15 @@ public class MainActivity extends BridgeActivity {
 
     private void handleUpdateIntent(android.content.Intent intent) {
         if (intent != null && "open_updater".equals(intent.getStringExtra("action"))) {
+            intent.removeExtra("action");
+            setIntent(intent);
             if (getBridge() != null && getBridge().getWebView() != null) {
                 getBridge().getWebView().postDelayed(() -> {
                     getBridge().getWebView().evaluateJavascript(
                         "window.dispatchEvent(new CustomEvent('open-app-updater'));",
                         null
                     );
-                }, 600);
+                }, 300);
             }
         }
     }
@@ -105,13 +107,21 @@ public class MainActivity extends BridgeActivity {
         if (intent != null && "ACTION_OPEN_NOTIFICATION".equals(intent.getAction())) {
             String url = intent.getStringExtra("url");
             String notifId = intent.getStringExtra("notificationId");
+
+            // Consume intent immediately so it never runs twice
+            intent.setAction(null);
+            intent.removeExtra("url");
+            intent.removeExtra("notificationId");
+            setIntent(intent);
+
             if (getBridge() != null && getBridge().getWebView() != null) {
                 getBridge().getWebView().postDelayed(() -> {
                     String targetUrl = url != null ? url : "/user/notifications";
                     String idStr = notifId != null ? notifId : "";
-                    String script = "window.dispatchEvent(new CustomEvent('open-push-notification', { detail: { url: '" + targetUrl + "', notificationId: '" + idStr + "' } }));";
+                    String script = "try { window.sessionStorage.setItem('pending_notification_url', '" + targetUrl + "'); } catch(e){}"
+                            + "window.dispatchEvent(new CustomEvent('open-push-notification', { detail: { url: '" + targetUrl + "', notificationId: '" + idStr + "' } }));";
                     getBridge().getWebView().evaluateJavascript(script, null);
-                }, 600);
+                }, 300);
             }
         }
     }

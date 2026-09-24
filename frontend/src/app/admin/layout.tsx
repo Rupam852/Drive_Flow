@@ -219,13 +219,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {/* Nav */}
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map(({ label, href, icon: Icon }) => (
-            <Link key={label} href={href}
-              onClick={(e) => {
-                setSidebarOpen(false);
-                if (pathname !== href) {
-                  router.push(href);
-                }
-              }}
+            <Link
+              key={label}
+              href={href}
+              onClick={() => setSidebarOpen(false)}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all border cursor-pointer
                 ${pathname === href
                   ? 'bg-[var(--color-primary)]/20 text-[var(--color-primary)] border-[var(--color-primary)]/30 font-semibold'

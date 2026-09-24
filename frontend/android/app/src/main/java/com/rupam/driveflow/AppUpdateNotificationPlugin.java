@@ -85,7 +85,7 @@ public class AppUpdateNotificationPlugin extends Plugin {
             Intent intent = new Intent(context, MainActivity.class);
             intent.setAction("ACTION_OPEN_UPDATER");
             intent.putExtra("action", "open_updater");
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
 
             PendingIntent pendingIntent = PendingIntent.getActivity(
                     context,
@@ -147,7 +147,7 @@ public class AppUpdateNotificationPlugin extends Plugin {
             intent.setAction("ACTION_OPEN_NOTIFICATION");
             intent.putExtra("url", url);
             intent.putExtra("notificationId", notificationId);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
 
             int notifId = (int) System.currentTimeMillis();
             PendingIntent pendingIntent = PendingIntent.getActivity(

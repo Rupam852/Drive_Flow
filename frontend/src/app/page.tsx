@@ -20,7 +20,13 @@ export default function Home() {
         clearExpiredSession(role);
         targetPath = '/login?expired=true';
       } else {
-        targetPath = role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
+        const pendingNotif = typeof window !== 'undefined' ? sessionStorage.getItem('pending_notification_url') : null;
+        if (pendingNotif) {
+          sessionStorage.removeItem('pending_notification_url');
+          targetPath = pendingNotif;
+        } else {
+          targetPath = role === 'admin' ? '/admin/dashboard' : '/user/dashboard';
+        }
       }
     }
 
