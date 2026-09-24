@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
 import { Notification } from '../models/Notification';
 import { User } from '../models/User';
+import { DeviceToken } from '../models/DeviceToken';
 import { logActivity } from '../utils/logger';
 import { sendCustomEmail } from '../utils/mailer';
+import { sendPushNotification } from '../utils/firebase';
 
 // @desc    Get in-app notifications for the logged-in user
 // @route   GET /api/notifications
@@ -224,6 +226,19 @@ export const createAdminNotification = async (req: Request, res: Response) => {
       })();
     }
 
+    // Send Real-Time Android Push Notification to System Status Bar
+    sendPushNotification({
+      title: title.trim(),
+      body: message.trim(),
+      targetUserIds: type === 'selected' || type === 'single' ? targetUsers : undefined,
+      data: {
+        notificationId: newNotification._id.toString(),
+        url: '/user/notifications',
+      },
+    }).catch(err => {
+      console.error('[Firebase Push Notification Error]:', err);
+    });
+
     try {
       await logActivity(
         adminId,
@@ -272,6 +287,37 @@ export const deleteAdminNotification = async (req: Request, res: Response) => {
       success: true,
       message: 'Notification recalled and deleted from all users successfully.',
     });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc    Register or update an FCM push device token
+// @route   POST /api/notifications/device-token
+// @access  Public / Optional Auth
+export const registerDeviceToken = async (req: Request, res: Response) => {
+  try {
+    const { token, platform = 'android' } = req.body;
+    const userId = (req as any).user?._id;
+
+    if (!token || typeof token !== 'string' || token.trim().length < 10) {
+      res.status(400).json({ message: 'Valid device token is required.' });
+      return;
+    }
+
+    const cleanToken = token.trim();
+
+    await DeviceToken.findOneAndUpdate(
+      { token: cleanToken },
+      {
+        token: cleanToken,
+        platform,
+        ...(userId ? { userId } : {}),
+      },
+      { upsert: true, new: true }
+    );
+
+    res.json({ success: true, message: 'Device token registered successfully.' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }

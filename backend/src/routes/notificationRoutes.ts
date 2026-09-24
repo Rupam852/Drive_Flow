@@ -7,10 +7,14 @@ import {
   getAdminNotifications,
   createAdminNotification,
   deleteAdminNotification,
+  registerDeviceToken,
 } from '../controllers/notificationController';
 import { protect, admin } from '../middleware/authMiddleware';
 
 const router = express.Router();
+
+// Device Token Registration (Public / Optional token header)
+router.post('/device-token', registerDeviceToken);
 
 // User endpoints
 router.get('/', protect, getUserNotifications);

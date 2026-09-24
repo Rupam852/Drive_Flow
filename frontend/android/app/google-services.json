@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "385058162174",
+    "project_id": "drive-flow-42d2b",
+    "storage_bucket": "drive-flow-42d2b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:385058162174:android:b90709fc1d6e60a2766caf",
+        "android_client_info": {
+          "package_name": "com.rupam.driveflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvznSw8XTAVK1nk48nrYiVmuczeOgzUdg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

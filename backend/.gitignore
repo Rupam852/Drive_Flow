@@ -18,5 +18,7 @@ build/
 *.key
 *credentials*.json
 *service-account*.json
+*firebase*.json
+*-adminsdk-*.json
 service-account.json
 credentials.json
