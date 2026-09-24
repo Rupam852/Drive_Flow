@@ -387,16 +387,16 @@ export default function AdminNotificationsPage() {
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 sendInApp
                   ? 'bg-purple-50 dark:bg-purple-500/15 border-purple-500 text-purple-900 dark:text-purple-300 shadow-sm ring-1 ring-purple-500/40'
-                  : 'bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400'
+                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:border-slate-400'
               }`}
             >
               <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                sendInApp ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-300 dark:border-gray-600'
+                sendInApp ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-400 bg-white dark:border-gray-600 dark:bg-white/5'
               }`}>
-                {sendInApp && <Check className="w-3 h-3 stroke-[3]" />}
+                {sendInApp && <Check className="w-3 h-3 text-white stroke-[3]" />}
               </div>
               <Bell className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>In-App Bell Alert (Phone & Web)</span>
+              <span className="text-slate-900 dark:text-white">In-App Bell Alert (Phone & Web)</span>
             </button>
 
             <button
@@ -405,23 +405,23 @@ export default function AdminNotificationsPage() {
               className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 sendEmail
                   ? 'bg-indigo-50 dark:bg-indigo-500/15 border-indigo-500 text-indigo-900 dark:text-indigo-300 shadow-sm ring-1 ring-indigo-500/40'
-                  : 'bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-500 dark:text-gray-400'
+                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:border-slate-400'
               }`}
             >
               <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                sendEmail ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-300 dark:border-gray-600'
+                sendEmail ? 'bg-indigo-600 border-indigo-600 text-white' : 'border-slate-400 bg-white dark:border-gray-600 dark:bg-white/5'
               }`}>
-                {sendEmail && <Check className="w-3 h-3 stroke-[3]" />}
+                {sendEmail && <Check className="w-3 h-3 text-white stroke-[3]" />}
               </div>
               <Mail className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>Email Notification (Gmail/Inbox)</span>
+              <span className="text-slate-900 dark:text-white">Email Notification (Gmail/Inbox)</span>
             </button>
           </div>
         </div>
 
         {/* Step 2: Recipient Audience */}
         <div className="pt-3 border-t border-slate-200 dark:border-white/10">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 mb-3 flex items-center gap-1.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-400 mb-3 flex items-center gap-1.5">
             <Send className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
             2. Select Recipient Audience
           </h3>
@@ -436,25 +436,29 @@ export default function AdminNotificationsPage() {
               }}
               className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'all'
-                  ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
-                  : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
+                  ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-600 dark:border-purple-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-purple-500/25'
+                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-purple-400 hover:bg-slate-50/70 shadow-xs'
               }`}
             >
-              <div className={`p-2 rounded-lg shrink-0 ${
+              <div className={`p-2 rounded-lg shrink-0 border ${
                 recipientMode === 'all'
-                  ? 'bg-purple-500 text-white'
-                  : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
+                  ? 'bg-purple-600 border-purple-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400'
               }`}>
                 <Users className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2 font-bold text-sm">
+                <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
                   <span>All Users</span>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-700 dark:text-purple-300">
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                    recipientMode === 'all'
+                      ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/30'
+                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
+                  }`}>
                     Broadcast
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-gray-400 mt-1 leading-relaxed">
                   Sends an official notice to all {users.length} verified users at once.
                 </p>
               </div>
@@ -474,25 +478,29 @@ export default function AdminNotificationsPage() {
               }}
               className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'single'
-                  ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
-                  : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
+                  ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-600 dark:border-purple-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-purple-500/25'
+                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-purple-400 hover:bg-slate-50/70 shadow-xs'
               }`}
             >
-              <div className={`p-2 rounded-lg shrink-0 ${
+              <div className={`p-2 rounded-lg shrink-0 border ${
                 recipientMode === 'single'
-                  ? 'bg-purple-500 text-white'
-                  : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
+                  ? 'bg-purple-600 border-purple-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400'
               }`}>
                 <User className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2 font-bold text-sm">
+                <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
                   <span>Specific User</span>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                    recipientMode === 'single'
+                      ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-500/30'
+                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
+                  }`}>
                     Direct
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-gray-400 mt-1 leading-relaxed">
                   Send a personalized direct message to one particular user.
                 </p>
               </div>
@@ -512,25 +520,29 @@ export default function AdminNotificationsPage() {
               }}
               className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'selected'
-                  ? 'bg-purple-50/60 dark:bg-purple-500/10 border-purple-500 text-purple-900 dark:text-white shadow-[0_0_20px_rgba(168,85,247,0.15)] ring-1 ring-purple-500'
-                  : 'bg-slate-50/60 dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
+                  ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-600 dark:border-purple-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-purple-500/25'
+                  : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-purple-400 hover:bg-slate-50/70 shadow-xs'
               }`}
             >
-              <div className={`p-2 rounded-lg shrink-0 ${
+              <div className={`p-2 rounded-lg shrink-0 border ${
                 recipientMode === 'selected'
-                  ? 'bg-purple-500 text-white'
-                  : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-400'
+                  ? 'bg-purple-600 border-purple-600 text-white shadow-sm'
+                  : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-400'
               }`}>
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2 font-bold text-sm">
+                <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
                   <span>Selected Users</span>
-                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                    recipientMode === 'selected'
+                      ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/30'
+                      : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
+                  }`}>
                     Custom ({selectedUserIds.length})
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
+                <p className="text-xs text-slate-600 dark:text-gray-400 mt-1 leading-relaxed">
                   Hand-pick multiple users to receive this notification.
                 </p>
               </div>
@@ -662,7 +674,7 @@ export default function AdminNotificationsPage() {
                   placeholder="Filter users..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-xs"
                 />
               </div>
 
@@ -676,18 +688,18 @@ export default function AdminNotificationsPage() {
                       onClick={() => toggleSelectUser(u._id)}
                       className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-purple-50 dark:bg-purple-500/15 border-purple-500 text-purple-900 dark:text-white'
-                          : 'bg-white dark:bg-white/[0.02] border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-50 dark:hover:bg-white/5'
+                          ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-500 text-slate-900 dark:text-white shadow-xs ring-1 ring-purple-500/30'
+                          : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-purple-400 hover:bg-purple-50/40 shadow-xs'
                       }`}
                     >
-                      <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                        isSelected ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-300 dark:border-gray-600'
+                      <div className={`w-4 h-4 rounded-md border flex items-center justify-center shrink-0 ${
+                        isSelected ? 'bg-purple-600 border-purple-600 text-white' : 'border-slate-400 dark:border-gray-500 bg-white dark:bg-white/5'
                       }`}>
-                        {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
+                        {isSelected && <Check className="w-3 h-3 stroke-[3] text-white" />}
                       </div>
                       <div className="truncate flex-1">
-                        <p className="text-xs font-semibold truncate leading-tight">{u.name}</p>
-                        <p className="text-[10px] text-slate-400 truncate">{u.email}</p>
+                        <p className="text-xs font-bold truncate leading-tight text-slate-900 dark:text-white">{u.name}</p>
+                        <p className="text-[10px] text-slate-600 dark:text-gray-400 truncate font-medium">{u.email}</p>
                       </div>
                     </button>
                   );
@@ -701,11 +713,11 @@ export default function AdminNotificationsPage() {
       {/* Quick Templates Bar */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             Quick Template Presets
           </label>
-          <span className="text-[11px] text-slate-400">Click to fill instant draft</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">Click to fill instant draft</span>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
           {TEMPLATES.map(tmpl => {
@@ -715,10 +727,10 @@ export default function AdminNotificationsPage() {
                 key={tmpl.name}
                 type="button"
                 onClick={() => handleApplyTemplate(tmpl)}
-                className={`shrink-0 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
+                className={`shrink-0 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-xs ${
                   isAppUpdate
-                    ? 'bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border-purple-500/50 text-purple-700 dark:text-purple-300 shadow-sm ring-1 ring-purple-500/30 hover:from-purple-500/30 hover:to-indigo-500/30'
-                    : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-purple-400 text-slate-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
+                    ? 'bg-purple-100/90 dark:bg-purple-500/20 border-purple-400 dark:border-purple-500/50 text-purple-900 dark:text-purple-300 ring-1 ring-purple-400/40'
+                    : 'bg-white dark:bg-white/5 border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-200 hover:border-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50/50'
                 }`}
               >
                 {tmpl.name}
@@ -761,7 +773,7 @@ export default function AdminNotificationsPage() {
           activeTab === 'compose' ? 'block' : 'hidden lg:block'
         }`}>
           <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
               <Edit3 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
               3. Compose Message Content
             </h3>
@@ -769,7 +781,7 @@ export default function AdminNotificationsPage() {
 
           {/* Subject Field */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-800 dark:text-gray-200 mb-1.5">
               Subject / Notification Title:
             </label>
             <div className="relative">
@@ -780,9 +792,9 @@ export default function AdminNotificationsPage() {
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
                 maxLength={120}
-                className="w-full pl-10 pr-14 py-2.5 rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all font-medium"
+                className="w-full pl-10 pr-14 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all font-medium"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-mono">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                 {subject.length}/120
               </span>
             </div>
@@ -790,7 +802,7 @@ export default function AdminNotificationsPage() {
 
           {/* Attached Link Input (Optional) */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-bold text-slate-800 dark:text-gray-200 mb-1.5">
               Attached Action Link (Optional):
             </label>
             <div className="relative">
@@ -800,7 +812,7 @@ export default function AdminNotificationsPage() {
                 placeholder="https://... (e.g. APK download or announcement link)"
                 value={attachedLink}
                 onChange={e => setAttachedLink(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-1 focus:ring-purple-500 transition-all"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all"
               />
             </div>
           </div>
@@ -808,7 +820,7 @@ export default function AdminNotificationsPage() {
           {/* Message Body Field */}
           <div>
             <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-              <label className="text-xs font-semibold text-slate-700 dark:text-gray-300">
+              <label className="text-xs font-bold text-slate-800 dark:text-gray-200">
                 Message Body Text:
               </label>
               <div className="flex items-center gap-2">
@@ -830,10 +842,10 @@ export default function AdminNotificationsPage() {
                     setLinkInserted(true);
                     setTimeout(() => setLinkInserted(false), 2500);
                   }}
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-sm ${
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs ${
                     linkInserted
                       ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
-                      : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/25 hover:bg-emerald-500/20'
+                      : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
                   }`}
                   title="Insert official APK download link into message draft and attach link"
                 >
@@ -849,7 +861,7 @@ export default function AdminNotificationsPage() {
                     </>
                   )}
                 </button>
-                <span className="text-[11px] text-slate-400 hidden sm:inline">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
                   Formatted automatically
                 </span>
               </div>
@@ -859,16 +871,16 @@ export default function AdminNotificationsPage() {
               placeholder="Write your announcement or direct message here..."
               value={message}
               onChange={e => setMessage(e.target.value)}
-              className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-black/30 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all leading-relaxed resize-none"
+              className="w-full p-3.5 rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all leading-relaxed resize-none"
             />
           </div>
 
           {/* Action Dispatch Buttons */}
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="text-xs text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
+            <div className="text-xs text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
               <Info className="w-4 h-4 text-purple-500 shrink-0" />
               <span>
-                Target: <strong className="text-slate-700 dark:text-white">{recipientCount} user(s)</strong> via {sendInApp && sendEmail ? 'Bell & Email' : sendInApp ? 'In-App Bell' : 'Email'}.
+                Target: <strong className="text-slate-900 dark:text-white font-bold">{recipientCount} user(s)</strong> via {sendInApp && sendEmail ? 'Bell & Email' : sendInApp ? 'In-App Bell' : 'Email'}.
               </span>
             </div>
 
@@ -882,7 +894,7 @@ export default function AdminNotificationsPage() {
                   setResultStatus(null);
                 }}
                 disabled={isSubmitting || (!subject && !message)}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer"
+                className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-700 dark:text-gray-200 hover:bg-slate-100 hover:text-slate-900 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 Clear
               </button>
@@ -891,7 +903,7 @@ export default function AdminNotificationsPage() {
                 type="button"
                 onClick={handleSendNotification}
                 disabled={isSubmitting || recipientCount === 0 || !subject.trim() || !message.trim()}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-purple-500/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-purple-500/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
@@ -919,68 +931,68 @@ export default function AdminNotificationsPage() {
         <div className={`lg:col-span-5 ${activeTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
           <div className="sticky top-20 bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-3">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                 Live Recipient Preview
               </h3>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-gray-300">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-gray-300">
                 Mockup
               </span>
             </div>
 
             {/* Email Container Mockup */}
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-[#f8fafc] text-slate-800 overflow-hidden shadow-inner font-sans text-xs">
+            <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-[#f8fafc] text-slate-800 overflow-hidden shadow-sm font-sans text-xs">
               {/* Fake Top Header */}
-              <div className="bg-slate-100 border-b border-slate-200 p-2.5 flex items-center justify-between text-[11px] text-slate-600">
+              <div className="bg-slate-100/90 border-b border-slate-200 p-2.5 flex items-center justify-between text-[11px] text-slate-700">
                 <div className="truncate">
-                  <span className="font-semibold text-slate-700">Target: </span>
+                  <span className="font-bold text-slate-900">Target: </span>
                   {recipientMode === 'single' && currentSingleUser
                     ? `${currentSingleUser.name} <${currentSingleUser.email}>`
                     : recipientMode === 'selected'
                     ? `${selectedUserIds.length} Selected Recipients`
                     : `All Verified Users (${users.length})`}
                 </div>
-                <span className="text-[10px] text-slate-400 shrink-0">Just now</span>
+                <span className="text-[10px] text-slate-500 shrink-0 font-medium">Just now</span>
               </div>
 
               {/* Content Box */}
               <div className="p-4 space-y-3 bg-white">
-                {/* Header Banner */}
-                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-xl p-4 text-center text-white">
-                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wider mb-1">
+                {/* Header Banner - with explicit text-white for both badge and h4 */}
+                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-xl p-4 text-center text-white shadow-md">
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/25 text-white text-[10px] font-bold uppercase tracking-wider mb-1.5 shadow-xs">
                     DriveFlow Official Notice
                   </span>
-                  <h4 className="font-bold text-sm leading-snug line-clamp-2">
+                  <h4 className="font-bold text-sm text-white leading-snug line-clamp-2 drop-shadow-xs">
                     {subject.trim() || 'No Subject Specified'}
                   </h4>
                 </div>
 
                 {/* Message Box */}
                 <div className="space-y-2 text-slate-700 leading-relaxed text-[12px]">
-                  <p className="font-semibold text-slate-900">
+                  <p className="font-bold text-slate-900">
                     Hello {recipientMode === 'single' && currentSingleUser ? currentSingleUser.name : 'DriveFlow User'},
                   </p>
-                  <div className="bg-slate-50 border-l-4 border-purple-500 rounded-r-lg p-3 text-slate-700 text-[12px] whitespace-pre-wrap leading-relaxed">
+                  <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 border-l-4 border-l-purple-600 rounded-r-lg p-3 text-slate-800 dark:text-gray-200 text-[12px] whitespace-pre-wrap leading-relaxed shadow-xs">
                     {message.trim() || 'Your composed message content will appear formatted here...'}
                   </div>
 
                   {attachedLink && (
                     <div className="pt-1">
-                      <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-[11px] font-semibold">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 text-white text-[11px] font-bold shadow-xs">
                         <span>Open Attached Link</span>
                         <ExternalLink className="w-3 h-3" />
                       </span>
                     </div>
                   )}
 
-                  <p className="text-[11px] text-slate-500 italic pt-1">
+                  <p className="text-[11px] text-slate-500 italic pt-1 font-medium">
                     This notice was sent by the DriveFlow Administrator.
                   </p>
                 </div>
 
                 {/* Footer */}
-                <div className="pt-3 border-t border-slate-100 text-center text-[10px] text-slate-400">
-                  <p className="font-semibold text-slate-500">DriveFlow Cloud Storage & File Manager</p>
+                <div className="pt-3 border-t border-slate-200 text-center text-[10px] text-slate-500">
+                  <p className="font-bold text-slate-700">DriveFlow Cloud Storage & File Manager</p>
                   <p>© {new Date().getFullYear()} DriveFlow Inc. All rights reserved.</p>
                 </div>
               </div>
@@ -997,14 +1009,14 @@ export default function AdminNotificationsPage() {
               <CheckCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span>Active In-App Announcements & Seen Tracking</span>
             </h3>
-            <p className="text-xs text-slate-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-slate-600 dark:text-gray-400 mt-0.5 font-medium">
               Track how many users have seen your notifications or recall/delete them with one click.
             </p>
           </div>
           <button
             onClick={fetchAdminNotifications}
             disabled={loadingAdminNotifs}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-xs font-bold text-slate-700 dark:text-gray-200 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 shadow-xs transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingAdminNotifs ? 'animate-spin text-purple-500' : ''}`} />
             <span>Refresh Stats</span>
@@ -1022,21 +1034,21 @@ export default function AdminNotificationsPage() {
             <p className="text-xs font-medium">No active in-app announcements published yet.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-100 dark:divide-white/5 space-y-2">
+          <div className="divide-y divide-slate-100 dark:divide-white/5 space-y-1">
             {adminNotifications.map(item => (
               <div
                 key={item._id}
-                className="pt-3 pb-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                className="py-3 px-2 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 hover:bg-slate-50/80 dark:hover:bg-white/[0.02] transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h4 className="font-bold text-xs text-slate-900 dark:text-white leading-tight">
                       {item.title}
                     </h4>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 capitalize">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-500/15 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-500/20 capitalize">
                       {item.type}
                     </span>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                       {new Date(item.createdAt).toLocaleDateString(undefined, {
                         month: 'short',
                         day: 'numeric',
@@ -1045,7 +1057,7 @@ export default function AdminNotificationsPage() {
                       })}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 line-clamp-1">
+                  <p className="text-xs text-slate-600 dark:text-gray-300 mt-1 line-clamp-1 leading-relaxed">
                     {item.message}
                   </p>
                 </div>
@@ -1055,14 +1067,14 @@ export default function AdminNotificationsPage() {
                   {/* Seen Stats */}
                   <div className="text-right">
                     <div className="flex items-center gap-1.5 justify-end">
-                      <Eye className="w-3.5 h-3.5 text-emerald-500" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                      <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                         {item.readCount} / {item.targetCount || 1} Seen ({item.seenPercentage}%)
                       </span>
                     </div>
-                    <div className="w-32 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden mt-1 ml-auto">
+                    <div className="w-32 h-2 bg-slate-200 dark:bg-white/10 border border-slate-300/60 dark:border-transparent rounded-full overflow-hidden mt-1 ml-auto shadow-inner">
                       <div
-                        className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                        className="h-full bg-emerald-600 dark:bg-emerald-500 rounded-full transition-all duration-500"
                         style={{ width: `${item.seenPercentage}%` }}
                       />
                     </div>
@@ -1072,7 +1084,7 @@ export default function AdminNotificationsPage() {
                   <button
                     onClick={() => handleDeleteAdminNotification(item._id)}
                     disabled={deletingId === item._id}
-                    className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors border border-rose-200 dark:border-rose-900/30 cursor-pointer"
+                    className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-colors border border-rose-200 dark:border-rose-900/30 cursor-pointer shadow-xs"
                     title="Recall & Delete from all users"
                   >
                     {deletingId === item._id ? (

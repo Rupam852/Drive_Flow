@@ -157,7 +157,7 @@ exports.deleteUser = deleteUser;
 // @access  Private/Admin
 const sendNotification = async (req, res) => {
     try {
-        const { recipientType, userId, userIds, subject, message } = req.body;
+        const { recipientType, userId, userIds, subject, message, link } = req.body;
         if (!subject || !subject.trim() || !message || !message.trim()) {
             res.status(400).json({ message: 'Subject and message body are required.' });
             return;
@@ -193,12 +193,14 @@ const sendNotification = async (req, res) => {
         }
         const cleanSubject = subject.trim();
         const cleanMessage = message.trim();
+        const cleanLink = link && typeof link === 'string' && link.trim().startsWith('http') ? link.trim() : null;
         const generateHtml = (name) => {
             const escapedBody = cleanMessage
                 .replace(/&/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/\n/g, '<br/>');
+            const isApkDownload = cleanLink && (cleanLink.toLowerCase().includes('.apk') || cleanLink.toLowerCase().includes('download') || cleanLink.toLowerCase().includes('drive.google') || cleanLink.toLowerCase().includes('neo-files-transfer'));
             return `
         <!DOCTYPE html>
         <html lang="en">
@@ -231,6 +233,18 @@ const sendNotification = async (req, res) => {
                       <div style="background-color: #f1f5f9; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 18px 20px; margin: 18px 0; color: #334155; font-size: 15px; line-height: 1.7;">
                         ${escapedBody}
                       </div>
+
+                      ${cleanLink ? `
+                        <div style="text-align: center; margin: 28px 0 16px;">
+                          <a href="${cleanLink}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); letter-spacing: 0.2px;">
+                            ${isApkDownload ? '📲 Download Android App (APK)' : '🔗 Open Attached Link'}
+                          </a>
+                          <p style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
+                            Link: <a href="${cleanLink}" style="color: #6366f1; text-decoration: underline;">${cleanLink}</a>
+                          </p>
+                        </div>
+                      ` : ''}
+
                       <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-top: 24px; margin-bottom: 0;">
                         This message was sent by the DriveFlow Administrator. If you have any inquiries, please contact our support team.
                       </p>
