@@ -570,9 +570,18 @@ export default function AdminNotificationsPage() {
                 >
                   {currentSingleUser ? (
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${getAvatarGradient(currentSingleUser.name)} flex items-center justify-center text-white text-xs font-bold shrink-0`}>
-                        {currentSingleUser.name.charAt(0).toUpperCase()}
-                      </div>
+                      {currentSingleUser.profilePic ? (
+                        <img
+                          src={currentSingleUser.profilePic}
+                          alt={currentSingleUser.name}
+                          className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10 shrink-0 shadow-xs"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${getAvatarGradient(currentSingleUser.name)} flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs`}>
+                          {currentSingleUser.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <div>
                         <p className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
                           {currentSingleUser.name}
@@ -622,12 +631,21 @@ export default function AdminNotificationsPage() {
                             }`}
                           >
                             <div className="flex items-center gap-2.5">
-                              <div className={`w-7 h-7 rounded-full bg-gradient-to-tr ${getAvatarGradient(u.name)} flex items-center justify-center text-white text-[11px] font-bold shrink-0`}>
-                                {u.name.charAt(0).toUpperCase()}
-                              </div>
+                              {u.profilePic ? (
+                                <img
+                                  src={u.profilePic}
+                                  alt={u.name}
+                                  className="w-7 h-7 rounded-full object-cover border border-slate-200 dark:border-white/10 shrink-0 shadow-xs"
+                                  referrerPolicy="no-referrer"
+                                />
+                              ) : (
+                                <div className={`w-7 h-7 rounded-full bg-gradient-to-tr ${getAvatarGradient(u.name)} flex items-center justify-center text-white text-[11px] font-bold shrink-0 shadow-xs`}>
+                                  {u.name.charAt(0).toUpperCase()}
+                                </div>
+                              )}
                               <div>
                                 <p className="text-xs font-semibold leading-tight">{u.name}</p>
-                                <p className="text-[11px] text-slate-400">{u.email}</p>
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{u.email}</p>
                               </div>
                             </div>
                             {selectedUserId === u._id && (
@@ -699,6 +717,18 @@ export default function AdminNotificationsPage() {
                       }`}>
                         {isSelected && <Check className="w-3 h-3 stroke-[3] text-white" />}
                       </div>
+                      {u.profilePic ? (
+                        <img
+                          src={u.profilePic}
+                          alt={u.name}
+                          className="w-6 h-6 rounded-full object-cover border border-slate-200 dark:border-white/10 shrink-0 shadow-xs"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className={`w-6 h-6 rounded-full bg-gradient-to-tr ${getAvatarGradient(u.name)} flex items-center justify-center text-white text-[10px] font-bold shrink-0 shadow-xs`}>
+                          {u.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <div className="truncate flex-1">
                         <p className="text-xs font-bold truncate leading-tight text-slate-900 dark:text-white">{u.name}</p>
                         <p className="text-[10px] text-slate-600 dark:text-gray-400 truncate font-medium">{u.email}</p>
