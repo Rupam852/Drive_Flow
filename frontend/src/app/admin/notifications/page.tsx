@@ -21,6 +21,16 @@ interface UserItem {
 
 const TEMPLATES = [
   {
+    name: '🚀 App Update (v1.0.2)',
+    subject: '🚀 New App Update Available: DriveFlow v1.0.2 is Here!',
+    message: `Hello,\n\nA brand new update for the DriveFlow Android App (v1.0.2) is now available for download!\n\n🌟 What's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery and retry\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\n📲 How to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update' to install instantly.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
+  },
+  {
+    name: '⚡ Quick App Update Alert',
+    subject: 'Important: Please Update Your DriveFlow App to the Latest Version',
+    message: `Hello,\n\nWe have released an essential performance and stability update for the DriveFlow application.\n\nKey Improvements:\n• Enhanced network stability & auto-reconnect\n• Reduced battery usage and optimized cloud caching\n• Critical security enhancements and bug fixes\n\nPlease update your app today to ensure uninterrupted and secure access to your files:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk\n\nThank you for choosing DriveFlow!\n\nBest regards,\nDriveFlow Team`,
+  },
+  {
     name: '📢 New Feature',
     subject: 'Exciting New Features Are Live on DriveFlow! 🚀',
     message: `Hello,\n\nWe are thrilled to announce that brand new enhancements and performance upgrades have just rolled out to DriveFlow!\n\nWhat's new:\n• Faster upload speeds and enhanced cloud stability\n• Improved file preview and search capabilities\n• Seamless mobile app performance\n\nLog in now to explore the latest updates.\n\nBest regards,\nDriveFlow Team`,
@@ -565,16 +575,23 @@ export default function AdminNotificationsPage() {
           <span className="text-[11px] text-slate-400">Click to fill instant draft</span>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-          {TEMPLATES.map(tmpl => (
-            <button
-              key={tmpl.name}
-              type="button"
-              onClick={() => handleApplyTemplate(tmpl)}
-              className="shrink-0 px-3 py-1.5 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-purple-400 text-xs font-semibold text-slate-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 transition-all active:scale-95"
-            >
-              {tmpl.name}
-            </button>
-          ))}
+          {TEMPLATES.map(tmpl => {
+            const isAppUpdate = tmpl.name.includes('App Update');
+            return (
+              <button
+                key={tmpl.name}
+                type="button"
+                onClick={() => handleApplyTemplate(tmpl)}
+                className={`shrink-0 px-3.5 py-1.5 rounded-xl border text-xs font-semibold transition-all active:scale-95 cursor-pointer ${
+                  isAppUpdate
+                    ? 'bg-gradient-to-r from-purple-500/20 to-indigo-500/20 border-purple-500/50 text-purple-700 dark:text-purple-300 shadow-sm ring-1 ring-purple-500/30 hover:from-purple-500/30 hover:to-indigo-500/30'
+                    : 'bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-purple-400 text-slate-700 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400'
+                }`}
+              >
+                {tmpl.name}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -633,13 +650,26 @@ export default function AdminNotificationsPage() {
 
           {/* Message Body Field */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
               <label className="text-xs font-semibold text-slate-700 dark:text-gray-300">
                 Email Body Text:
               </label>
-              <span className="text-[11px] text-slate-400">
-                Paragraphs & newlines will be nicely formatted
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const downloadText = '\n\n📲 Official APK Download Link:\nhttps://drive.google.com/file/d/1WvMSCKstDyINwRP51YlUh1F2RSKDUg5h/view?usp=drivesdk';
+                    setMessage(prev => prev + downloadText);
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all cursor-pointer active:scale-95"
+                  title="Insert official APK download link into message"
+                >
+                  <span>+ Insert APK Link</span>
+                </button>
+                <span className="text-[11px] text-slate-400 hidden sm:inline">
+                  Formatted automatically
+                </span>
+              </div>
             </div>
             <textarea
               rows={9}
