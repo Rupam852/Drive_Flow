@@ -65,13 +65,13 @@ const TEMPLATES = [
   },
   {
     name: '🚀 App Update Announcement',
-    subject: 'System Notice: DriveFlow App Update Ready (v1.0.6)',
-    message: `Hello,\n\nA recommended system update (Version v1.0.6) has been deployed for your DriveFlow account.\n\nPerformance & Security Enhancements:\n• Enhanced Offline Connection Monitoring & Auto-Recovery\n• Ultra-Smooth 120Hz Display & Navigation Optimization\n• High-Speed Cloud Sync & Fast Transfer Upgrades\n• Stability Polish across all screens\n\nHow to Apply This Update:\n1. Open DriveFlow > Tap Menu > Select 'App Update'.\n2. Or download the verified build directly from the DriveFlow portal:\nhttps://neo-files-transfer.pages.dev/download/723586892fd0\n\nDriveFlow Engineering Operations`,
+    subject: 'System Notice: DriveFlow App Update Ready ([Version Name])',
+    message: `Hello,\n\nA recommended system update (Version [Version Name]) has been deployed for your DriveFlow account.\n\nPerformance & Security Enhancements:\n• Enhanced Offline Connection Monitoring & Auto-Recovery\n• Ultra-Smooth 120Hz Display & Navigation Optimization\n• High-Speed Cloud Sync & Fast Transfer Upgrades\n• Stability Polish across all screens\n\nHow to Apply This Update:\n1. Open DriveFlow > Tap Menu > Select 'App Update'.\n2. Or download the verified build directly from the DriveFlow portal:\nhttps://neo-files-transfer.pages.dev/download/723586892fd0\n\nDriveFlow Engineering Operations`,
   },
   {
     name: '📢 New Feature',
-    subject: 'System Release Notice: Platform Enhancements (v1.0.6)',
-    message: `Hello,\n\nYour DriveFlow account has received a scheduled platform release with performance and cloud upgrades.\n\nKey Release Notes:\n• Enhanced File Transfer Speeds & Cloud Bandwidth\n• Improved Document & Media Preview Capability\n• Mobile App Performance & Offline Sync Optimization\n\nThese upgrades are automatically active and available in your workspace.\n\nDriveFlow Engineering Operations`,
+    subject: 'System Release Notice: Platform Enhancements ([Version Name])',
+    message: `Hello,\n\nYour DriveFlow account has received a scheduled platform release ([Version Name]) with performance and cloud upgrades.\n\nKey Release Notes:\n• Enhanced File Transfer Speeds & Cloud Bandwidth\n• Improved Document & Media Preview Capability\n• Mobile App Performance & Offline Sync Optimization\n\nThese upgrades are automatically active and available in your workspace.\n\nDriveFlow Engineering Operations`,
   },
   {
     name: '⚠️ Scheduled Maintenance',
@@ -166,6 +166,8 @@ export default function AdminNotificationsPage() {
   const [copiedFailed, setCopiedFailed] = useState(false);
   const [showFileNameModal, setShowFileNameModal] = useState(false);
   const [fileNameInput, setFileNameInput] = useState('');
+  const [showVersionModal, setShowVersionModal] = useState(false);
+  const [versionInput, setVersionInput] = useState('');
 
   const handleOpenFileNameModal = () => {
     setFileNameInput('');
@@ -187,6 +189,31 @@ export default function AdminNotificationsPage() {
     }
     setShowFileNameModal(false);
     setFileNameInput('');
+  };
+
+  const handleOpenVersionModal = () => {
+    setVersionInput('');
+    setShowVersionModal(true);
+  };
+
+  const handleApplyVersion = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    let trimmed = versionInput.trim();
+    if (trimmed) {
+      if (!trimmed.toLowerCase().startsWith('v') && /^\d/.test(trimmed)) {
+        trimmed = `v${trimmed}`;
+      }
+      if (message.includes('[Version Name]')) {
+        setMessage(prev => prev.replace(/\[Version Name\]/g, trimmed));
+      } else {
+        setMessage(prev => prev + `\n\n• Version: ${trimmed}`);
+      }
+      if (subject.includes('[Version Name]')) {
+        setSubject(prev => prev.replace(/\[Version Name\]/g, trimmed));
+      }
+    }
+    setShowVersionModal(false);
+    setVersionInput('');
   };
 
   // Fetch users for targeting
@@ -366,6 +393,11 @@ export default function AdminNotificationsPage() {
     if (message.includes('[File Name]')) {
       handleOpenFileNameModal();
       setResultStatus({ type: 'error', text: "Please set the uploaded file name before sending." });
+      return false;
+    }
+    if (message.includes('[Version Name]') || subject.includes('[Version Name]')) {
+      handleOpenVersionModal();
+      setResultStatus({ type: 'error', text: "Please set the release version name before sending." });
       return false;
     }
     return true;
@@ -1054,6 +1086,18 @@ export default function AdminNotificationsPage() {
                   </button>
                 )}
 
+                {(selectedTemplateName?.includes('App Update') || selectedTemplateName?.includes('New Feature') || message.includes('[Version Name]') || subject.includes('[Version Name]')) && (
+                  <button
+                    type="button"
+                    onClick={handleOpenVersionModal}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs bg-indigo-50 dark:bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/30 hover:bg-indigo-100"
+                    title="Set or replace [Version Name] in message draft and subject"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>+ Set Version Name</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => {
@@ -1109,6 +1153,22 @@ export default function AdminNotificationsPage() {
                   className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold hover:bg-amber-700 transition-colors shrink-0 text-[11px] shadow-xs cursor-pointer"
                 >
                   Set File Name
+                </button>
+              </div>
+            )}
+
+            {(message.includes('[Version Name]') || subject.includes('[Version Name]')) && (
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Notice: Please replace <strong>[Version Name]</strong> with your release version (e.g. v1.0.6).</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleOpenVersionModal}
+                  className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold hover:bg-amber-700 transition-colors shrink-0 text-[11px] shadow-xs cursor-pointer"
+                >
+                  Set Version Name
                 </button>
               </div>
             )}
@@ -1711,6 +1771,93 @@ export default function AdminNotificationsPage() {
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>OK / Apply Name</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Set Version Name Modal */}
+      <AnimatePresence>
+        {showVersionModal && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowVersionModal(false);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3 bg-slate-50/60 dark:bg-white/[0.02]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                      Set Release Version
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-0.5">
+                      Replace [Version Name] in your update announcement
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowVersionModal(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body Form */}
+              <form onSubmit={handleApplyVersion} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 dark:text-gray-200 mb-1.5">
+                    Version Name:
+                  </label>
+                  <div className="relative">
+                    <Sparkles className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      autoFocus
+                      required
+                      placeholder="e.g. v1.0.6 or 1.0.6"
+                      value={versionInput}
+                      onChange={e => setVersionInput(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-xs font-medium"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                    This will replace all <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 font-mono text-indigo-600 dark:text-indigo-400 text-[10px]">[Version Name]</code> placeholders in your title and message.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowVersionModal(false)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-500/25 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>OK / Apply Version</span>
                   </button>
                 </div>
               </form>
