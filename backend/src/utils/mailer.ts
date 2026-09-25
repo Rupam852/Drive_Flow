@@ -71,7 +71,7 @@ export function buildDriveFlowEmailHtml({
           <tr>
             <td style="padding: 26px 32px 20px; text-align: center; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);">
               <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">DriveFlow</h1>
-              <p style="margin: 4px 0 0; color: #e9d5ff; font-size: 13px; font-weight: 500;">Secure Cloud Storage</p>
+              <p style="margin: 4px 0 0; color: #e9d5ff; font-size: 13px; font-weight: 500;">Official System Notification</p>
             </td>
           </tr>
           <tr>
@@ -102,8 +102,8 @@ export function buildDriveFlowEmailHtml({
           </tr>
           <tr>
             <td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; line-height: 16px; color: #94a3b8;">
-              <p style="margin: 0 0 4px;">&copy; ${new Date().getFullYear()} DriveFlow. All rights reserved.</p>
-              <p style="margin: 0;">This automated notification was sent to your registered DriveFlow account.</p>
+              <p style="margin: 0 0 4px;">&copy; ${new Date().getFullYear()} DriveFlow Operations. All rights reserved.</p>
+              <p style="margin: 0;">This official transactional notice was sent to your registered account.</p>
             </td>
           </tr>
         </table>
