@@ -212,7 +212,7 @@ export const createAdminNotification = async (req: Request, res: Response) => {
                     ${cleanBody}
                   </div>
                   ${link ? `<p><a href="${link}" style="background-color: #6366f1; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block;">Open Link</a></p>` : ''}
-                  <p style="font-size: 12px; color: #94a3b8; text-align: center;">DriveFlow Notifications</p>
+                  <p style="font-size: 12px; color: #94a3b8; text-align: center;">DriveFlow Team</p>
                 </div>
               `;
               await sendCustomEmail(r.email, cleanSubject, html);

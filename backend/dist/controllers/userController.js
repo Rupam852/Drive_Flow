@@ -31,11 +31,11 @@ const approveUser = async (req, res) => {
                 try {
                     const approvedHtml = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
-              <h2 style="color: #10b981; text-align: center; margin-bottom: 20px;">🎉 Account Approved & Activated!</h2>
+              <h2 style="color: #10b981; text-align: center; margin-bottom: 20px;">Account Approved &amp; Activated</h2>
               <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${user.name}</strong>,</p>
-              <p style="font-size: 16px; color: #333; line-height: 1.6;">Great news! Our admin has reviewed and **approved** your DriveFlow account registration. Your digital workspace is now fully activated and ready for use.</p>
+              <p style="font-size: 16px; color: #333; line-height: 1.6;">Great news! Our admin has reviewed and approved your DriveFlow account registration. Your digital workspace is now fully activated and ready for use.</p>
               <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <p style="font-size: 15px; color: #065f46; margin: 0; font-weight: bold;">Status: Approved & Active</p>
+                <p style="font-size: 15px; color: #065f46; margin: 0; font-weight: bold;">Status: Approved &amp; Active</p>
                 <p style="font-size: 14px; color: #047857; margin: 5px 0 0 0;">You can now log in using your registered email and secure password.</p>
               </div>
               <p style="font-size: 15px; color: #333; line-height: 1.6;">Start uploading, storing, and organizing your files securely with complete high-speed encryption.</p>
@@ -43,10 +43,10 @@ const approveUser = async (req, res) => {
                 <a href="${process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app'}/login" style="background-color: #10b981; color: #ffffff; padding: 12px 28px; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 12px rgba(16,185,129,0.25); display: inline-block;">Log In to Your Workspace</a>
               </div>
               <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
-              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Team</p>
             </div>
           `;
-                    await (0, mailer_1.sendCustomEmail)(user.email, '[DriveFlow] Your Account has been Approved! 🎉', approvedHtml);
+                    await (0, mailer_1.sendCustomEmail)(user.email, 'DriveFlow: Your account has been approved', approvedHtml);
                 }
                 catch (err) {
                     console.error(`Failed to send approval welcome email to ${user.email}:`, err);
@@ -88,10 +88,10 @@ const rejectUser = async (req, res) => {
                 <a href="mailto:rupambairagya08@gmail.com?subject=Rejection%20Inquiry" style="background-color: #ef4444; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; display: inline-block;">Contact Administrator Support</a>
               </div>
               <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
-              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Team</p>
             </div>
           `;
-                    await (0, mailer_1.sendCustomEmail)(user.email, '[DriveFlow] Your registration profile has been rejected', rejectedHtml);
+                    await (0, mailer_1.sendCustomEmail)(user.email, 'DriveFlow: Update regarding your account registration', rejectedHtml);
                 }
                 catch (err) {
                     console.error(`Failed to send rejection email to ${user.email}:`, err);
@@ -218,7 +218,7 @@ const sendNotification = async (req, res) => {
                   <tr>
                     <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%); padding: 36px 28px; text-align: center;">
                       <div style="display: inline-block; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(8px); padding: 6px 16px; border-radius: 9999px; margin-bottom: 12px; border: 1px solid rgba(255, 255, 255, 0.35);">
-                        <span style="color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;">DriveFlow Official Notification</span>
+                        <span style="color: #ffffff; font-size: 12px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;">DriveFlow Notification</span>
                       </div>
                       <h1 style="color: #ffffff; font-size: 22px; font-weight: 700; margin: 0; line-height: 1.35; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">${cleanSubject}</h1>
                     </td>
@@ -237,16 +237,13 @@ const sendNotification = async (req, res) => {
                       ${cleanLink ? `
                         <div style="text-align: center; margin: 28px 0 16px;">
                           <a href="${cleanLink}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 12px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35); letter-spacing: 0.2px;">
-                            ${isApkDownload ? '📲 Download Android App (APK)' : '🔗 Open Attached Link'}
+                            ${isApkDownload ? 'Get Latest App Update' : 'Open Attached Link'}
                           </a>
-                          <p style="font-size: 11px; color: #94a3b8; margin-top: 8px;">
-                            Link: <a href="${cleanLink}" style="color: #6366f1; text-decoration: underline;">${cleanLink}</a>
-                          </p>
                         </div>
                       ` : ''}
 
                       <p style="font-size: 13px; color: #64748b; line-height: 1.6; margin-top: 24px; margin-bottom: 0;">
-                        This message was sent by the DriveFlow Administrator. If you have any inquiries, please contact our support team.
+                        This message was sent by the DriveFlow Administrator to keep you updated on your account.
                       </p>
                     </td>
                   </tr>
@@ -255,10 +252,13 @@ const sendNotification = async (req, res) => {
                   <tr>
                     <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 22px; text-align: center;">
                       <p style="font-size: 13px; color: #475569; margin: 0 0 4px; font-weight: 600;">
-                        DriveFlow Cloud Storage & File Manager
+                        DriveFlow Team
                       </p>
                       <p style="font-size: 12px; color: #94a3b8; margin: 0;">
-                        © ${new Date().getFullYear()} DriveFlow Inc. All rights reserved.
+                        &copy; ${new Date().getFullYear()} DriveFlow. All rights reserved.
+                      </p>
+                      <p style="font-size: 11px; color: #94a3b8; margin: 6px 0 0;">
+                        You are receiving this system email as an active registered user of DriveFlow.
                       </p>
                     </td>
                   </tr>

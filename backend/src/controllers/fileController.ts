@@ -1161,10 +1161,10 @@ export const updateUserStatus = async (req: Request, res: Response) => {
                 <a href="mailto:rupambairagya08@gmail.com?subject=Rejection%20Inquiry" style="background-color: #ef4444; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; display: inline-block;">Contact Administrator Support</a>
               </div>
               <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
-              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Team</p>
             </div>
           `;
-          await sendCustomEmail(user.email, '[DriveFlow] Your registration profile has been rejected', rejectedHtml);
+          await sendCustomEmail(user.email, 'DriveFlow: Update regarding your account registration', rejectedHtml);
         }
       } catch (err) {
         console.error('Failed to send status update notification email:', err);

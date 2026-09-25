@@ -55,25 +55,23 @@ const sendDirectEmail = async (to: string, subject: string, html: string, text?:
   const plainText = text || htmlToPlainText(html);
 
   await transporter.sendMail({
-    from: `"DriveFlow Security" <${process.env.MAILER_EMAIL}>`,
+    from: `"DriveFlow" <${process.env.MAILER_EMAIL}>`,
     replyTo: process.env.MAILER_EMAIL,
     to,
     subject,
     text: plainText,
     html,
     headers: {
-      'X-Priority': '1',
-      'X-MSMail-Priority': 'High',
-      'Importance': 'high',
       'X-Entity-Ref-ID': `driveflow-${Date.now()}`,
       'X-Auto-Response-Suppress': 'OOF, AutoReply',
+      'List-Unsubscribe': `<mailto:${process.env.MAILER_EMAIL}?subject=unsubscribe>`,
     },
   });
 };
 
 export const sendOtpEmail = async (to: string, otp: string) => {
   const subject = `DriveFlow: Your verification code is ${otp}`;
-  const plainText = `DriveFlow Account Verification\n\nYour one-time code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nSecurity Notice: Never share this code with anyone. If you didn't request this code, you can safely ignore this email.\n\n-- DriveFlow Security Team`;
+  const plainText = `DriveFlow Account Verification\n\nYour one-time code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nSecurity Notice: Never share this code with anyone. If you didn't request this code, you can safely ignore this email.\n\n-- DriveFlow Team`;
 
   const defaultOtpBody = `<!DOCTYPE html>
 <html lang="en">

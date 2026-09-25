@@ -115,22 +115,20 @@ export async function POST(request: Request) {
 
     const finalHtml = html || defaultOtpHtml;
     const finalPlainText = isOtp
-      ? `DriveFlow Account Verification\n\nYour one-time code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nSecurity Notice: Never share this code with anyone. If you did not request this code, you can safely ignore this email.\n\n-- DriveFlow Security Team`
+      ? `DriveFlow Account Verification\n\nYour one-time code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nSecurity Notice: Never share this code with anyone. If you did not request this code, you can safely ignore this email.\n\n-- DriveFlow Team`
       : htmlToPlainText(finalHtml);
 
     const mailOptions = {
-      from: `"DriveFlow Security" <${process.env.MAILER_EMAIL}>`,
+      from: `"DriveFlow" <${process.env.MAILER_EMAIL}>`,
       replyTo: process.env.MAILER_EMAIL,
       to,
       subject: finalSubject,
       text: finalPlainText,
       html: finalHtml,
       headers: {
-        'X-Priority': '1',
-        'X-MSMail-Priority': 'High',
-        'Importance': 'high',
         'X-Entity-Ref-ID': `driveflow-${Date.now()}`,
         'X-Auto-Response-Suppress': 'OOF, AutoReply',
+        'List-Unsubscribe': `<mailto:${process.env.MAILER_EMAIL}?subject=unsubscribe>`,
       },
     };
 

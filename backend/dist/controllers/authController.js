@@ -143,10 +143,10 @@ const verifyEmail = async (req, res) => {
             </div>
             <p style="font-size: 15px; color: #333; line-height: 1.6;">You will receive an automated email confirmation as soon as your account is approved and ready to access!</p>
             <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
-            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+            <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Team</p>
           </div>
         `;
-                await (0, mailer_1.sendCustomEmail)(user.email, '[DriveFlow] Account Pending Approval', userHtml);
+                await (0, mailer_1.sendCustomEmail)(user.email, 'DriveFlow: Account registration received', userHtml);
                 // 2. Send admin notification email
                 const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'bott27124@gmail.com';
                 const adminHtml = `
@@ -403,10 +403,10 @@ const googleAuth = async (req, res) => {
           </div>
           <p style="font-size: 15px; color: #333; line-height: 1.6;">You will receive an automated email confirmation as soon as your account is approved and ready to access!</p>
           <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
-          <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Security Operations Team</p>
+          <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Team</p>
         </div>
       `;
-            (0, mailer_1.sendCustomEmail)(user.email, '[DriveFlow] Account Pending Approval', userHtml).catch(console.error);
+            (0, mailer_1.sendCustomEmail)(user.email, 'DriveFlow: Account registration received', userHtml).catch(console.error);
             // Send alert to admin
             const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'bott27124@gmail.com';
             const adminHtml = `
