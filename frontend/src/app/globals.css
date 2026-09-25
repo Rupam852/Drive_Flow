@@ -390,20 +390,22 @@ header[class*="fixed"] {
 textarea,
 input:not([type="checkbox"]):not([type="radio"]),
 select {
-  color: #0f172a;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
 }
 
 .dark textarea,
 .dark input:not([type="checkbox"]):not([type="radio"]),
 .dark select {
   color: #ffffff !important;
+  background-color: #111422 !important;
 }
 
+.light textarea,
 .light input:not([type="checkbox"]):not([type="radio"]),
-.light select,
-.light textarea {
-  background-color: #ffffff !important;
+.light select {
   color: #0f172a !important;
+  background-color: #ffffff !important;
   border: 1px solid #cbd5e1 !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
 }
@@ -413,6 +415,7 @@ select {
   border-color: #8b5cf6 !important;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
   color: #0f172a !important;
+  background-color: #ffffff !important;
 }
 .light input::placeholder,
 .light textarea::placeholder {
