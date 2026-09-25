@@ -386,7 +386,19 @@ header[class*="fixed"] {
   color: #7c3aed !important;
 }
 
-/* 8. Input Fields in Light Mode */
+/* 8. Input Fields & Textarea Styling */
+textarea,
+input:not([type="checkbox"]):not([type="radio"]),
+select {
+  color: #0f172a;
+}
+
+.dark textarea,
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark select {
+  color: #ffffff !important;
+}
+
 .light input:not([type="checkbox"]):not([type="radio"]),
 .light select,
 .light textarea {
@@ -400,6 +412,7 @@ header[class*="fixed"] {
 .light textarea:focus {
   border-color: #8b5cf6 !important;
   box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
+  color: #0f172a !important;
 }
 .light input::placeholder,
 .light textarea::placeholder {

@@ -9,6 +9,7 @@ import {
   Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText
 } from 'lucide-react';
 import api from '@/lib/api';
+import { useTheme } from '@/components/ThemeProvider';
 
 interface UserItem {
   _id: string;
@@ -80,6 +81,8 @@ const getAvatarGradient = (name: string = '') => {
 };
 
 export default function AdminNotificationsPage() {
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
@@ -649,6 +652,10 @@ export default function AdminNotificationsPage() {
                         placeholder="Search name or email..."
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
+                        style={{
+                          color: isDark ? '#ffffff' : '#0f172a',
+                          backgroundColor: isDark ? 'rgba(0, 0, 0, 0.3)' : '#ffffff',
+                        }}
                         className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-slate-100 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-purple-500"
                       />
                     </div>
@@ -735,6 +742,10 @@ export default function AdminNotificationsPage() {
                   placeholder="Filter users..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
+                  style={{
+                    color: isDark ? '#ffffff' : '#0f172a',
+                    backgroundColor: isDark ? 'rgba(0, 0, 0, 0.3)' : '#ffffff',
+                  }}
                   className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs"
                 />
               </div>
@@ -866,7 +877,11 @@ export default function AdminNotificationsPage() {
                 value={subject}
                 onChange={e => setSubject(e.target.value)}
                 maxLength={120}
-                className="w-full pl-10 pr-14 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all font-medium"
+                style={{
+                  color: isDark ? '#ffffff' : '#0f172a',
+                  backgroundColor: isDark ? 'rgba(0, 0, 0, 0.3)' : '#ffffff',
+                }}
+                className="w-full pl-10 pr-14 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all font-medium"
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 dark:text-slate-400 font-mono">
                 {subject.length}/120
@@ -886,7 +901,11 @@ export default function AdminNotificationsPage() {
                 placeholder="https://... (e.g. APK download or announcement link)"
                 value={attachedLink}
                 onChange={e => setAttachedLink(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all"
+                style={{
+                  color: isDark ? '#ffffff' : '#0f172a',
+                  backgroundColor: isDark ? 'rgba(0, 0, 0, 0.3)' : '#ffffff',
+                }}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all"
               />
             </div>
           </div>
@@ -993,7 +1012,11 @@ export default function AdminNotificationsPage() {
               placeholder="Write your announcement or direct message here..."
               value={message}
               onChange={e => setMessage(e.target.value)}
-              className="w-full p-3.5 rounded-xl bg-white dark:bg-black/30 border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all leading-relaxed resize-none"
+              style={{
+                color: isDark ? '#ffffff' : '#0f172a',
+                backgroundColor: isDark ? 'rgba(0, 0, 0, 0.3)' : '#ffffff',
+              }}
+              className="w-full p-3.5 rounded-xl border border-slate-300 dark:border-white/15 text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all leading-relaxed resize-none"
             />
           </div>
 
