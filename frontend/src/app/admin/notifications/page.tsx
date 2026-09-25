@@ -36,32 +36,32 @@ interface AdminNotificationItem {
 const TEMPLATES = [
   {
     name: '📄 File Upload Notification',
-    subject: 'DriveFlow: New file added to your account',
+    subject: 'New file uploaded to your account',
     message: `Hello,\n\nA new file has been uploaded to your DriveFlow account.\n\nFile Details:\n• File Name: [File Name]\n• Uploaded By: DriveFlow Administration\n• Status: Ready to view and download\n\nYou can access, view, or download this file directly from your DriveFlow workspace.\n\nBest regards,\nDriveFlow Team`,
   },
   {
     name: '🚀 App Update Announcement',
-    subject: 'DriveFlow: New app update available',
-    message: `Hello,\n\nA new update for the DriveFlow Android App is now available!\n\nWhat's New in This Version:\n• Smart Offline Detection: Instant connection monitoring with automatic reconnection\n• High Refresh-Rate Support: Smoother navigation and animations\n• Transfer Upgrades: Faster and more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and clear visual experience\n\nHow to Get the Update:\n1. In the DriveFlow Android app: Open the sidebar menu and tap 'App Update'.\n2. Web Portal: Log in at https://driveflowrupam.vercel.app/user/notifications\n\nBest regards,\nDriveFlow Operations Team`,
+    subject: 'New App Update Available: Download Latest Version',
+    message: `Hello,\n\nA brand new update for the DriveFlow Android App is now available for download!\n\nWhat's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\nHow to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update'.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://neo-files-transfer.pages.dev/download/723586892fd0\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
   },
   {
     name: '📢 New Feature',
-    subject: 'DriveFlow: New features and enhancements',
-    message: `Hello,\n\nWe have rolled out new enhancements and performance improvements to your DriveFlow workspace.\n\nWhat's new:\n• Faster upload speeds and enhanced cloud stability\n• Improved file preview and search capabilities\n• Seamless mobile app performance\n\nLog in to your account to explore the latest updates.\n\nBest regards,\nDriveFlow Team`,
+    subject: 'Exciting New Features Are Live on DriveFlow!',
+    message: `Hello,\n\nWe are thrilled to announce that brand new enhancements and performance upgrades have just rolled out to DriveFlow!\n\nWhat's new:\n• Faster upload speeds and enhanced cloud stability\n• Improved file preview and search capabilities\n• Seamless mobile app performance\n\nLog in now to explore the latest updates.\n\nBest regards,\nDriveFlow Team`,
   },
   {
     name: '⚠️ Scheduled Maintenance',
-    subject: 'DriveFlow: Scheduled system maintenance',
-    message: `Hello,\n\nPlease be advised that DriveFlow will undergo scheduled server maintenance to improve security, infrastructure resilience, and cloud performance.\n\n• Date: This weekend\n• Duration: Approximately 30-45 minutes\n\nDuring this brief window, file synchronization may experience temporary delays. Your data remains fully secure and encrypted.\n\nThank you for your patience.\n\nBest regards,\nDriveFlow Operations Team`,
+    subject: 'Scheduled System Maintenance Notice',
+    message: `Hello,\n\nPlease be advised that DriveFlow will undergo scheduled server maintenance to improve security, infrastructure resilience, and cloud performance.\n\n• Date: This weekend\n• Duration: Approximately 30-45 minutes\n\nDuring this brief window, file synchronization may experience temporary delays. Your data remains fully secure and encrypted.\n\nThank you for your patience and support.\n\nBest regards,\nDriveFlow Operations Team`,
   },
   {
     name: '🔒 Security Advisory',
-    subject: 'DriveFlow: Important security update',
-    message: `Hello,\n\nAt DriveFlow, your privacy and data security are our top priorities. We regularly review our safety protocols to ensure complete protection for all stored files.\n\nSecurity Reminders:\n• Never share your account password or verification codes with anyone.\n• Review active login sessions if you access your account on shared devices.\n\nIf you notice any unusual activity, please contact support immediately.\n\nBest regards,\nDriveFlow Security Operations`,
+    subject: 'Important Security Update',
+    message: `Hello,\n\nAt DriveFlow, your privacy and data security are our top priorities. We regularly review our safety protocols to ensure complete protection for all stored files.\n\nSecurity Reminders:\n• Never share your account password or verification codes with anyone.\n• Ensure you download the official DriveFlow application from trusted sources.\n• Review your active login sessions if you access your account on shared devices.\n\nIf you notice any unusual activity, please contact support immediately.\n\nBest regards,\nDriveFlow Security Operations`,
   },
   {
     name: '📁 Storage Notice',
-    subject: 'DriveFlow: Storage and account update',
+    subject: 'Cloud Storage & File Optimization Notice',
     message: `Hello,\n\nWe wanted to share an update regarding cloud storage and system optimizations on DriveFlow. Our team has tuned storage performance to make your uploads, sharing, and downloads smoother than ever.\n\nFeel free to organize your folders, review shared items, and enjoy high-speed cloud access across all your devices.\n\nBest regards,\nDriveFlow Team`,
   },
 ];
@@ -200,7 +200,7 @@ export default function AdminNotificationsPage() {
     setMessage(tmpl.message);
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
     if (tmpl.name.includes('App Update')) {
-      setAttachedLink(`${origin}/user/notifications`);
+      setAttachedLink('https://neo-files-transfer.pages.dev/download/723586892fd0');
     } else if (tmpl.name.includes('File Upload')) {
       setAttachedLink(`${origin}/user/files`);
     } else {
@@ -1086,7 +1086,7 @@ export default function AdminNotificationsPage() {
                     DriveFlow Official Notice
                   </span>
                   <h4 className="font-bold text-sm text-white leading-snug line-clamp-2 drop-shadow-xs">
-                    {subject.trim() || 'No Subject Specified'}
+                    {subject.trim() ? (subject.trim().replace(/^driveflow[:\s-]*/i, '') || subject.trim()) : 'No Subject Specified'}
                   </h4>
                 </div>
 
