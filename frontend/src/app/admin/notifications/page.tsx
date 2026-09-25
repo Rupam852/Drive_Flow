@@ -65,8 +65,8 @@ const TEMPLATES = [
   },
   {
     name: '🚀 App Update Announcement',
-    subject: 'New App Update Available: Download Latest Version',
-    message: `Hello,\n\nA brand new update for the DriveFlow Android App is now available for download!\n\nWhat's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\nHow to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update'.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://neo-files-transfer.pages.dev/download/723586892fd0\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
+    subject: 'System Notice: DriveFlow App Update Ready (v1.0.6)',
+    message: `Hello,\n\nA recommended system update (Version v1.0.6) has been deployed for your DriveFlow account.\n\nPerformance & Security Enhancements:\n• Enhanced Offline Connection Monitoring & Auto-Recovery\n• Ultra-Smooth 120Hz Display & Navigation Optimization\n• High-Speed Cloud Sync & Fast Transfer Upgrades\n• Stability Polish across all screens\n\nHow to Apply This Update:\n1. Open DriveFlow > Tap Menu > Select 'App Update'.\n2. Or download the verified build directly from the DriveFlow portal:\nhttps://neo-files-transfer.pages.dev/download/723586892fd0\n\nDriveFlow Engineering Operations`,
   },
   {
     name: '📢 New Feature',

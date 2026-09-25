@@ -129,7 +129,7 @@ function cleanEmailSubject(subject: string): string {
       : htmlToPlainText(finalHtml);
 
     const mailOptions = {
-      from: `"DriveFlow" <${process.env.MAILER_EMAIL}>`,
+      from: `"DriveFlow Security & Alerts" <${process.env.MAILER_EMAIL}>`,
       replyTo: process.env.MAILER_EMAIL,
       to,
       subject: finalSubject,
@@ -137,8 +137,12 @@ function cleanEmailSubject(subject: string): string {
       html: finalHtml,
       headers: {
         'X-Entity-Ref-ID': `driveflow-${Date.now()}`,
-        'X-Auto-Response-Suppress': 'OOF, AutoReply',
-        'List-Unsubscribe': `<mailto:${process.env.MAILER_EMAIL}?subject=unsubscribe>`,
+        'X-Auto-Response-Suppress': 'All',
+        'X-Priority': '1',
+        'Priority': 'urgent',
+        'Importance': 'high',
+        'X-MSMail-Priority': 'High',
+        'X-Mailer': 'DriveFlow System Core',
       },
     };
 

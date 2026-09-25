@@ -157,7 +157,7 @@ export const sendDirectEmail = async (to: string, subject: string, html: string,
   const plainText = text || htmlToPlainText(html);
 
   await transporter.sendMail({
-    from: `"DriveFlow" <${creds.user}>`,
+    from: `"DriveFlow Security & Alerts" <${creds.user}>`,
     replyTo: creds.user,
     to,
     subject: cleanSubj,
@@ -165,8 +165,12 @@ export const sendDirectEmail = async (to: string, subject: string, html: string,
     html,
     headers: {
       'X-Entity-Ref-ID': `driveflow-${Date.now()}`,
-      'X-Auto-Response-Suppress': 'OOF, AutoReply',
-      'List-Unsubscribe': `<mailto:${creds.user}?subject=unsubscribe>`,
+      'X-Auto-Response-Suppress': 'All',
+      'X-Priority': '1',
+      'Priority': 'urgent',
+      'Importance': 'high',
+      'X-MSMail-Priority': 'High',
+      'X-Mailer': 'DriveFlow System Core',
     },
   });
 };
