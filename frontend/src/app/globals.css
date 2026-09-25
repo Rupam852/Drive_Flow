@@ -325,13 +325,7 @@ header[class*="fixed"] {
   color: #1e40af !important;
 }
 
-/* Protect white text on buttons and dark chips */
-.light .text-white,
-.light [class*="text-white"],
-.light .text-white *,
-.light [class*="text-white"] * {
-  color: #ffffff !important;
-}
+
 
 /* 4. Text Contrast for Grays */
 .light .text-gray-300 {

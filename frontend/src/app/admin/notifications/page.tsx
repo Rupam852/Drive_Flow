@@ -9,7 +9,6 @@ import {
   Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText
 } from 'lucide-react';
 import api from '@/lib/api';
-import { useTheme } from '@/components/ThemeProvider';
 
 interface UserItem {
   _id: string;
@@ -81,8 +80,6 @@ const getAvatarGradient = (name: string = '') => {
 };
 
 export default function AdminNotificationsPage() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
 
