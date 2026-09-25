@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  User, Mail, Shield, Camera, Edit2, Check, X, Key,
+  User, Mail, Shield, Edit2, Check, X, Key,
   AlertCircle, RefreshCw, CheckCircle2, Lock, Eye, EyeOff,
-  Sparkles, Send, ShieldCheck, Timer
+  Sparkles, Send, ShieldCheck
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
@@ -23,7 +23,6 @@ interface AdminProfileData {
 
 export default function AdminProfilePage() {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [profile, setProfile] = useState<AdminProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,9 +31,6 @@ export default function AdminProfilePage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
   const [savingName, setSavingName] = useState(false);
-
-  // Upload Avatar State
-  const [uploadingPic, setUploadingPic] = useState(false);
 
   // OTP-Protected Password Change State
   const [otpStep, setOtpStep] = useState<'idle' | 'otp_sent'>('idle');
@@ -135,108 +131,6 @@ export default function AdminProfilePage() {
     }
   };
 
-  // Handle Profile Photo Upload & Compression
-  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      showStatus('error', 'Please choose a valid image file (JPEG, PNG, or WebP).');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      showStatus('error', 'Image size must be less than 5MB.');
-      return;
-    }
-
-    setUploadingPic(true);
-
-    try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const maxDimension = 320;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-              if (width > maxDimension) {
-                height = Math.round((height * maxDimension) / width);
-                width = maxDimension;
-              }
-            } else {
-              if (height > maxDimension) {
-                width = Math.round((width * maxDimension) / height);
-                height = maxDimension;
-              }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-              ctx.drawImage(img, 0, 0, width, height);
-              resolve(canvas.toDataURL('image/jpeg', 0.85));
-            } else {
-              resolve(event.target?.result as string);
-            }
-          };
-          img.onerror = () => reject(new Error('Failed to process image'));
-          img.src = event.target?.result as string;
-        };
-        reader.onerror = () => reject(new Error('Failed to read file'));
-        reader.readAsDataURL(file);
-      });
-
-      const res = await api.put('/auth/profile', { profilePic: dataUrl });
-      const updated = res.data.user;
-
-      setProfile((prev) => (prev ? { ...prev, profilePic: updated.profilePic } : null));
-
-      const localUserStr = localStorage.getItem('user');
-      if (localUserStr) {
-        const parsed = JSON.parse(localUserStr);
-        localStorage.setItem('user', JSON.stringify({ ...parsed, profilePic: updated.profilePic }));
-      }
-
-      showStatus('success', 'Profile photo updated successfully!');
-    } catch (err: any) {
-      showStatus('error', err.response?.data?.message || 'Failed to upload photo.');
-    } finally {
-      setUploadingPic(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  // Remove Profile Photo
-  const handleRemovePhoto = async () => {
-    setUploadingPic(true);
-    try {
-      const res = await api.put('/auth/profile', { profilePic: '' });
-      const updated = res.data.user;
-
-      setProfile((prev) => (prev ? { ...prev, profilePic: '' } : null));
-
-      const localUserStr = localStorage.getItem('user');
-      if (localUserStr) {
-        const parsed = JSON.parse(localUserStr);
-        localStorage.setItem('user', JSON.stringify({ ...parsed, profilePic: '' }));
-      }
-
-      showStatus('success', 'Profile photo removed.');
-    } catch (err: any) {
-      showStatus('error', err.response?.data?.message || 'Failed to remove photo.');
-    } finally {
-      setUploadingPic(false);
-    }
-  };
-
   // Step 1: Send OTP to Admin's Email
   const handleSendPasswordOtp = async () => {
     setSendingOtp(true);
@@ -320,22 +214,13 @@ export default function AdminProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      {/* Hidden File Input for Avatar Upload */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handlePhotoSelect}
-        className="hidden"
-      />
-
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
           Admin Profile
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Manage your administrator identity, profile photo, and OTP-secured credentials.
+          Manage your administrator identity and email OTP-protected credentials.
         </p>
       </div>
 
@@ -371,8 +256,8 @@ export default function AdminProfilePage() {
       {/* Top Profile Card */}
       <div className="bg-white dark:bg-[#121626] border border-slate-200/80 dark:border-white/10 rounded-3xl p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          {/* Avatar with Camera Button */}
-          <div className="relative group shrink-0">
+          {/* Avatar (Google Picture or Default Avatar) */}
+          <div className="relative shrink-0">
             <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-purple-500/20 dark:border-purple-500/30 shadow-xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center">
               {profile?.profilePic ? (
                 <img
@@ -386,21 +271,6 @@ export default function AdminProfilePage() {
                 </span>
               )}
             </div>
-
-            {/* Upload Overlay Button */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingPic}
-              className="absolute bottom-1 right-1 p-2 rounded-full bg-purple-600 hover:bg-purple-500 text-white shadow-lg shadow-purple-500/30 transition-transform active:scale-95 cursor-pointer"
-              title="Upload new profile photo"
-            >
-              {uploadingPic ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Camera className="w-4 h-4" />
-              )}
-            </button>
           </div>
 
           {/* User Details & Edit Name */}
@@ -411,10 +281,14 @@ export default function AdminProfilePage() {
                 Administrator
               </span>
 
-              {profile?.isGoogleUser && (
+              {profile?.profilePic && profile?.isGoogleUser ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Google Linked
+                  Google Profile Active
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+                  Default Avatar
                 </span>
               )}
             </div>
@@ -469,27 +343,6 @@ export default function AdminProfilePage() {
               <Mail className="w-4 h-4 text-slate-400" />
               <span>{profile?.email}</span>
             </p>
-
-            {/* Photo Action Buttons */}
-            <div className="pt-2 flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:border-purple-500 dark:hover:border-purple-400 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 font-medium transition-colors cursor-pointer"
-              >
-                Change Photo
-              </button>
-              {profile?.profilePic && (
-                <button
-                  type="button"
-                  onClick={handleRemovePhoto}
-                  disabled={uploadingPic}
-                  className="px-3 py-1.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 font-medium transition-colors cursor-pointer"
-                >
-                  Remove Photo
-                </button>
-              )}
-            </div>
           </div>
         </div>
 
@@ -497,7 +350,7 @@ export default function AdminProfilePage() {
         <div className="mt-6 pt-5 border-t border-slate-100 dark:border-white/10 flex items-start gap-2.5 text-xs text-slate-500 dark:text-slate-400">
           <Sparkles className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
           <p className="leading-relaxed">
-            <strong>Cross-Login Profile Picture Sync:</strong> Agar aap Google se login karte hain, toh aapki Google profile picture automatically yaha save ho jati hai. Uske baad password se login karne par bhi wahi photo hamesha dikhegi.
+            <strong>Google Profile Sync:</strong> Agar aap Google Sign-In se login karte hain, toh aapki verified Google profile photo automatically yaha load ho jati hai (aur password login par bhi preserve rehti hai). Agar Google se link nahi hai, toh default avatar show hota hai.
           </p>
         </div>
       </div>
@@ -564,7 +417,7 @@ export default function AdminProfilePage() {
                   <button
                     type="button"
                     onClick={() => setOtpStep('idle')}
-                    className="text-[11px] underline text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white shrink-0 ml-2"
+                    className="text-[11px] underline text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white shrink-0 ml-2 cursor-pointer"
                   >
                     Cancel
                   </button>
