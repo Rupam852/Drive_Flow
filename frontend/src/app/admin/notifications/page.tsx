@@ -6,7 +6,8 @@ import {
   Bell, Mail, Send, Users, User, CheckCircle2, AlertTriangle,
   Search, X, Sparkles, RefreshCw, Eye, Edit3, ArrowRight,
   ShieldCheck, Info, Check, AlertCircle, ChevronDown,
-  Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText
+  Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText,
+  Clock, EyeOff
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -20,6 +21,14 @@ interface UserItem {
   createdAt: string;
 }
 
+export interface AuditUser {
+  _id: string;
+  name: string;
+  email: string;
+  role?: string;
+  profilePic?: string;
+}
+
 interface AdminNotificationItem {
   _id: string;
   title: string;
@@ -31,6 +40,8 @@ interface AdminNotificationItem {
   targetCount: number;
   seenPercentage: number;
   senderName: string;
+  readUsers?: AuditUser[];
+  targetUsers?: AuditUser[];
 }
 
 const TEMPLATES = [
@@ -101,6 +112,11 @@ export default function AdminNotificationsPage() {
   const [adminNotifications, setAdminNotifications] = useState<AdminNotificationItem[]>([]);
   const [loadingAdminNotifs, setLoadingAdminNotifs] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Seen Audit Modal State
+  const [auditingNotif, setAuditingNotif] = useState<AdminNotificationItem | null>(null);
+  const [auditTab, setAuditTab] = useState<'seen' | 'unseen'>('seen');
+  const [auditSearch, setAuditSearch] = useState('');
 
   // UI Controls
   const [activeTab, setActiveTab] = useState<'compose' | 'preview'>('compose');
@@ -192,6 +208,40 @@ export default function AdminNotificationsPage() {
     if (recipientMode === 'selected') return selectedUserIds.length;
     return 0;
   }, [recipientMode, users.length, currentSingleUser, selectedUserIds.length]);
+
+  // Derived audit lists for active modal
+  const { seenUsersList, unseenUsersList } = useMemo(() => {
+    if (!auditingNotif) return { seenUsersList: [], unseenUsersList: [] };
+
+    const seen = auditingNotif.readUsers || [];
+    const seenIds = new Set(seen.map(u => String(u._id)));
+
+    let targetPool: AuditUser[] = [];
+    if (auditingNotif.type === 'broadcast') {
+      targetPool = users.map(u => ({
+        _id: u._id,
+        name: u.name,
+        email: u.email,
+        role: u.role,
+        profilePic: u.profilePic,
+      }));
+    } else {
+      targetPool = auditingNotif.targetUsers || [];
+    }
+
+    const unseen = targetPool.filter(u => !seenIds.has(String(u._id)));
+
+    return { seenUsersList: seen, unseenUsersList: unseen };
+  }, [auditingNotif, users]);
+
+  const displayedAuditUsers = useMemo(() => {
+    const list = auditTab === 'seen' ? seenUsersList : unseenUsersList;
+    if (!auditSearch.trim()) return list;
+    const q = auditSearch.toLowerCase();
+    return list.filter(
+      u => (u.name && u.name.toLowerCase().includes(q)) || (u.email && u.email.toLowerCase().includes(q))
+    );
+  }, [auditTab, seenUsersList, unseenUsersList, auditSearch]);
 
   // Apply template preset
   const handleApplyTemplate = (tmpl: typeof TEMPLATES[0]) => {
@@ -1223,11 +1273,20 @@ export default function AdminNotificationsPage() {
 
                 {/* Seen Progress Bar & Recall Button */}
                 <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end shrink-0">
-                  {/* Seen Stats */}
-                  <div className="text-right">
+                  {/* Seen Stats (Clickable) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuditingNotif(item);
+                      setAuditTab('seen');
+                      setAuditSearch('');
+                    }}
+                    className="group text-right cursor-pointer p-2 -my-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-left sm:text-right border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                    title="Click to view which users have seen this notification"
+                  >
                     <div className="flex items-center gap-1.5 justify-end">
-                      <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      <Eye className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform" />
+                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                         {item.readCount} / {item.targetCount || 1} Seen ({item.seenPercentage}%)
                       </span>
                     </div>
@@ -1237,7 +1296,11 @@ export default function AdminNotificationsPage() {
                         style={{ width: `${item.seenPercentage}%` }}
                       />
                     </div>
-                  </div>
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center justify-end gap-0.5 opacity-90 group-hover:opacity-100 transition-opacity">
+                      <span>Click to view users</span>
+                      <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+                    </p>
+                  </button>
 
                   {/* Recall / Delete from All Users */}
                   <button
@@ -1305,6 +1368,228 @@ export default function AdminNotificationsPage() {
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Confirm & Publish</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Seen & Read Audit Modal */}
+      <AnimatePresence>
+        {auditingNotif && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-start justify-between gap-3 bg-slate-50/60 dark:bg-white/[0.02]">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                      {auditingNotif.type === 'broadcast' ? 'Broadcast' : auditingNotif.type === 'selected' ? 'Selected Users' : 'Direct Message'}
+                    </span>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {new Date(auditingNotif.createdAt).toLocaleDateString(undefined, {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white mt-1 line-clamp-1">
+                    {auditingNotif.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">
+                    {auditingNotif.message}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setAuditingNotif(null)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Stats Overview */}
+              <div className="grid grid-cols-2 gap-2 p-4 bg-slate-100/50 dark:bg-white/[0.01] border-b border-slate-100 dark:border-white/10">
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/30">
+                  <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-semibold text-xs">
+                    <CheckCheck className="w-4 h-4" />
+                    <span>Seen in App</span>
+                  </div>
+                  <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
+                    {seenUsersList.length}{' '}
+                    <span className="text-xs font-normal text-emerald-600/80 dark:text-emerald-400/80">
+                      ({auditingNotif.seenPercentage}%)
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10">
+                  <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 font-semibold text-xs">
+                    <Clock className="w-4 h-4" />
+                    <span>Unread / Pending</span>
+                  </div>
+                  <div className="text-xl font-bold text-slate-800 dark:text-slate-200 mt-1">
+                    {unseenUsersList.length}{' '}
+                    <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
+                      ({Math.max(0, 100 - auditingNotif.seenPercentage)}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabs: Seen vs Unseen */}
+              <div className="flex items-center px-4 pt-3 border-b border-slate-100 dark:border-white/10 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAuditTab('seen')}
+                  className={`pb-2.5 px-3 text-xs font-bold transition-all relative cursor-pointer flex items-center gap-1.5 ${
+                    auditTab === 'seen'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <CheckCheck className="w-3.5 h-3.5" />
+                  <span>Seen Users ({seenUsersList.length})</span>
+                  {auditTab === 'seen' && (
+                    <motion.div
+                      layoutId="auditTabIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-emerald-600 dark:bg-emerald-400 rounded-full"
+                    />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAuditTab('unseen')}
+                  className={`pb-2.5 px-3 text-xs font-bold transition-all relative cursor-pointer flex items-center gap-1.5 ${
+                    auditTab === 'unseen'
+                      ? 'text-purple-600 dark:text-purple-400'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <EyeOff className="w-3.5 h-3.5" />
+                  <span>Unseen / Not Opened ({unseenUsersList.length})</span>
+                  {auditTab === 'unseen' && (
+                    <motion.div
+                      layoutId="auditTabIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600 dark:bg-purple-400 rounded-full"
+                    />
+                  )}
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="p-3 border-b border-slate-100 dark:border-white/10">
+                <div className="relative">
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={auditSearch}
+                    onChange={(e) => setAuditSearch(e.target.value)}
+                    placeholder={`Search ${auditTab === 'seen' ? 'seen' : 'unseen'} users by name or email...`}
+                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:border-purple-500"
+                  />
+                  {auditSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setAuditSearch('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Users List */}
+              <div className="p-3 overflow-y-auto flex-1 space-y-1.5 min-h-[160px] max-h-[300px]">
+                {displayedAuditUsers.length === 0 ? (
+                  <div className="py-10 text-center text-slate-400 text-xs">
+                    {auditSearch ? (
+                      <p>No users matching &quot;{auditSearch}&quot;</p>
+                    ) : auditTab === 'seen' ? (
+                      <div className="space-y-1">
+                        <EyeOff className="w-6 h-6 mx-auto text-slate-400 mb-2 opacity-60" />
+                        <p className="font-semibold text-slate-700 dark:text-slate-300">No users have opened this yet</p>
+                        <p className="text-[11px]">When users view this notification in their app or web, they will appear here in real-time.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <CheckCircle2 className="w-6 h-6 mx-auto text-emerald-500 mb-2" />
+                        <p className="font-semibold text-slate-700 dark:text-slate-300">All targeted users have seen this!</p>
+                        <p className="text-[11px]">100% of recipient users have opened and read this notification.</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  displayedAuditUsers.map((user) => (
+                    <div
+                      key={user._id}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-100 dark:border-white/5 hover:border-slate-200 dark:hover:border-white/10 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {user.profilePic ? (
+                          <img
+                            src={user.profilePic}
+                            alt={user.name}
+                            className="w-8 h-8 rounded-full object-cover border border-slate-200 dark:border-white/10"
+                          />
+                        ) : (
+                          <div
+                            className={`w-8 h-8 rounded-full bg-gradient-to-br ${getAvatarGradient(
+                              user.name
+                            )} text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs`}
+                          >
+                            {(user.name || 'U').charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                            {user.name || 'Unnamed User'}
+                          </p>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 ml-3">
+                        {auditTab === 'seen' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <Check className="w-3 h-3" />
+                            Seen
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-500/10 text-slate-500 dark:text-slate-400 border border-slate-500/20">
+                            <Clock className="w-3 h-3" />
+                            Unread
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-3 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-xs text-slate-500">
+                <span>
+                  Showing {displayedAuditUsers.length} of {auditTab === 'seen' ? seenUsersList.length : unseenUsersList.length} users
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAuditingNotif(null)}
+                  className="px-4 py-1.5 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-white/20 transition-colors cursor-pointer"
+                >
+                  Close
                 </button>
               </div>
             </motion.div>

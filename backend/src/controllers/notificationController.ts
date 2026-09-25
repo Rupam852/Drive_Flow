@@ -127,14 +127,18 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
 
     const notifications = await Notification.find()
       .populate('sender', 'name email')
+      .populate('readBy', 'name email profilePic role')
+      .populate('targetUsers', 'name email profilePic role')
       .sort({ createdAt: -1 })
       .limit(100);
 
     const formatted = notifications.map(n => {
-      const readCount = n.readBy?.length || 0;
+      const readUsers = ((n.readBy as any[]) || []).filter(Boolean);
+      const readCount = readUsers.length;
+      const targetUsersList = ((n.targetUsers as any[]) || []).filter(Boolean);
       const targetCount = n.type === 'broadcast' 
         ? totalVerifiedUsers 
-        : (n.targetUsers?.length || 0);
+        : targetUsersList.length;
 
       const seenPercentage = targetCount > 0 
         ? Math.min(100, Math.round((readCount / targetCount) * 100))
@@ -152,6 +156,20 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
         targetCount,
         seenPercentage,
         senderName: (n.sender as any)?.name || 'Admin',
+        readUsers: readUsers.map((u: any) => ({
+          _id: u._id?.toString() || u.toString(),
+          name: u.name || 'User',
+          email: u.email || '',
+          profilePic: u.profilePic,
+          role: u.role || 'user',
+        })),
+        targetUsers: targetUsersList.map((u: any) => ({
+          _id: u._id?.toString() || u.toString(),
+          name: u.name || 'User',
+          email: u.email || '',
+          profilePic: u.profilePic,
+          role: u.role || 'user',
+        })),
       };
     });
 
