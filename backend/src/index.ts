@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import rateLimit from 'express-rate-limit';
@@ -9,6 +10,7 @@ import userRoutes from './routes/userRoutes';
 import fileRoutes from './routes/fileRoutes';
 import notificationRoutes from './routes/notificationRoutes';
 import { errorHandler } from './middleware/errorMiddleware';
+import { sanitizeNoSql } from './middleware/sanitizeMiddleware';
 import { seedAdmin } from './controllers/authController';
 import { trimExcessLogs } from './utils/logger';
 
@@ -21,6 +23,13 @@ connectDB().then(() => {
 });
 
 const app = express();
+
+// Security Headers with 100% Android Mobile App & Cross-Origin Compatibility
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false, // Managed by Next.js frontend
+}));
 
 // Enable trust proxy for rate limiting behind Render load balancer
 app.set('trust proxy', 1);
@@ -57,8 +66,10 @@ app.use(cors({
   },
   credentials: true,
 }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(sanitizeNoSql);
 
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} | Origin: ${req.headers.origin || 'none'}`);

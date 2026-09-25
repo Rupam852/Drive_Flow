@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
+const helmet_1 = __importDefault(require("helmet"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
@@ -14,6 +15,7 @@ const userRoutes_1 = __importDefault(require("./routes/userRoutes"));
 const fileRoutes_1 = __importDefault(require("./routes/fileRoutes"));
 const notificationRoutes_1 = __importDefault(require("./routes/notificationRoutes"));
 const errorMiddleware_1 = require("./middleware/errorMiddleware");
+const sanitizeMiddleware_1 = require("./middleware/sanitizeMiddleware");
 const authController_1 = require("./controllers/authController");
 const logger_1 = require("./utils/logger");
 dotenv_1.default.config();
@@ -23,6 +25,12 @@ dotenv_1.default.config();
     (0, logger_1.trimExcessLogs)();
 });
 const app = (0, express_1.default)();
+// Security Headers with 100% Android Mobile App & Cross-Origin Compatibility
+app.use((0, helmet_1.default)({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false, // Managed by Next.js frontend
+}));
 // Enable trust proxy for rate limiting behind Render load balancer
 app.set('trust proxy', 1);
 // Rate limiting for auth endpoints to prevent brute-forcing
@@ -60,6 +68,7 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json({ limit: '50mb' }));
 app.use(express_1.default.urlencoded({ limit: '50mb', extended: true }));
+app.use(sanitizeMiddleware_1.sanitizeNoSql);
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} | Origin: ${req.headers.origin || 'none'}`);
     next();
