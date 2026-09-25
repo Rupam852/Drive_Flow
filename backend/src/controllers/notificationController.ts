@@ -210,11 +210,17 @@ export const createAdminNotification = async (req: Request, res: Response) => {
         try {
           let recipients: Array<{ email: string; name?: string }> = [];
           if (type === 'broadcast') {
-            const users = await User.find({ isEmailVerified: true }).select('email name');
-            recipients = users.map(u => ({ email: u.email, name: u.name }));
+            const users = await User.find({
+              $or: [{ isEmailVerified: true }, { status: 'approved' }]
+            }).select('email name');
+            recipients = users
+              .filter(u => u.email && u.email.includes('@'))
+              .map(u => ({ email: u.email, name: u.name }));
           } else if (Array.isArray(targetUsers) && targetUsers.length > 0) {
-            const users = await User.find({ _id: { $in: targetUsers }, isEmailVerified: true }).select('email name');
-            recipients = users.map(u => ({ email: u.email, name: u.name }));
+            const users = await User.find({ _id: { $in: targetUsers } }).select('email name');
+            recipients = users
+              .filter(u => u.email && u.email.includes('@'))
+              .map(u => ({ email: u.email, name: u.name }));
           }
 
           const cleanSubject = cleanEmailSubject(title.trim());
@@ -235,20 +241,26 @@ export const createAdminNotification = async (req: Request, res: Response) => {
             }
           }
 
-          for (const r of recipients) {
-            try {
-              const html = buildDriveFlowEmailHtml({
-                title: cleanSubject.replace(/^DriveFlow:\s*/i, ''),
-                userName: r.name || 'User',
-                messageHtml: `<div style="font-size: 14px; line-height: 22px; color: #334155;">${cleanBody}</div>`,
-                buttonText,
-                buttonUrl,
-                noticeText: 'This automated notification was sent to your registered DriveFlow account.',
-              });
-              await sendCustomEmail(r.email, cleanSubject, html);
-            } catch (mailErr) {
-              console.warn(`Failed sending email to ${r.email}:`, mailErr);
-            }
+          const CHUNK_SIZE = 5;
+          for (let i = 0; i < recipients.length; i += CHUNK_SIZE) {
+            const chunk = recipients.slice(i, i + CHUNK_SIZE);
+            await Promise.all(
+              chunk.map(async (r) => {
+                try {
+                  const html = buildDriveFlowEmailHtml({
+                    title: cleanSubject.replace(/^DriveFlow:\s*/i, ''),
+                    userName: r.name || 'User',
+                    messageHtml: `<div style="font-size: 14px; line-height: 22px; color: #334155;">${cleanBody}</div>`,
+                    buttonText,
+                    buttonUrl,
+                    noticeText: 'This automated notification was sent to your registered DriveFlow account.',
+                  });
+                  await sendCustomEmail(r.email, cleanSubject, html);
+                } catch (mailErr) {
+                  console.warn(`Failed sending email to ${r.email}:`, mailErr);
+                }
+              })
+            );
           }
         } catch (e) {
           console.error('Error during email broadcast alongside in-app notification:', e);

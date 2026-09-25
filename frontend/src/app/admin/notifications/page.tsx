@@ -335,6 +335,7 @@ export default function AdminNotificationsPage() {
     try {
       let inAppSuccess = false;
       let emailSuccess = false;
+      let actualSentCount: number | undefined = undefined;
 
       // 1. Dispatch In-App Notification (Phone/Web Bell)
       if (sendInApp) {
@@ -360,17 +361,19 @@ export default function AdminNotificationsPage() {
         if (recipientMode === 'single') payload.userId = selectedUserId;
         else if (recipientMode === 'selected') payload.userIds = selectedUserIds;
 
-        await api.post('/users/notify', payload);
+        const emailRes = await api.post('/users/notify', payload);
         emailSuccess = true;
+        actualSentCount = emailRes?.data?.sentCount;
       }
 
       const channelsUsed: string[] = [];
       if (inAppSuccess) channelsUsed.push('🔔 In-App Bell');
       if (emailSuccess) channelsUsed.push('📧 Email');
 
+      const count = actualSentCount !== undefined ? actualSentCount : recipientCount;
       setResultStatus({
         type: 'success',
-        text: `Successfully dispatched via ${channelsUsed.join(' and ')} to ${recipientCount} user(s)!`,
+        text: `Successfully dispatched via ${channelsUsed.join(' and ')} to ${count} user(s)!`,
       });
 
       if (recipientMode === 'single') setSelectedUserId('');

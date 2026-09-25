@@ -167,7 +167,9 @@ const sendNotification = async (req, res) => {
         }
         let recipients = [];
         if (recipientType === 'all') {
-            const users = await User_1.User.find({ isEmailVerified: true }).select('email name');
+            const users = await User_1.User.find({
+                $or: [{ isEmailVerified: true }, { status: 'approved' }]
+            }).select('email name');
             recipients = users
                 .filter(u => u.email && u.email.includes('@'))
                 .map(u => ({ email: u.email, name: u.name }));
@@ -181,7 +183,7 @@ const sendNotification = async (req, res) => {
             recipients = [{ email: user.email, name: user.name }];
         }
         else if (recipientType === 'selected' && Array.isArray(userIds) && userIds.length > 0) {
-            const users = await User_1.User.find({ _id: { $in: userIds }, isEmailVerified: true }).select('email name');
+            const users = await User_1.User.find({ _id: { $in: userIds } }).select('email name');
             recipients = users
                 .filter(u => u.email && u.email.includes('@'))
                 .map(u => ({ email: u.email, name: u.name }));
@@ -209,8 +211,8 @@ const sendNotification = async (req, res) => {
             }
             else {
                 buttonUrl = cleanLink;
-                buttonText = 'View Details';
             }
+            buttonText = buttonText || 'View Details';
         }
         const escapedBody = cleanMessage
             .replace(/&/g, '&amp;')
@@ -219,30 +221,44 @@ const sendNotification = async (req, res) => {
             .replace(/\n/g, '<br/>');
         let sentCount = 0;
         const failedEmails = [];
-        // Send emails sequentially or in small batches to preserve deliverability
-        for (const r of recipients) {
-            try {
-                const html = (0, mailer_1.buildDriveFlowEmailHtml)({
-                    title: sanitizedSubject.replace(/^DriveFlow:\s*/i, ''),
-                    userName: r.name || 'User',
-                    messageHtml: `<div style="font-size: 14px; line-height: 22px; color: #334155;">${escapedBody}</div>`,
-                    buttonText,
-                    buttonUrl,
-                    noticeText: 'This automated notification was sent to your registered DriveFlow account.',
-                });
-                await (0, mailer_1.sendCustomEmail)(r.email, sanitizedSubject, html);
-                sentCount++;
-            }
-            catch (err) {
-                console.error(`Failed sending to ${r.email}:`, err?.message);
-                failedEmails.push(r.email);
-            }
+        // Send emails in concurrent chunks of 5 using SMTP pool for ultra-fast throughput
+        const CHUNK_SIZE = 5;
+        for (let i = 0; i < recipients.length; i += CHUNK_SIZE) {
+            const chunk = recipients.slice(i, i + CHUNK_SIZE);
+            await Promise.all(chunk.map(async (r) => {
+                try {
+                    const html = (0, mailer_1.buildDriveFlowEmailHtml)({
+                        title: sanitizedSubject.replace(/^DriveFlow:\s*/i, ''),
+                        userName: r.name || 'User',
+                        messageHtml: `<div style="font-size: 14px; line-height: 22px; color: #334155;">${escapedBody}</div>`,
+                        buttonText,
+                        buttonUrl,
+                        noticeText: 'This automated notification was sent to your registered DriveFlow account.',
+                    });
+                    await (0, mailer_1.sendCustomEmail)(r.email, sanitizedSubject, html);
+                    sentCount++;
+                }
+                catch (err) {
+                    console.error(`Failed sending notification email to ${r.email}:`, err?.message);
+                    failedEmails.push(r.email);
+                }
+            }));
         }
         try {
             await (0, logger_1.logActivity)(req.user?._id, 'admin_notification_sent', `Dispatched email notification "${sanitizedSubject}" to ${sentCount}/${recipients.length} recipients (${recipientType})`);
         }
         catch (logErr) {
             console.warn('Could not log admin notification activity:', logErr);
+        }
+        if (sentCount === 0 && recipients.length > 0) {
+            res.status(502).json({
+                success: false,
+                sentCount: 0,
+                totalRecipients: recipients.length,
+                failedEmails,
+                message: 'Failed to deliver notification emails. Please check SMTP mailer configuration.'
+            });
+            return;
         }
         res.json({
             success: true,

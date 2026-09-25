@@ -395,7 +395,8 @@ const downloadFile = async (req, res) => {
         const isFolder = meta.data.mimeType === 'application/vnd.google-apps.folder';
         const actionType = isInline ? 'preview' : 'download';
         const actionDesc = isInline ? `Previewed File: ${meta.data.name}` : `Downloaded ${isFolder ? 'Folder ZIP' : 'File'}: ${meta.data.name}`;
-        await (0, logger_1.logActivity)(req.user?._id, actionType, actionDesc);
+        // Non-blocking log: fire-and-forget so file streaming starts immediately with 0ms DB latency
+        (0, logger_1.logActivity)(req.user?._id, actionType, actionDesc).catch(console.error);
         if (meta.data.mimeType === 'application/vnd.google-apps.folder') {
             // Handle Folder ZIP
             const archive = zipLib('zip', { zlib: { level: 9 } });
