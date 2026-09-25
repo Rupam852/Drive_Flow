@@ -45,6 +45,7 @@ export default function AdminProfilePage() {
   // Forgot Password / Reset Link State
   const [sendingResetLink, setSendingResetLink] = useState(false);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+  const [showPasswordSuccessModal, setShowPasswordSuccessModal] = useState(false);
 
   // Feedback Alerts
   const [statusMessage, setStatusMessage] = useState<{
@@ -172,6 +173,7 @@ export default function AdminProfilePage() {
         newPassword,
       });
 
+      setShowPasswordSuccessModal(true);
       showStatus('success', res.data?.message || 'Password verified and updated successfully via Email OTP!');
       setOtpStep('idle');
       setEnteredOtp('');
@@ -606,6 +608,51 @@ export default function AdminProfilePage() {
                       <span>Send Link Now</span>
                     </>
                   )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Password Changed Successfully Modal */}
+      <AnimatePresence>
+        {showPasswordSuccessModal && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowPasswordSuccessModal(false);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-3xl p-6 sm:p-7 max-w-sm w-full shadow-2xl text-center space-y-5"
+            >
+              <div className="w-16 h-16 mx-auto rounded-3xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shadow-inner">
+                <CheckCircle2 className="w-9 h-9" />
+              </div>
+
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  Password Changed Successfully!
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-gray-400 leading-relaxed">
+                  Aapka password successfully update ho gaya hai. Aap naye password ke saath DriveFlow me safely login aur access kar sakte hain.
+                </p>
+              </div>
+
+              <div className="pt-1">
+                <button
+                  type="button"
+                  autoFocus
+                  onClick={() => setShowPasswordSuccessModal(false)}
+                  className="w-full py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:scale-98 text-white text-xs font-bold shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 cursor-pointer transition-all"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>OK / Close</span>
                 </button>
               </div>
             </motion.div>
