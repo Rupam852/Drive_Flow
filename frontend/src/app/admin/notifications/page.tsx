@@ -258,8 +258,15 @@ export default function AdminNotificationsPage() {
     );
   }, [auditTab, seenUsersList, unseenUsersList, auditSearch]);
 
-  // Apply template preset
+  // Apply or toggle template preset
   const handleApplyTemplate = (tmpl: typeof TEMPLATES[0]) => {
+    if (selectedTemplateName === tmpl.name) {
+      setSelectedTemplateName(null);
+      setSubject('');
+      setMessage('');
+      setAttachedLink('');
+      return;
+    }
     setSelectedTemplateName(tmpl.name);
     setSubject(tmpl.subject);
     setMessage(tmpl.message);
@@ -417,6 +424,7 @@ export default function AdminNotificationsPage() {
       setSubject('');
       setMessage('');
       setAttachedLink('');
+      setSelectedTemplateName(null);
 
       fetchAdminNotifications();
     } catch (err: any) {
