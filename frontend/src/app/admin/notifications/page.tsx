@@ -6,7 +6,7 @@ import {
   Bell, Mail, Send, Users, User, CheckCircle2, AlertTriangle,
   Search, X, Sparkles, RefreshCw, Eye, Edit3, ArrowRight,
   ShieldCheck, Info, Check, AlertCircle, ChevronDown,
-  Trash2, ExternalLink, Link2, CheckCheck, Smartphone
+  Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -34,6 +34,11 @@ interface AdminNotificationItem {
 }
 
 const TEMPLATES = [
+  {
+    name: '📄 File Upload Notification',
+    subject: 'DriveFlow: New file added to your account',
+    message: `Hello,\n\nA new file has been uploaded to your DriveFlow account.\n\nFile Details:\n• File Name: [File Name]\n• Uploaded By: DriveFlow Administration\n• Status: Ready to view and download\n\nYou can access, view, or download this file directly from your DriveFlow workspace.\n\nBest regards,\nDriveFlow Team`,
+  },
   {
     name: '🚀 App Update Announcement',
     subject: 'DriveFlow: New app update available',
@@ -193,8 +198,13 @@ export default function AdminNotificationsPage() {
     setSelectedTemplateName(tmpl.name);
     setSubject(tmpl.subject);
     setMessage(tmpl.message);
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
     if (tmpl.name.includes('App Update')) {
-      setAttachedLink('https://neo-files-transfer.pages.dev/download/723586892fd0');
+      setAttachedLink(`${origin}/user/notifications`);
+    } else if (tmpl.name.includes('File Upload')) {
+      setAttachedLink(`${origin}/user/files`);
+    } else {
+      setAttachedLink('');
     }
     setResultStatus(null);
   };
@@ -248,6 +258,13 @@ export default function AdminNotificationsPage() {
     if (recipientMode === 'selected' && selectedUserIds.length === 0) {
       setResultStatus({ type: 'error', text: 'Please choose at least one user recipient.' });
       return false;
+    }
+    if (message.includes('[File Name]')) {
+      const proceed = window.confirm("Notice: Your message still contains '[File Name]'. Would you like to update it with the actual file name before sending? Click 'Cancel' to edit, or 'OK' to send as is.");
+      if (!proceed) {
+        setResultStatus({ type: 'error', text: "Please replace '[File Name]' with the uploaded file name." });
+        return false;
+      }
     }
     return true;
   };
@@ -884,6 +901,29 @@ export default function AdminNotificationsPage() {
                 <button
                   type="button"
                   onClick={() => {
+                    const fname = prompt('Enter the uploaded file name (e.g. Project_Report.pdf):');
+                    if (fname && fname.trim()) {
+                      const trimmed = fname.trim();
+                      if (message.includes('[File Name]')) {
+                        setMessage(prev => prev.replace(/\[File Name\]/g, trimmed));
+                      } else {
+                        setMessage(prev => prev + `\n\n• File: ${trimmed}`);
+                      }
+                      if (subject.includes('[File Name]')) {
+                        setSubject(prev => prev.replace(/\[File Name\]/g, trimmed));
+                      }
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs bg-purple-50 dark:bg-purple-500/10 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/30 hover:bg-purple-100"
+                  title="Insert or replace [File Name] in message draft"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>+ Set File Name</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
                     const downloadUrl = 'https://neo-files-transfer.pages.dev/download/723586892fd0';
                     const downloadSnippet = `\n\n📲 Official DriveFlow Android App Download Link:\n${downloadUrl}`;
 
@@ -923,6 +963,31 @@ export default function AdminNotificationsPage() {
                 </span>
               </div>
             </div>
+
+            {message.includes('[File Name]') && (
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+                <div className="flex items-center gap-1.5 font-medium">
+                  <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Notice: Please replace <strong>[File Name]</strong> with your uploaded file's actual name.</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const fname = prompt('Enter your uploaded file name (e.g. Invoice_July.pdf):');
+                    if (fname && fname.trim()) {
+                      const trimmed = fname.trim();
+                      setMessage(prev => prev.replace(/\[File Name\]/g, trimmed));
+                      if (subject.includes('[File Name]')) {
+                        setSubject(prev => prev.replace(/\[File Name\]/g, trimmed));
+                      }
+                    }
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold hover:bg-amber-700 transition-colors shrink-0 text-[11px] shadow-xs cursor-pointer"
+                >
+                  Replace Now
+                </button>
+              </div>
+            )}
             <textarea
               rows={9}
               placeholder="Write your announcement or direct message here..."
