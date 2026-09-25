@@ -164,6 +164,30 @@ export default function AdminNotificationsPage() {
   } | null>(null);
   const [deliveryReport, setDeliveryReport] = useState<DeliveryReportData | null>(null);
   const [copiedFailed, setCopiedFailed] = useState(false);
+  const [showFileNameModal, setShowFileNameModal] = useState(false);
+  const [fileNameInput, setFileNameInput] = useState('');
+
+  const handleOpenFileNameModal = () => {
+    setFileNameInput('');
+    setShowFileNameModal(true);
+  };
+
+  const handleApplyFileName = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const trimmed = fileNameInput.trim();
+    if (trimmed) {
+      if (message.includes('[File Name]')) {
+        setMessage(prev => prev.replace(/\[File Name\]/g, trimmed));
+      } else {
+        setMessage(prev => prev + `\n\n• File: ${trimmed}`);
+      }
+      if (subject.includes('[File Name]')) {
+        setSubject(prev => prev.replace(/\[File Name\]/g, trimmed));
+      }
+    }
+    setShowFileNameModal(false);
+    setFileNameInput('');
+  };
 
   // Fetch users for targeting
   const fetchUsers = async () => {
@@ -340,11 +364,9 @@ export default function AdminNotificationsPage() {
       return false;
     }
     if (message.includes('[File Name]')) {
-      const proceed = window.confirm("Notice: Your message still contains '[File Name]'. Would you like to update it with the actual file name before sending? Click 'Cancel' to edit, or 'OK' to send as is.");
-      if (!proceed) {
-        setResultStatus({ type: 'error', text: "Please replace '[File Name]' with the uploaded file name." });
-        return false;
-      }
+      handleOpenFileNameModal();
+      setResultStatus({ type: 'error', text: "Please set the uploaded file name before sending." });
+      return false;
     }
     return true;
   };
@@ -1020,28 +1042,17 @@ export default function AdminNotificationsPage() {
                 Message Body Text:
               </label>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const fname = prompt('Enter the uploaded file name (e.g. Project_Report.pdf):');
-                    if (fname && fname.trim()) {
-                      const trimmed = fname.trim();
-                      if (message.includes('[File Name]')) {
-                        setMessage(prev => prev.replace(/\[File Name\]/g, trimmed));
-                      } else {
-                        setMessage(prev => prev + `\n\n• File: ${trimmed}`);
-                      }
-                      if (subject.includes('[File Name]')) {
-                        setSubject(prev => prev.replace(/\[File Name\]/g, trimmed));
-                      }
-                    }
-                  }}
-                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs bg-purple-50 dark:bg-purple-500/10 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/30 hover:bg-purple-100"
-                  title="Insert or replace [File Name] in message draft"
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>+ Set File Name</span>
-                </button>
+                {(selectedTemplateName?.includes('File Upload') || message.includes('[File Name]') || subject.includes('[File Name]')) && (
+                  <button
+                    type="button"
+                    onClick={handleOpenFileNameModal}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs bg-purple-50 dark:bg-purple-500/10 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/30 hover:bg-purple-100"
+                    title="Set or replace [File Name] in message draft"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>+ Set File Name</span>
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -1094,19 +1105,10 @@ export default function AdminNotificationsPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    const fname = prompt('Enter your uploaded file name (e.g. Invoice_July.pdf):');
-                    if (fname && fname.trim()) {
-                      const trimmed = fname.trim();
-                      setMessage(prev => prev.replace(/\[File Name\]/g, trimmed));
-                      if (subject.includes('[File Name]')) {
-                        setSubject(prev => prev.replace(/\[File Name\]/g, trimmed));
-                      }
-                    }
-                  }}
+                  onClick={handleOpenFileNameModal}
                   className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold hover:bg-amber-700 transition-colors shrink-0 text-[11px] shadow-xs cursor-pointer"
                 >
-                  Replace Now
+                  Set File Name
                 </button>
               </div>
             )}
@@ -1625,6 +1627,93 @@ export default function AdminNotificationsPage() {
                   <span>Done / Close</span>
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Set Uploaded File Name Modal */}
+      <AnimatePresence>
+        {showFileNameModal && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowFileNameModal(false);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Modal Header */}
+              <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3 bg-slate-50/60 dark:bg-white/[0.02]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/20">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                      Set Uploaded File Name
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-gray-400 mt-0.5">
+                      Replace [File Name] in your message draft
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowFileNameModal(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Modal Body Form */}
+              <form onSubmit={handleApplyFileName} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-800 dark:text-gray-200 mb-1.5">
+                    File Name:
+                  </label>
+                  <div className="relative">
+                    <FileText className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      autoFocus
+                      required
+                      placeholder="e.g. Project_Report_2026.pdf"
+                      value={fileNameInput}
+                      onChange={e => setFileNameInput(e.target.value)}
+                      className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs font-medium"
+                    />
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                    This will replace all <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 font-mono text-purple-600 dark:text-purple-400 text-[10px]">[File Name]</code> placeholders in your draft.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowFileNameModal(false)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold cursor-pointer transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-lg shadow-purple-500/25 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>OK / Apply Name</span>
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
