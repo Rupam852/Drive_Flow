@@ -38,7 +38,7 @@ export const getUserNotifications = async (req: Request, res: Response) => {
       type: n.type,
       link: n.link,
       createdAt: n.createdAt,
-      isRead: n.readBy.some(id => id.toString() === userId.toString()),
+      isRead: Array.isArray(n.readBy) && n.readBy.some(id => id && id.toString() === userId.toString()),
     }));
 
     const unreadCount = formatted.filter(n => !n.isRead).length;
@@ -123,7 +123,7 @@ export const dismissNotification = async (req: Request, res: Response) => {
 // @access  Private/Admin
 export const getAdminNotifications = async (req: Request, res: Response) => {
   try {
-    const totalVerifiedUsers = await User.countDocuments({ isEmailVerified: true, role: 'user' });
+    const totalTargetUsers = await User.countDocuments({ role: { $ne: 'admin' } });
 
     const notifications = await Notification.find()
       .populate('sender', 'name email')
@@ -133,12 +133,13 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
       .limit(100);
 
     const formatted = notifications.map(n => {
-      const readUsers = ((n.readBy as any[]) || []).filter(Boolean);
+      // Only count non-admin users in read/seen tracking
+      const readUsers = ((n.readBy as any[]) || []).filter(u => u && u.role !== 'admin');
       const readCount = readUsers.length;
-      const targetUsersList = ((n.targetUsers as any[]) || []).filter(Boolean);
+      const targetUsersList = ((n.targetUsers as any[]) || []).filter(u => u && u.role !== 'admin');
       const targetCount = n.type === 'broadcast' 
-        ? totalVerifiedUsers 
-        : targetUsersList.length;
+        ? totalTargetUsers 
+        : Math.max(1, targetUsersList.length);
 
       const seenPercentage = targetCount > 0 
         ? Math.min(100, Math.round((readCount / targetCount) * 100))
@@ -175,7 +176,7 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
 
     res.json({
       notifications: formatted,
-      totalUsers: totalVerifiedUsers,
+      totalUsers: totalTargetUsers,
     });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });

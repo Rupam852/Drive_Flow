@@ -225,28 +225,36 @@ export default function AdminNotificationsPage() {
   }, [recipientMode, users.length, currentSingleUser, selectedUserIds.length]);
 
   // Derived audit lists for active modal
-  const { seenUsersList, unseenUsersList } = useMemo(() => {
-    if (!auditingNotif) return { seenUsersList: [], unseenUsersList: [] };
-
-    const seen = auditingNotif.readUsers || [];
-    const seenIds = new Set(seen.map(u => String(u._id)));
+  const { seenUsersList, unseenUsersList, auditSeenPercent } = useMemo(() => {
+    if (!auditingNotif) return { seenUsersList: [], unseenUsersList: [], auditSeenPercent: 0 };
 
     let targetPool: AuditUser[] = [];
     if (auditingNotif.type === 'broadcast') {
-      targetPool = users.map(u => ({
-        _id: u._id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        profilePic: u.profilePic,
-      }));
+      targetPool = users
+        .filter(u => u.role !== 'admin')
+        .map(u => ({
+          _id: u._id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          profilePic: u.profilePic,
+        }));
     } else {
-      targetPool = auditingNotif.targetUsers || [];
+      targetPool = (auditingNotif.targetUsers || []).filter(u => u && u.role !== 'admin');
     }
 
+    const targetIds = new Set(targetPool.map(u => String(u._id)));
+    const seen = (auditingNotif.readUsers || [])
+      .filter(u => u && u.role !== 'admin' && (auditingNotif.type === 'broadcast' || targetIds.has(String(u._id))));
+
+    const seenIds = new Set(seen.map(u => String(u._id)));
     const unseen = targetPool.filter(u => !seenIds.has(String(u._id)));
 
-    return { seenUsersList: seen, unseenUsersList: unseen };
+    const percent = targetPool.length > 0 
+      ? Math.min(100, Math.round((seen.length / targetPool.length) * 100))
+      : 0;
+
+    return { seenUsersList: seen, unseenUsersList: unseen, auditSeenPercent: percent };
   }, [auditingNotif, users]);
 
   const displayedAuditUsers = useMemo(() => {
@@ -1674,7 +1682,7 @@ export default function AdminNotificationsPage() {
                   <div className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">
                     {seenUsersList.length}{' '}
                     <span className="text-xs font-normal text-emerald-600/80 dark:text-emerald-400/80">
-                      ({auditingNotif.seenPercentage}%)
+                      ({auditSeenPercent}%)
                     </span>
                   </div>
                 </div>
@@ -1687,7 +1695,7 @@ export default function AdminNotificationsPage() {
                   <div className="text-xl font-bold text-slate-800 dark:text-slate-200 mt-1">
                     {unseenUsersList.length}{' '}
                     <span className="text-xs font-normal text-slate-500 dark:text-slate-400">
-                      ({Math.max(0, 100 - auditingNotif.seenPercentage)}%)
+                      ({Math.max(0, 100 - auditSeenPercent)}%)
                     </span>
                   </div>
                 </div>
