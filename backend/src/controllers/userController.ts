@@ -218,6 +218,7 @@ export const sendNotification = async (req: Request, res: Response) => {
 
     let sentCount = 0;
     const failedEmails: string[] = [];
+    const failedDetails: Array<{ email: string; name?: string; reason: string }> = [];
 
     // Send emails in concurrent chunks of 5 using SMTP pool for ultra-fast throughput
     const CHUNK_SIZE = 5;
@@ -237,8 +238,10 @@ export const sendNotification = async (req: Request, res: Response) => {
             await sendCustomEmail(r.email, sanitizedSubject, html);
             sentCount++;
           } catch (err: any) {
-            console.error(`Failed sending notification email to ${r.email}:`, err?.message);
+            const reason = err?.message || 'SMTP delivery rejected or connection timeout';
+            console.error(`Failed sending notification email to ${r.email}:`, reason);
             failedEmails.push(r.email);
+            failedDetails.push({ email: r.email, name: r.name, reason });
           }
         })
       );
@@ -254,23 +257,19 @@ export const sendNotification = async (req: Request, res: Response) => {
       console.warn('Could not log admin notification activity:', logErr);
     }
 
-    if (sentCount === 0 && recipients.length > 0) {
-      res.status(502).json({
-        success: false,
-        sentCount: 0,
-        totalRecipients: recipients.length,
-        failedEmails,
-        message: 'Failed to deliver notification emails. Please check SMTP mailer configuration.'
-      });
-      return;
-    }
-
+    const isAllSuccessful = sentCount === recipients.length;
     res.json({
-      success: true,
+      success: isAllSuccessful,
       sentCount,
       totalRecipients: recipients.length,
+      failedCount: failedEmails.length,
       failedEmails: failedEmails.length > 0 ? failedEmails : undefined,
-      message: `Notification successfully sent to ${sentCount} recipient(s).`
+      failedDetails: failedDetails.length > 0 ? failedDetails : undefined,
+      recipientType,
+      subject: sanitizedSubject,
+      message: isAllSuccessful
+        ? `All ${sentCount} recipient(s) received the notification email successfully.`
+        : `Notification delivered to ${sentCount}/${recipients.length} recipients. ${failedEmails.length} failed.`
     });
 
   } catch (error) {

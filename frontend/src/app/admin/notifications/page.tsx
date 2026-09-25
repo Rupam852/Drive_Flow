@@ -7,7 +7,7 @@ import {
   Search, X, Sparkles, RefreshCw, Eye, Edit3, ArrowRight,
   ShieldCheck, Info, Check, AlertCircle, ChevronDown,
   Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText,
-  Clock, EyeOff
+  Clock, EyeOff, Copy, XCircle
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -42,6 +42,19 @@ interface AdminNotificationItem {
   senderName: string;
   readUsers?: AuditUser[];
   targetUsers?: AuditUser[];
+}
+
+interface DeliveryReportData {
+  isOpen: boolean;
+  success: boolean;
+  totalRecipients: number;
+  sentCount: number;
+  failedCount: number;
+  failedEmails?: string[];
+  failedDetails?: Array<{ email: string; name?: string; reason: string }>;
+  channels: string[];
+  subject: string;
+  recipientMode: string;
 }
 
 const TEMPLATES = [
@@ -149,6 +162,8 @@ export default function AdminNotificationsPage() {
     text: string;
     details?: string;
   } | null>(null);
+  const [deliveryReport, setDeliveryReport] = useState<DeliveryReportData | null>(null);
+  const [copiedFailed, setCopiedFailed] = useState(false);
 
   // Fetch users for targeting
   const fetchUsers = async () => {
@@ -336,6 +351,7 @@ export default function AdminNotificationsPage() {
       let inAppSuccess = false;
       let emailSuccess = false;
       let actualSentCount: number | undefined = undefined;
+      let emailData: any = null;
 
       // 1. Dispatch In-App Notification (Phone/Web Bell)
       if (sendInApp) {
@@ -362,18 +378,38 @@ export default function AdminNotificationsPage() {
         else if (recipientMode === 'selected') payload.userIds = selectedUserIds;
 
         const emailRes = await api.post('/users/notify', payload);
-        emailSuccess = true;
-        actualSentCount = emailRes?.data?.sentCount;
+        emailData = emailRes?.data;
+        emailSuccess = emailData?.success ?? true;
+        actualSentCount = emailData?.sentCount;
       }
 
       const channelsUsed: string[] = [];
       if (inAppSuccess) channelsUsed.push('🔔 In-App Bell');
-      if (emailSuccess) channelsUsed.push('📧 Email');
+      if (sendEmail) channelsUsed.push('📧 Email');
 
-      const count = actualSentCount !== undefined ? actualSentCount : recipientCount;
+      const totalTarget = emailData?.totalRecipients || recipientCount;
+      const finalSent = actualSentCount !== undefined ? actualSentCount : totalTarget;
+      const finalFailed = emailData?.failedCount ?? (emailData?.failedEmails ? emailData.failedEmails.length : 0);
+
+      // Launch detailed Delivery Confirmation & Failure Audit Popup
+      setDeliveryReport({
+        isOpen: true,
+        success: sendEmail ? (finalFailed === 0) : inAppSuccess,
+        totalRecipients: totalTarget,
+        sentCount: finalSent,
+        failedCount: finalFailed,
+        failedEmails: emailData?.failedEmails,
+        failedDetails: emailData?.failedDetails,
+        channels: channelsUsed,
+        subject: subject.trim(),
+        recipientMode,
+      });
+
       setResultStatus({
-        type: 'success',
-        text: `Successfully dispatched via ${channelsUsed.join(' and ')} to ${count} user(s)!`,
+        type: finalFailed > 0 ? 'error' : 'success',
+        text: finalFailed > 0
+          ? `Dispatched with alerts: ${finalSent} delivered, ${finalFailed} failed.`
+          : `Successfully dispatched via ${channelsUsed.join(' and ')} to ${finalSent} user(s)!`,
       });
 
       if (recipientMode === 'single') setSelectedUserId('');
@@ -387,6 +423,23 @@ export default function AdminNotificationsPage() {
       console.error('Failed to send notification:', err);
       const msg = err.response?.data?.message || err.message || 'Failed to dispatch notification.';
       setResultStatus({ type: 'error', text: msg });
+
+      setDeliveryReport({
+        isOpen: true,
+        success: false,
+        totalRecipients: recipientCount,
+        sentCount: 0,
+        failedCount: recipientCount,
+        channels: [sendInApp ? '🔔 In-App Bell' : '', sendEmail ? '📧 Email' : ''].filter(Boolean),
+        subject: subject.trim(),
+        recipientMode,
+        failedDetails: [
+          {
+            email: 'Targeted Recipients',
+            reason: msg,
+          }
+        ]
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -1371,6 +1424,189 @@ export default function AdminNotificationsPage() {
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Confirm & Publish</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delivery Confirmation & Failure Audit Modal */}
+      <AnimatePresence>
+        {deliveryReport?.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.92, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Header with status badge */}
+              <div className={`p-6 border-b ${
+                deliveryReport.failedCount === 0
+                  ? 'bg-emerald-500/10 dark:bg-emerald-500/10 border-emerald-500/20'
+                  : deliveryReport.sentCount > 0
+                  ? 'bg-amber-500/10 dark:bg-amber-500/10 border-amber-500/20'
+                  : 'bg-rose-500/10 dark:bg-rose-500/10 border-rose-500/20'
+              } flex items-start justify-between gap-4`}>
+                <div className="flex items-start gap-3.5">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+                    deliveryReport.failedCount === 0
+                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                      : deliveryReport.sentCount > 0
+                      ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30'
+                      : 'bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/30'
+                  }`}>
+                    {deliveryReport.failedCount === 0 ? (
+                      <CheckCircle2 className="w-6 h-6" />
+                    ) : deliveryReport.sentCount > 0 ? (
+                      <AlertTriangle className="w-6 h-6" />
+                    ) : (
+                      <XCircle className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">
+                      {deliveryReport.failedCount === 0
+                        ? 'Notification Dispatched Successfully!'
+                        : deliveryReport.sentCount > 0
+                        ? 'Partial Delivery Alert'
+                        : 'Delivery Failed'}
+                    </h3>
+                    <p className="text-xs text-slate-600 dark:text-gray-300 mt-1">
+                      {deliveryReport.failedCount === 0
+                        ? `All targeted recipients (${deliveryReport.sentCount}) received the notification.`
+                        : `${deliveryReport.sentCount} delivered, but ${deliveryReport.failedCount} user(s) failed.`}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setDeliveryReport(null)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-5 overflow-y-auto custom-scrollbar">
+                {/* 3 Metrics Cards */}
+                <div className="grid grid-cols-3 gap-2.5">
+                  <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 text-center">
+                    <p className="text-[11px] font-medium text-slate-500 dark:text-gray-400">Total Targeted</p>
+                    <p className="text-xl font-bold text-slate-900 dark:text-white mt-0.5">{deliveryReport.totalRecipients}</p>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 text-center">
+                    <p className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Delivered</p>
+                    <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">{deliveryReport.sentCount}</p>
+                  </div>
+                  <div className={`p-3.5 rounded-2xl text-center ${
+                    deliveryReport.failedCount > 0
+                      ? 'bg-rose-500/10 border border-rose-500/25'
+                      : 'bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10'
+                  }`}>
+                    <p className={`text-[11px] font-medium ${
+                      deliveryReport.failedCount > 0 ? 'text-rose-600 dark:text-rose-400 font-semibold' : 'text-slate-500 dark:text-gray-400'
+                    }`}>Failed</p>
+                    <p className={`text-xl font-bold mt-0.5 ${
+                      deliveryReport.failedCount > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'
+                    }`}>{deliveryReport.failedCount}</p>
+                  </div>
+                </div>
+
+                {/* Channels & Info pill */}
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/10 text-xs space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-gray-400">Channels:</span>
+                    <span className="font-semibold text-slate-800 dark:text-gray-200">{deliveryReport.channels.join(' & ')}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500 dark:text-gray-400">Subject:</span>
+                    <span className="font-semibold text-slate-800 dark:text-gray-200 truncate max-w-[240px]">{deliveryReport.subject}</span>
+                  </div>
+                </div>
+
+                {/* If all succeeded */}
+                {deliveryReport.failedCount === 0 && (
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 flex items-start gap-2.5">
+                    <CheckCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold">All emails delivered directly to inboxes</p>
+                      <p className="text-[11px] opacity-90 mt-0.5 leading-relaxed">
+                        The SMTP server has confirmed delivery to all {deliveryReport.sentCount} recipient(s) without bounce.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* If there are failed users: Show Reason List */}
+                {deliveryReport.failedCount > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-rose-600 dark:text-rose-400">
+                        <AlertTriangle className="w-4 h-4" />
+                        <span>Failed Recipients & Reasons ({deliveryReport.failedCount})</span>
+                      </div>
+                      {deliveryReport.failedEmails && deliveryReport.failedEmails.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(deliveryReport.failedEmails!.join('\n'));
+                            setCopiedFailed(true);
+                            setTimeout(() => setCopiedFailed(false), 2000);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[11px] font-semibold text-slate-700 dark:text-gray-300 hover:bg-slate-200 dark:hover:bg-white/10 flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          {copiedFailed ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                          <span>{copiedFailed ? 'Copied!' : 'Copy Emails'}</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {deliveryReport.failedDetails && deliveryReport.failedDetails.length > 0 ? (
+                        deliveryReport.failedDetails.map((f, idx) => (
+                          <div
+                            key={idx}
+                            className="p-3 rounded-xl bg-rose-500/5 border border-rose-500/20 text-xs space-y-1"
+                          >
+                            <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-white">
+                              <span className="truncate">{f.email}</span>
+                              {f.name && <span className="text-[10px] text-slate-500">({f.name})</span>}
+                            </div>
+                            <p className="text-[11px] text-rose-600 dark:text-rose-400 font-mono bg-rose-500/10 px-2 py-1 rounded-lg">
+                              Karan (Reason): {f.reason}
+                            </p>
+                          </div>
+                        ))
+                      ) : (
+                        deliveryReport.failedEmails?.map((email, idx) => (
+                          <div
+                            key={idx}
+                            className="p-2.5 rounded-xl bg-rose-500/5 border border-rose-500/20 text-xs flex items-center justify-between"
+                          >
+                            <span className="font-semibold text-slate-900 dark:text-white truncate">{email}</span>
+                            <span className="text-[10px] text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded">Delivery rejected</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/[0.02] flex items-center justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDeliveryReport(null)}
+                  className="px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-lg shadow-purple-500/25 transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Done / Close</span>
                 </button>
               </div>
             </motion.div>
