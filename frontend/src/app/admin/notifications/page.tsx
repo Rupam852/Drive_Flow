@@ -104,21 +104,7 @@ export default function AdminNotificationsPage() {
 
   // UI Controls
   const [activeTab, setActiveTab] = useState<'compose' | 'preview'>('compose');
-  const [previewTab, setPreviewTab] = useState<'email' | 'mobile'>('email');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const sanitizedPreviewSubject = useMemo(() => {
-    if (!subject.trim()) return 'DriveFlow: Notification';
-    let clean = subject.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}]/gu, '');
-    clean = clean.replace(/[!\[\]]/g, '').trim();
-    clean = clean.replace(/^driveflow[:\s-]*/i, '').trim();
-    clean = clean.replace(/\s+/g, ' ').trim();
-    return clean ? `DriveFlow: ${clean}` : 'DriveFlow Notification';
-  }, [subject]);
-
-  const sanitizedPreviewTitle = useMemo(() => {
-    return sanitizedPreviewSubject.replace(/^DriveFlow:\s*/i, '');
-  }, [sanitizedPreviewSubject]);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -1067,190 +1053,76 @@ export default function AdminNotificationsPage() {
         {/* Right: Live Interactive Preview (5 cols on lg) */}
         <div className={`lg:col-span-5 ${activeTab === 'preview' ? 'block' : 'hidden lg:block'}`}>
           <div className="sticky top-20 bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10 flex-wrap gap-2">
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
                 <Eye className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-gray-200">
-                  Live Dispatch Preview
-                </h3>
-              </div>
-              <div className="flex items-center bg-slate-100 dark:bg-white/10 p-0.5 rounded-lg text-[11px] font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setPreviewTab('email')}
-                  className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1 cursor-pointer ${
-                    previewTab === 'email'
-                      ? 'bg-white dark:bg-purple-600 text-purple-700 dark:text-white font-bold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  <Mail className="w-3 h-3" />
-                  <span>Email</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTab('mobile')}
-                  className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1 cursor-pointer ${
-                    previewTab === 'mobile'
-                      ? 'bg-white dark:bg-purple-600 text-purple-700 dark:text-white font-bold shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  <Smartphone className="w-3 h-3" />
-                  <span>Push &amp; Bell</span>
-                </button>
-              </div>
+                Live Recipient Preview
+              </h3>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-gray-300">
+                Mockup
+              </span>
             </div>
 
-            {previewTab === 'email' ? (
-              /* Exact Email Inbox Template Preview */
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-[#f8fafc] text-slate-800 overflow-hidden shadow-sm font-sans text-xs">
-                {/* Email Client Header Bar */}
-                <div className="bg-slate-100/90 border-b border-slate-200 p-2.5 space-y-1 text-[11px] text-slate-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                      <span>Primary Inbox</span>
-                      <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-1.5 py-0.2 rounded">
-                        100% Deliverability
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-medium">Just now</span>
-                  </div>
-                  <div className="text-slate-600 truncate">
-                    <strong className="text-slate-800">From:</strong> DriveFlow &lt;bott27124@gmail.com&gt;
-                  </div>
-                  <div className="text-slate-600 truncate">
-                    <strong className="text-slate-800">To:</strong> {recipientMode === 'single' && currentSingleUser ? `${currentSingleUser.name} <${currentSingleUser.email}>` : recipientMode === 'selected' ? `${selectedUserIds.length} Selected Recipients` : `All Verified Users (${users.length})`}
-                  </div>
-                  <div className="text-slate-900 font-semibold truncate pt-1 border-t border-slate-200/60 mt-1">
-                    <span className="text-slate-500 font-normal">Subject: </span>
-                    {sanitizedPreviewSubject}
-                  </div>
+            {/* Email Container Mockup */}
+            <div className="rounded-xl border border-slate-300 dark:border-slate-800 bg-[#f8fafc] text-slate-800 overflow-hidden shadow-sm font-sans text-xs">
+              {/* Fake Top Header */}
+              <div className="bg-slate-100/90 border-b border-slate-200 p-2.5 flex items-center justify-between text-[11px] text-slate-700">
+                <div className="truncate">
+                  <span className="font-bold text-slate-900">Target: </span>
+                  {recipientMode === 'single' && currentSingleUser
+                    ? `${currentSingleUser.name} <${currentSingleUser.email}>`
+                    : recipientMode === 'selected'
+                    ? `${selectedUserIds.length} Selected Recipients`
+                    : `All Verified Users (${users.length})`}
                 </div>
-
-                {/* Actual Email Container */}
-                <div className="p-3 bg-slate-100/40">
-                  <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
-                    {/* Authentic DriveFlow Email Header */}
-                    <div className="p-4 text-center text-white bg-gradient-to-r from-purple-700 to-indigo-600" style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)' }}>
-                      <h4 className="m-0 text-white font-bold text-base tracking-tight" style={{ color: '#ffffff' }}>
-                        DriveFlow
-                      </h4>
-                      <p className="m-0 mt-0.5 text-purple-200 text-[11px] font-medium" style={{ color: '#e9d5ff' }}>
-                        Secure Cloud Storage
-                      </p>
-                    </div>
-
-                    {/* Email Body */}
-                    <div className="p-4 space-y-3">
-                      <h5 className="text-[14px] font-bold text-slate-900 leading-snug">
-                        {sanitizedPreviewTitle}
-                      </h5>
-                      <p className="text-slate-600 text-xs font-medium">
-                        Hello {recipientMode === 'single' && currentSingleUser ? currentSingleUser.name : 'User'},
-                      </p>
-                      <div className="text-slate-700 text-xs leading-relaxed whitespace-pre-line bg-slate-50/70 p-3 rounded-xl border border-slate-100">
-                        {message.trim() ? (
-                          message.split(/(\[File Name\])/g).map((part, i) =>
-                            part === '[File Name]' ? (
-                              <span key={i} className="inline-block bg-amber-100 border border-amber-300 text-amber-900 font-bold px-1.5 py-0.5 rounded text-[11px]">
-                                [File Name]
-                              </span>
-                            ) : (
-                              part
-                            )
-                          )
-                        ) : (
-                          <span className="text-slate-400 italic">Message content will appear here...</span>
-                        )}
-                      </div>
-
-                      {attachedLink && (
-                        <div className="pt-2 text-center">
-                          <span
-                            className="inline-block px-5 py-2 rounded-lg font-bold text-xs shadow-md text-white"
-                            style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)', color: '#ffffff' }}
-                          >
-                            {attachedLink.includes('/user/files') ? 'View Files in Workspace' : attachedLink.includes('/user/notifications') ? 'Open App to Update' : 'Open Attached Link'}
-                          </span>
-                        </div>
-                      )}
-
-                      <p className="text-[10px] text-slate-400 pt-2 border-t border-slate-100">
-                        This automated notification was sent to your registered DriveFlow account.
-                      </p>
-                    </div>
-
-                    {/* Email Footer */}
-                    <div className="p-3 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-400">
-                      <p className="m-0">&copy; {new Date().getFullYear()} DriveFlow. All rights reserved.</p>
-                      <p className="m-0 mt-0.5">Automated secure dispatch.</p>
-                    </div>
-                  </div>
-                </div>
+                <span className="text-[10px] text-slate-500 shrink-0 font-medium">Just now</span>
               </div>
-            ) : (
-              /* Mobile Push & Bell Preview */
-              <div className="space-y-3">
-                {/* Android Status Bar Notification Mockup */}
-                <div className="p-3 rounded-xl bg-slate-900 text-white shadow-md border border-slate-800 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between text-[10px] text-slate-400">
-                    <div className="flex items-center gap-1.5 font-bold text-purple-400">
-                      <div className="w-3.5 h-3.5 rounded bg-purple-600 flex items-center justify-center text-[9px] text-white font-black">
-                        D
-                      </div>
-                      <span>DriveFlow • Push Alert</span>
-                    </div>
-                    <span>now</span>
-                  </div>
-                  <div className="font-bold text-slate-100 text-xs">
-                    {subject.trim() || 'New Notification'}
-                  </div>
-                  <div className="text-slate-300 text-[11px] line-clamp-2 leading-relaxed">
-                    {message.trim() || 'Notification body text will appear in phone status bar...'}
-                  </div>
+
+              {/* Content Box */}
+              <div className="p-4 space-y-3 bg-white">
+                {/* Header Banner - with explicit text-white for both badge and h4 */}
+                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 rounded-xl p-4 text-center text-white shadow-md">
+                  <span className="inline-block px-2.5 py-0.5 rounded-full bg-white/25 text-white text-[10px] font-bold uppercase tracking-wider mb-1.5 shadow-xs">
+                    DriveFlow Official Notice
+                  </span>
+                  <h4 className="font-bold text-sm text-white leading-snug line-clamp-2 drop-shadow-xs">
+                    {subject.trim() || 'No Subject Specified'}
+                  </h4>
                 </div>
 
-                {/* In-App Bell Notification Modal Mockup */}
-                <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30 p-3.5 shadow-xs space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wider flex items-center gap-1">
-                      <Bell className="w-3 h-3" />
-                      In-App Bell Preview
-                    </span>
-                    <span className="text-[10px] text-slate-400">Bell Tray</span>
-                  </div>
-                  <div className="text-xs text-slate-800 dark:text-white font-bold">
-                    {subject.trim() || 'DriveFlow Update'}
-                  </div>
-                  <div className="text-[11px] text-slate-600 dark:text-gray-300 whitespace-pre-line leading-relaxed bg-slate-50 dark:bg-white/5 p-2.5 rounded-lg border border-slate-100 dark:border-white/5">
-                    {message.trim() || 'Message text appears here in modal...'}
+                {/* Message Box */}
+                <div className="space-y-2 text-slate-700 leading-relaxed text-[12px]">
+                  <p className="font-bold text-slate-900">
+                    Hello {recipientMode === 'single' && currentSingleUser ? currentSingleUser.name : 'DriveFlow User'},
+                  </p>
+                  <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 border-l-4 border-l-purple-600 rounded-r-lg p-3 text-slate-800 dark:text-gray-200 text-[12px] whitespace-pre-wrap leading-relaxed shadow-xs">
+                    {message.trim() || 'Your composed message content will appear formatted here...'}
                   </div>
 
                   {attachedLink && (
-                    <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 flex items-center justify-center shrink-0">
-                          <Link2 className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <span className="text-[9px] font-bold uppercase text-slate-500 block">
-                            Attached Resource
-                          </span>
-                          <span className="text-[10px] font-semibold text-slate-800 dark:text-white truncate block">
-                            {attachedLink}
-                          </span>
-                        </div>
-                      </div>
-                      <span className="px-2.5 py-1 rounded bg-purple-600 text-white font-bold text-[10px] shrink-0" style={{ color: '#ffffff' }}>
-                        Open Link
+                    <div className="pt-1">
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-purple-600 text-white text-[11px] font-bold shadow-xs"
+                        style={{ color: '#ffffff', backgroundColor: '#7c3aed' }}
+                      >
+                        <span style={{ color: '#ffffff', fontWeight: 700 }}>Open Attached Link</span>
+                        <ExternalLink className="w-3.5 h-3.5" style={{ color: '#ffffff' }} />
                       </span>
                     </div>
                   )}
+
+                  <p className="text-[11px] text-slate-500 italic pt-1 font-medium">
+                    This notice was sent by the DriveFlow Administrator.
+                  </p>
+                </div>
+
+                {/* Footer */}
+                <div className="pt-3 border-t border-slate-200 text-center text-[10px] text-slate-500">
+                  <p className="font-bold text-slate-700">DriveFlow Cloud Storage &amp; File Manager</p>
+                  <p>&copy; {new Date().getFullYear()} DriveFlow Inc. All rights reserved.</p>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
