@@ -17,6 +17,8 @@ router.post('/verify-email', authController_1.verifyEmail);
 router.post('/resend-otp', authController_1.resendOtp);
 router.post('/forgot-password', passwordController_1.forgotPassword);
 router.post('/reset-password', passwordController_1.resetPassword);
+router.get('/profile', authMiddleware_1.protect, authController_1.getProfile);
 router.put('/profile', authMiddleware_1.protect, authController_1.updateProfile);
+router.post('/change-password', authMiddleware_1.protect, authController_1.changePassword);
 exports.default = router;
 //# sourceMappingURL=authRoutes.js.map

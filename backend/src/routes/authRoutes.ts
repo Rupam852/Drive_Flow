@@ -1,5 +1,15 @@
 import express from 'express';
-import { registerUser, loginUser, verifyEmail, resendOtp, getAppVersion, updateProfile, googleAuth } from '../controllers/authController';
+import {
+  registerUser,
+  loginUser,
+  verifyEmail,
+  resendOtp,
+  getAppVersion,
+  getProfile,
+  updateProfile,
+  changePassword,
+  googleAuth
+} from '../controllers/authController';
 import { forgotPassword, resetPassword } from '../controllers/passwordController';
 import { protect } from '../middleware/authMiddleware';
 
@@ -14,6 +24,8 @@ router.post('/verify-email', verifyEmail);
 router.post('/resend-otp', resendOtp);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
+router.post('/change-password', protect, changePassword);
 
 export default router;

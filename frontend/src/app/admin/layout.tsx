@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Users, FolderOpen, LogOut, Menu, X,
-  HardDrive, Smartphone, RefreshCw, Bell,
+  HardDrive, Smartphone, RefreshCw, Bell, User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
@@ -21,6 +21,7 @@ const navItems = [
   { label: 'Files', href: '/admin/files', icon: FolderOpen },
   { label: 'Users', href: '/admin/users', icon: Users },
   { label: 'Notifications', href: '/admin/notifications', icon: Bell },
+  { label: 'Profile', href: '/admin/profile', icon: User },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

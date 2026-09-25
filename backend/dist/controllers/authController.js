@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.googleAuth = exports.updateProfile = exports.getAppVersion = exports.seedAdmin = exports.resendOtp = exports.verifyEmail = exports.loginUser = exports.registerUser = void 0;
+exports.googleAuth = exports.changePassword = exports.updateProfile = exports.getProfile = exports.getAppVersion = exports.seedAdmin = exports.resendOtp = exports.verifyEmail = exports.loginUser = exports.registerUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const fs_1 = __importDefault(require("fs"));
@@ -275,29 +275,58 @@ const getAppVersion = async (req, res) => {
     }
 };
 exports.getAppVersion = getAppVersion;
-// @desc    Update authenticated user profile name
+// @desc    Get authenticated user profile
+// @route   GET /api/auth/profile
+// @access  Private
+const getProfile = async (req, res) => {
+    try {
+        const userId = req.user?._id;
+        const user = await User_1.User.findById(userId).select('-passwordHash');
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status,
+            profilePic: user.profilePic,
+            createdAt: user.createdAt,
+            isGoogleUser: !!user.googleId,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.getProfile = getProfile;
+// @desc    Update authenticated user profile name and/or avatar
 // @route   PUT /api/auth/profile
 // @access  Private
 const updateProfile = async (req, res) => {
     try {
-        const { name } = req.body;
-        if (!name || name.trim().length === 0) {
-            res.status(400).json({ message: 'Name is required' });
-            return;
-        }
+        const { name, profilePic } = req.body;
         const userId = req.user?._id;
         const user = await User_1.User.findById(userId);
         if (!user) {
             res.status(404).json({ message: 'User not found' });
             return;
         }
-        user.name = name;
+        if (name && name.trim()) {
+            user.name = name.trim();
+        }
+        if (profilePic !== undefined) {
+            user.profilePic = profilePic;
+        }
         await user.save();
         // Log user activity
-        await (0, logger_1.logActivity)(user._id.toString(), 'update_profile', `User updated profile name to ${name}`);
+        await (0, logger_1.logActivity)(user._id.toString(), 'update_profile', `User updated profile: ${user.name}`);
         res.status(200).json({
             message: 'Profile updated successfully',
             user: {
+                _id: user._id,
                 id: user._id,
                 name: user.name,
                 email: user.email,
@@ -312,6 +341,41 @@ const updateProfile = async (req, res) => {
     }
 };
 exports.updateProfile = updateProfile;
+// @desc    Change password for authenticated user
+// @route   POST /api/auth/change-password
+// @access  Private
+const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user?._id;
+        const user = await User_1.User.findById(userId);
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+        if (!newPassword || newPassword.length < 6 || newPassword.length > 9) {
+            res.status(400).json({ message: 'Password must be between 6 and 9 characters long.' });
+            return;
+        }
+        // Verify current password if user has password set
+        if (user.passwordHash && currentPassword) {
+            const isMatch = await bcryptjs_1.default.compare(currentPassword, user.passwordHash);
+            if (!isMatch) {
+                res.status(400).json({ message: 'Current password does not match.' });
+                return;
+            }
+        }
+        const salt = await bcryptjs_1.default.genSalt(10);
+        user.passwordHash = await bcryptjs_1.default.hash(newPassword, salt);
+        await user.save();
+        await (0, logger_1.logActivity)(user._id.toString(), 'change_password', `Password changed successfully for ${user.email}`);
+        res.json({ success: true, message: 'Password changed successfully.' });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.changePassword = changePassword;
 const googleClient = new google_auth_library_1.OAuth2Client();
 const googleAuth = async (req, res) => {
     try {

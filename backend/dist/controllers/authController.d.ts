@@ -5,5 +5,7 @@ export declare const verifyEmail: (req: Request, res: Response) => Promise<void>
 export declare const resendOtp: (req: Request, res: Response) => Promise<void>;
 export declare const seedAdmin: () => Promise<void>;
 export declare const getAppVersion: (req: Request, res: Response) => Promise<void>;
+export declare const getProfile: (req: Request, res: Response) => Promise<void>;
 export declare const updateProfile: (req: Request, res: Response) => Promise<void>;
+export declare const changePassword: (req: Request, res: Response) => Promise<void>;
 export declare const googleAuth: (req: Request, res: Response) => Promise<void>;

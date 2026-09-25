@@ -286,16 +286,40 @@ export const getAppVersion = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Update authenticated user profile name
+// @desc    Get authenticated user profile
+// @route   GET /api/auth/profile
+// @access  Private
+export const getProfile = async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?._id;
+    const user = await User.findById(userId).select('-passwordHash');
+
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      profilePic: user.profilePic,
+      createdAt: user.createdAt,
+      isGoogleUser: !!user.googleId,
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc    Update authenticated user profile name and/or avatar
 // @route   PUT /api/auth/profile
 // @access  Private
 export const updateProfile = async (req: Request, res: Response) => {
   try {
-    const { name } = req.body;
-    if (!name || name.trim().length === 0) {
-      res.status(400).json({ message: 'Name is required' });
-      return;
-    }
+    const { name, profilePic } = req.body;
 
     const userId = (req as any).user?._id;
     const user = await User.findById(userId);
@@ -305,15 +329,23 @@ export const updateProfile = async (req: Request, res: Response) => {
       return;
     }
 
-    user.name = name;
+    if (name && name.trim()) {
+      user.name = name.trim();
+    }
+
+    if (profilePic !== undefined) {
+      user.profilePic = profilePic;
+    }
+
     await user.save();
 
     // Log user activity
-    await logActivity(user._id.toString(), 'update_profile', `User updated profile name to ${name}`);
+    await logActivity(user._id.toString(), 'update_profile', `User updated profile: ${user.name}`);
 
     res.status(200).json({
       message: 'Profile updated successfully',
       user: {
+        _id: user._id,
         id: user._id,
         name: user.name,
         email: user.email,
@@ -322,6 +354,46 @@ export const updateProfile = async (req: Request, res: Response) => {
         profilePic: user.profilePic,
       }
     });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc    Change password for authenticated user
+// @route   POST /api/auth/change-password
+// @access  Private
+export const changePassword = async (req: Request, res: Response) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = (req as any).user?._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 6 || newPassword.length > 9) {
+      res.status(400).json({ message: 'Password must be between 6 and 9 characters long.' });
+      return;
+    }
+
+    // Verify current password if user has password set
+    if (user.passwordHash && currentPassword) {
+      const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!isMatch) {
+        res.status(400).json({ message: 'Current password does not match.' });
+        return;
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+    await user.save();
+
+    await logActivity(user._id.toString(), 'change_password', `Password changed successfully for ${user.email}`);
+
+    res.json({ success: true, message: 'Password changed successfully.' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }
