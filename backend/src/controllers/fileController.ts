@@ -529,6 +529,10 @@ export const downloadFile = async (req: Request, res: Response) => {
 
         res.setHeader('Content-Disposition', disposition);
         res.setHeader('Content-Type', exportMime);
+        if (isInline) {
+          res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+          res.setHeader('ETag', `"${fileId}"`);
+        }
         
         response.data.on('error', (err: any) => {
           console.error('Export stream error:', err);
@@ -571,6 +575,10 @@ export const downloadFile = async (req: Request, res: Response) => {
 
               res.setHeader('Content-Disposition', disposition);
               res.setHeader('Content-Type', 'application/pdf');
+              if (isInline) {
+                res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+                res.setHeader('ETag', `"${fileId}"`);
+              }
 
               exportRes.data.on('end', async () => {
                 try { await drive.files.delete({ fileId: tempCopy.data.id! }); } catch (e) { console.error('Cleanup error:', e); }
@@ -613,6 +621,10 @@ export const downloadFile = async (req: Request, res: Response) => {
 
         res.setHeader('Content-Disposition', disposition);
         res.setHeader('Content-Type', mimeType);
+        if (isInline) {
+          res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+          res.setHeader('ETag', `"${fileId}"`);
+        }
         
         response.data.on('error', (err: any) => {
           console.error('Download stream error:', err);

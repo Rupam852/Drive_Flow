@@ -1,8 +1,9 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-const getBaseURL = () => {
+export const getApiUrl = () => {
   return process.env.NEXT_PUBLIC_API_URL || 'https://driveflow-worker.rupambairagya08.workers.dev/api';
 };
+export const getBaseURL = getApiUrl;
 
 const api = axios.create({
   baseURL: getBaseURL(),

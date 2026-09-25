@@ -467,6 +467,10 @@ const downloadFile = async (req, res) => {
                 const disposition = isInline ? 'inline' : `attachment; filename="${safeName}${ext}"; filename*=UTF-8''${safeName}${ext}`;
                 res.setHeader('Content-Disposition', disposition);
                 res.setHeader('Content-Type', exportMime);
+                if (isInline) {
+                    res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+                    res.setHeader('ETag', `"${fileId}"`);
+                }
                 response.data.on('error', (err) => {
                     console.error('Export stream error:', err);
                     if (!res.headersSent)
@@ -502,6 +506,10 @@ const downloadFile = async (req, res) => {
                             const disposition = isInline ? 'inline' : `attachment; filename="${safeName}.pdf"; filename*=UTF-8''${safeName}.pdf`;
                             res.setHeader('Content-Disposition', disposition);
                             res.setHeader('Content-Type', 'application/pdf');
+                            if (isInline) {
+                                res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+                                res.setHeader('ETag', `"${fileId}"`);
+                            }
                             exportRes.data.on('end', async () => {
                                 try {
                                     await googleDrive_1.default.files.delete({ fileId: tempCopy.data.id });
@@ -539,6 +547,10 @@ const downloadFile = async (req, res) => {
                 const disposition = isInline ? 'inline' : `attachment; filename="${safeName}"; filename*=UTF-8''${safeName}`;
                 res.setHeader('Content-Disposition', disposition);
                 res.setHeader('Content-Type', mimeType);
+                if (isInline) {
+                    res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+                    res.setHeader('ETag', `"${fileId}"`);
+                }
                 response.data.on('error', (err) => {
                     console.error('Download stream error:', err);
                     if (!res.headersSent)

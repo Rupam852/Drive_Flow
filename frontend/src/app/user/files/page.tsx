@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Folder, File, Download, Eye, X, ChevronRight, Home, Image, FileText, Film, MoreVertical, Check, Square, Search, ExternalLink, ArrowDown, Loader2, CheckCircle2, XCircle } from 'lucide-react';
-import api from '@/lib/api';
+import api, { getApiUrl } from '@/lib/api';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { Capacitor } from '@capacitor/core';
@@ -90,8 +90,9 @@ export default function UserFilesPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const { pullDistance, isRefreshing, isPulling } = usePullToRefresh(async () => {
+    folderCacheRef.current.delete(currentFolder.id);
     if (!searchQuery) {
-      await loadFiles(currentFolder.id);
+      await loadFiles(currentFolder.id, true, true);
     } else {
       const res = await api.get(`/files/search?q=${encodeURIComponent(searchQuery)}`);
       setFiles(res.data);
@@ -140,11 +141,27 @@ export default function UserFilesPage() {
     setDownloadProgress(null);
   };
   const currentFolder = path[path.length - 1]!;
+  const folderCacheRef = useRef<Map<string, { files: DriveFile[]; timestamp: number }>>(new Map());
 
-  const loadFiles = async (folderId: string) => {
-    setLoading(true);
+  const loadFiles = async (folderId: string, background = false, forceFresh = false) => {
+    if (forceFresh) {
+      folderCacheRef.current.delete(folderId);
+    }
+    const cached = folderCacheRef.current.get(folderId);
+    const now = Date.now();
+    const isFresh = cached && (now - cached.timestamp < 45000);
+
+    if (cached && !forceFresh) {
+      // 0ms instant display of cached folder contents - Zero flicker!
+      setFiles(cached.files);
+      setLoading(false);
+      if (isFresh && !background) return;
+    } else if (!background) {
+      setLoading(true);
+    }
     try {
       const res = await api.get(`/files?parentId=${folderId}`);
+      folderCacheRef.current.set(folderId, { files: res.data, timestamp: Date.now() });
       setFiles(res.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -333,8 +350,7 @@ export default function UserFilesPage() {
   const getToken = () =>
     localStorage.getItem('token_user') || localStorage.getItem('token') || '';
 
-  const getApiBase = () =>
-    process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const getApiBase = () => getApiUrl();
 
   const handleDownload = async (file: DriveFile, format?: string) => {
     if (isConvertible(file) && !format && !isFolder(file)) {
@@ -689,9 +705,10 @@ export default function UserFilesPage() {
       setMovingIds([]);
       setSelected(new Set());
       setShowMoveModal(false);
+      folderCacheRef.current.clear();
       addToast('File moved successfully');
       fetchStats();
-      await loadFiles(currentFolder.id);
+      await loadFiles(currentFolder.id, false, true);
     } catch (e) { 
       console.error(e);
       addToast('Error moving file', 'error');
@@ -1059,7 +1076,7 @@ export default function UserFilesPage() {
                 
                 {isImage(previewFile) ? (
                   <img 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`}
+                    src={`${getApiBase()}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`}
                     alt={previewFile.name} 
                     className="max-h-full max-w-full object-contain shadow-2xl relative z-10" />
                 ) : isVideo(previewFile) ? (
@@ -1067,10 +1084,10 @@ export default function UserFilesPage() {
                     controls 
                     autoPlay 
                     className="max-h-full w-full relative z-10 shadow-2xl" 
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`} />
+                    src={`${getApiBase()}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`} />
                 ) : (previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) ? (
                   <iframe
-                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${getApiBase()}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
                     className="w-full h-full border-none relative z-10 bg-white" />
                 ) : (
                   <div className="flex flex-col items-center gap-6 text-gray-500 relative z-10">

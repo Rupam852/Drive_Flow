@@ -10,7 +10,7 @@ import {
   CheckCircle, AlertCircle, AlertTriangle, Info, Eye, EyeOff, ArrowDown
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import api from '@/lib/api';
+import api, { getApiUrl } from '@/lib/api';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { Capacitor } from '@capacitor/core';
@@ -214,8 +214,9 @@ function AdminFilesContent() {
   const [fakeProgress, setFakeProgress] = useState(0);
 
   const { pullDistance, isRefreshing, isPulling } = usePullToRefresh(async () => {
+    folderCacheRef.current.delete(currentFolder.id);
     if (!searchQuery) {
-      await loadFiles(currentFolder.id);
+      await loadFiles(currentFolder.id, true, true);
     } else {
       const res = await api.get(`/files/search?q=${encodeURIComponent(searchQuery)}`);
       setFiles(res.data);
@@ -366,12 +367,28 @@ function AdminFilesContent() {
   const uploadXhrRef = useRef<XMLHttpRequest | null>(null);
 
   const currentFolder = path[path.length - 1]!;
+  const folderCacheRef = useRef<Map<string, { files: DriveFile[]; timestamp: number }>>(new Map());
 
-  const loadFiles = async (folderId: string) => {
-    setLoading(true);
+  const loadFiles = async (folderId: string, background = false, forceFresh = false) => {
+    if (forceFresh) {
+      folderCacheRef.current.delete(folderId);
+    }
+    const cached = folderCacheRef.current.get(folderId);
+    const now = Date.now();
+    const isFresh = cached && (now - cached.timestamp < 45000);
+
+    if (cached && !forceFresh) {
+      // 0ms instant display of cached folder contents - Zero flicker!
+      setFiles(cached.files);
+      setLoading(false);
+      if (isFresh && !background) return;
+    } else if (!background) {
+      setLoading(true);
+    }
     setSelected(new Set());
     try {
       const res = await api.get(`/files?parentId=${folderId}`);
+      folderCacheRef.current.set(folderId, { files: res.data, timestamp: Date.now() });
       setFiles(res.data);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -1241,7 +1258,7 @@ function AdminFilesContent() {
     const ids = Array.from(selected).join(',');
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
     const zipFileName = (customName || 'DriveFlow_Export') + '.zip';
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const apiBase = getApiUrl();
 
     try {
       const response = await api.get(`/files/bulk-download?fileIds=${ids}`, {
@@ -1324,7 +1341,7 @@ function AdminFilesContent() {
       return;
     }
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const apiBase = getApiUrl();
 
     if (format) {
       const ext = format === 'pdf' ? '.pdf' : '.docx';
@@ -2061,7 +2078,7 @@ function AdminFilesContent() {
                         addToast('Failed to open file', 'error');
                         return;
                       }
-                      const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${dlToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`;
+                      const url = `${getApiUrl()}/files/${previewFile.id}/download?downloadToken=${dlToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`;
                       const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
                       if (isNative) {
                         window.open(url, '_system');
@@ -2098,7 +2115,7 @@ function AdminFilesContent() {
 
                 {isImage(previewFile) ? (
                   <img
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`}
+                    src={`${getApiUrl()}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`}
                     alt={previewFile.name}
                     className="max-h-full max-w-full object-contain shadow-2xl relative z-10" />
                 ) : isVideo(previewFile) ? (
@@ -2106,10 +2123,10 @@ function AdminFilesContent() {
                     controls
                     autoPlay
                     className="max-h-full w-full relative z-10 shadow-2xl"
-                    src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`} />
+                    src={`${getApiUrl()}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true`} />
                 ) : (previewFile.mimeType === 'application/pdf' || isConvertible(previewFile)) ? (
                   <iframe
-                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
+                    src={`https://docs.google.com/gview?url=${encodeURIComponent(`${getApiUrl()}/files/${previewFile.id}/download?downloadToken=${previewToken}&inline=true${isConvertible(previewFile) ? '&format=pdf' : ''}`)}&embedded=true`}
                     className="w-full h-full border-none relative z-10 bg-white" />
                 ) : (
                   <div className="flex flex-col items-center gap-6 text-gray-500 relative z-10">

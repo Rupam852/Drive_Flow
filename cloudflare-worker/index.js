@@ -54,8 +54,18 @@ export default {
 
     const cache = caches.default;
 
+    // Helper to build canonical cache key (stripping transient download tokens so repeat previews hit edge cache)
+    const getCacheKey = (targetUrl) => {
+      const u = new URL(targetUrl.toString());
+      if (isPreviewRequest) {
+        u.searchParams.delete("downloadToken");
+        u.searchParams.delete("token");
+      }
+      return new Request(u.toString(), { method: "GET" });
+    };
+
     if (isCacheableGet) {
-      const cacheKey = new Request(url.toString(), request);
+      const cacheKey = getCacheKey(url);
       let cachedResponse = await cache.match(cacheKey);
       if (cachedResponse) {
         // Return 0ms cached binary preview response from Cloudflare Edge
@@ -135,7 +145,7 @@ export default {
         status: response.status,
         headers: responseHeaders,
       });
-      ctx.waitUntil(cache.put(new Request(url.toString(), request), responseToCache));
+      ctx.waitUntil(cache.put(getCacheKey(url), responseToCache));
     }
 
     return response;
