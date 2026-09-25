@@ -1013,43 +1013,45 @@ const updateUserStatus = async (req, res) => {
             try {
                 const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
                 if (status === 'approved') {
-                    const approvedHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
-              <h2 style="color: #10b981; text-align: center; margin-bottom: 20px;">🎉 Account Approved!</h2>
-              <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${user.name}</strong>,</p>
-              <p style="font-size: 16px; color: #333; line-height: 1.6;">Great news! Your <strong>DriveFlow</strong> account has been successfully approved by our administrator team.</p>
-              <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <p style="font-size: 15px; color: #065f46; margin: 0; font-weight: bold;">Status: Approved & Active</p>
-                <p style="font-size: 14px; color: #047857; margin: 5px 0 0 0;">You now have full access to upload, manage, search, and share your files!</p>
+                    const approvedHtml = (0, mailer_1.buildDriveFlowEmailHtml)({
+                        title: 'Account Approved',
+                        userName: user.name,
+                        messageHtml: `
+              <p style="margin: 0 0 12px; font-size: 15px; color: #1e293b;">
+                Great news! Your <strong>DriveFlow</strong> account registration has been reviewed and approved by the administrator team.
+              </p>
+              <div style="background-color: #ecfdf5; border-left: 4px solid #10b981; padding: 14px 16px; margin: 16px 0; border-radius: 8px;">
+                <p style="font-size: 14px; color: #065f46; margin: 0; font-weight: 700;">Status: Approved &amp; Active</p>
+                <p style="font-size: 13px; color: #047857; margin: 4px 0 0 0;">You now have full access to upload, manage, and share your files.</p>
               </div>
-              <div style="text-align: center; margin: 25px 0;">
-                <a href="${frontendUrl}/login" style="background-color: #10b981; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; box-shadow: 0 4px 10px rgba(16,185,129,0.25); display: inline-block;">Login to your Dashboard</a>
-              </div>
-              <p style="font-size: 14px; color: #555; line-height: 1.6;">If you have any questions or require support, please don't hesitate to reach out.</p>
-              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
-              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Operations Team</p>
-            </div>
-          `;
-                    await (0, mailer_1.sendCustomEmail)(user.email, '[DriveFlow] Account Approved Successfully!', approvedHtml);
+              <p style="margin: 12px 0 0; font-size: 14px; color: #475569;">
+                You can now log in using your registered credentials.
+              </p>
+            `,
+                        buttonText: 'Log In to Workspace',
+                        buttonUrl: `${frontendUrl}/login`,
+                        noticeText: 'If you have any questions or require support, please contact the administrator.',
+                    });
+                    await (0, mailer_1.sendCustomEmail)(user.email, 'DriveFlow: Account approved', approvedHtml);
                 }
                 else if (status === 'rejected') {
-                    const rejectedHtml = `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px; background-color: #ffffff;">
-              <h2 style="color: #ef4444; text-align: center; margin-bottom: 20px;">Notice: Account Registration Declined</h2>
-              <p style="font-size: 16px; color: #333; line-height: 1.6;">Hello <strong>${user.name}</strong>,</p>
-              <p style="font-size: 16px; color: #333; line-height: 1.6;">Thank you for registering with <strong>DriveFlow</strong>. After careful review, our administrative team has declined your registration request at this time.</p>
-              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <p style="font-size: 15px; color: #991b1b; margin: 0; font-weight: bold;">Status: Registration Rejected</p>
-                <p style="font-size: 14px; color: #b91c1c; margin: 5px 0 0 0;">If you believe this is a misunderstanding, please contact our administrator support to resolve the issue.</p>
+                    const rejectedHtml = (0, mailer_1.buildDriveFlowEmailHtml)({
+                        title: 'Account Registration Update',
+                        userName: user.name,
+                        messageHtml: `
+              <p style="margin: 0 0 12px; font-size: 15px; color: #1e293b;">
+                Thank you for your interest in <strong>DriveFlow</strong>. After review by our administrative team, your registration request has been declined at this time.
+              </p>
+              <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 14px 16px; margin: 16px 0; border-radius: 8px;">
+                <p style="font-size: 14px; color: #991b1b; margin: 0; font-weight: 700;">Status: Registration Declined</p>
+                <p style="font-size: 13px; color: #b91c1c; margin: 4px 0 0 0;">If you believe this is a misunderstanding, please contact administrator support.</p>
               </div>
-              <div style="text-align: center; margin: 25px 0;">
-                <a href="mailto:rupambairagya08@gmail.com?subject=Rejection%20Inquiry" style="background-color: #ef4444; color: #ffffff; padding: 12px 24px; text-decoration: none; font-size: 15px; font-weight: bold; border-radius: 8px; display: inline-block;">Contact Administrator Support</a>
-              </div>
-              <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 25px 0;" />
-              <p style="font-size: 12px; color: #888; text-align: center; margin: 0;">DriveFlow Team</p>
-            </div>
-          `;
-                    await (0, mailer_1.sendCustomEmail)(user.email, 'DriveFlow: Update regarding your account registration', rejectedHtml);
+            `,
+                        buttonText: 'Contact Administrator Support',
+                        buttonUrl: 'mailto:rupambairagya08@gmail.com?subject=Registration%20Inquiry',
+                        noticeText: 'This automated notification was sent from DriveFlow Administration.',
+                    });
+                    await (0, mailer_1.sendCustomEmail)(user.email, 'DriveFlow: Account registration update', rejectedHtml);
                 }
             }
             catch (err) {

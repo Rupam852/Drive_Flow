@@ -54,8 +54,18 @@ export async function POST(request: Request) {
       socketTimeout: 10000,
     } as any);
 
+function cleanEmailSubject(subject: string): string {
+  if (!subject) return 'DriveFlow Notification';
+  let clean = subject.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}]/gu, '');
+  clean = clean.replace(/[!\[\]]/g, '').trim();
+  clean = clean.replace(/^driveflow[:\s-]*/i, '').trim();
+  clean = clean.replace(/\s+/g, ' ').trim();
+  return clean ? `DriveFlow: ${clean}` : 'DriveFlow Notification';
+}
+
     const isOtp = !!otp;
-    const finalSubject = subject || (isOtp ? `DriveFlow: Your verification code is ${otp}` : 'DriveFlow Notification');
+    const rawSubject = subject || (isOtp ? `DriveFlow: Your verification code is ${otp}` : 'DriveFlow Notification');
+    const finalSubject = cleanEmailSubject(rawSubject);
 
     const defaultOtpHtml = `<!DOCTYPE html>
 <html lang="en">

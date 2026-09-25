@@ -29,6 +29,91 @@ function htmlToPlainText(html: string): string {
     .trim();
 }
 
+export function cleanEmailSubject(subject: string): string {
+  if (!subject) return 'DriveFlow Notification';
+  // 1. Strip all unicode emojis (e.g. 🚀, 🛠️, 🎉, etc.)
+  let clean = subject.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}]/gu, '');
+  // 2. Strip brackets and exclamation marks that trigger spam filters
+  clean = clean.replace(/[!\[\]]/g, '').trim();
+  // 3. Normalize leading brand prefix
+  clean = clean.replace(/^driveflow[:\s-]*/i, '').trim();
+  clean = clean.replace(/\s+/g, ' ').trim();
+  return clean ? `DriveFlow: ${clean}` : 'DriveFlow Notification';
+}
+
+export function buildDriveFlowEmailHtml({
+  title,
+  userName,
+  messageHtml,
+  buttonText,
+  buttonUrl,
+  noticeText
+}: {
+  title: string;
+  userName?: string;
+  messageHtml: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  noticeText?: string;
+}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 15px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);" cellspacing="0" cellpadding="0">
+          <tr>
+            <td style="padding: 26px 32px 20px; text-align: center; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);">
+              <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">DriveFlow</h1>
+              <p style="margin: 4px 0 0; color: #e9d5ff; font-size: 13px; font-weight: 500;">Secure Cloud Storage</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 32px 32px 24px; color: #1e293b;">
+              <h2 style="margin: 0 0 12px; font-size: 18px; font-weight: 700; color: #0f172a;">${title}</h2>
+              <p style="margin: 0 0 16px; font-size: 14px; line-height: 22px; color: #475569;">
+                Hello ${userName || 'User'},
+              </p>
+              
+              <div style="font-size: 14px; line-height: 22px; color: #334155; margin: 16px 0;">
+                ${messageHtml}
+              </div>
+
+              ${buttonText && buttonUrl ? `
+                <div style="text-align: center; margin: 26px 0 14px;">
+                  <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 600; display: inline-block; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
+                    ${buttonText}
+                  </a>
+                </div>
+              ` : ''}
+
+              ${noticeText ? `
+                <p style="margin: 20px 0 0; font-size: 12px; line-height: 18px; color: #94a3b8;">
+                  ${noticeText}
+                </p>
+              ` : ''}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; line-height: 16px; color: #94a3b8;">
+              <p style="margin: 0 0 4px;">&copy; ${new Date().getFullYear()} DriveFlow. All rights reserved.</p>
+              <p style="margin: 0;">This automated notification was sent to your registered DriveFlow account.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 const sendDirectEmail = async (to: string, subject: string, html: string, text?: string) => {
   if (!process.env.MAILER_EMAIL || !process.env.MAILER_PASS) {
     throw new Error('Direct mailer credentials not configured');
@@ -52,13 +137,14 @@ const sendDirectEmail = async (to: string, subject: string, html: string, text?:
     socketTimeout: 15000,
   } as any);
 
+  const cleanSubj = cleanEmailSubject(subject);
   const plainText = text || htmlToPlainText(html);
 
   await transporter.sendMail({
     from: `"DriveFlow" <${process.env.MAILER_EMAIL}>`,
     replyTo: process.env.MAILER_EMAIL,
     to,
-    subject,
+    subject: cleanSubj,
     text: plainText,
     html,
     headers: {
@@ -155,13 +241,14 @@ export const sendOtpEmail = async (to: string, otp: string) => {
 };
 
 export const sendCustomEmail = async (to: string, subject: string, html: string) => {
+  const cleanSubj = cleanEmailSubject(subject);
   try {
     const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
     
     // Call the Vercel frontend API to send the custom email
     await axios.post(
       `${frontendUrl}/api/send-email`,
-      { to, subject, html },
+      { to, subject: cleanSubj, html },
       {
         headers: {
           'x-api-key': getApiKey(),
@@ -175,7 +262,7 @@ export const sendCustomEmail = async (to: string, subject: string, html: string)
   } catch (error: any) {
     console.warn(`Vercel relay failed for custom email to ${to}, attempting direct Nodemailer fallback:`, error?.message);
     try {
-      await sendDirectEmail(to, subject, html);
+      await sendDirectEmail(to, cleanSubj, html);
       console.log(`Custom email sent directly to ${to} via direct Nodemailer`);
     } catch (fallbackError: any) {
       console.error(`Error sending custom email to ${to}:`, fallbackError?.message);

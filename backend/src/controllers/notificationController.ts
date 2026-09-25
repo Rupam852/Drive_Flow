@@ -3,7 +3,7 @@ import { Notification } from '../models/Notification';
 import { User } from '../models/User';
 import { DeviceToken } from '../models/DeviceToken';
 import { logActivity } from '../utils/logger';
-import { sendCustomEmail } from '../utils/mailer';
+import { sendCustomEmail, buildDriveFlowEmailHtml, cleanEmailSubject } from '../utils/mailer';
 import { sendPushNotification, getFirebaseStatus } from '../utils/firebase';
 
 // @desc    Get in-app notifications for the logged-in user
@@ -199,22 +199,34 @@ export const createAdminNotification = async (req: Request, res: Response) => {
             recipients = users.map(u => ({ email: u.email, name: u.name }));
           }
 
-          const cleanSubject = title.trim();
+          const cleanSubject = cleanEmailSubject(title.trim());
           const cleanBody = message.trim().replace(/\n/g, '<br/>');
+          const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
+
+          let buttonUrl: string | undefined = undefined;
+          let buttonText: string | undefined = undefined;
+
+          if (link && typeof link === 'string' && link.trim().startsWith('http')) {
+            const isDirectBinary = link.toLowerCase().includes('.apk') || link.toLowerCase().includes('pages.dev');
+            if (isDirectBinary) {
+              buttonUrl = `${frontendUrl}/user/notifications`;
+              buttonText = 'Open App to Update';
+            } else {
+              buttonUrl = link.trim();
+              buttonText = 'View Details';
+            }
+          }
 
           for (const r of recipients) {
             try {
-              const html = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
-                  <h2 style="color: #6366f1; text-align: center;">${cleanSubject}</h2>
-                  <p>Hello ${r.name || 'User'},</p>
-                  <div style="background-color: #f8fafc; border-left: 4px solid #6366f1; padding: 15px; margin: 15px 0;">
-                    ${cleanBody}
-                  </div>
-                  ${link ? `<p><a href="${link}" style="background-color: #6366f1; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 8px; display: inline-block;">Open Link</a></p>` : ''}
-                  <p style="font-size: 12px; color: #94a3b8; text-align: center;">DriveFlow Team</p>
-                </div>
-              `;
+              const html = buildDriveFlowEmailHtml({
+                title: cleanSubject.replace(/^DriveFlow:\s*/i, ''),
+                userName: r.name || 'User',
+                messageHtml: `<div style="font-size: 14px; line-height: 22px; color: #334155;">${cleanBody}</div>`,
+                buttonText,
+                buttonUrl,
+                noticeText: 'This automated notification was sent to your registered DriveFlow account.',
+              });
               await sendCustomEmail(r.email, cleanSubject, html);
             } catch (mailErr) {
               console.warn(`Failed sending email to ${r.email}:`, mailErr);

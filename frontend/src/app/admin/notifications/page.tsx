@@ -36,27 +36,27 @@ interface AdminNotificationItem {
 const TEMPLATES = [
   {
     name: '🚀 App Update Announcement',
-    subject: '🚀 New App Update Available: Download Latest DriveFlow Version',
-    message: `Hello,\n\nA brand new update for the DriveFlow Android App is now available for download!\n\n🌟 What's New in This Version:\n• Smart Offline Detection: Instant internet connection monitoring with auto-recovery and retry\n• Ultra-Smooth 120Hz Display Support: Unlocked high refresh-rate animations and navigation\n• Cloud Sync & Transfer Upgrades: Faster, more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and comfortable viewing experience across all screens\n\n📲 How to Get the Update:\n1. If you have the app installed: Open DriveFlow, open the sidebar menu, and tap 'App Update' to install instantly.\n2. Direct APK Download: You can download the latest official APK directly from:\nhttps://neo-files-transfer.pages.dev/download/723586892fd0\n\nUpdate now to enjoy the fastest and smoothest cloud experience.\n\nBest regards,\nDriveFlow Operations Team`,
+    subject: 'DriveFlow: New app update available',
+    message: `Hello,\n\nA new update for the DriveFlow Android App is now available!\n\nWhat's New in This Version:\n• Smart Offline Detection: Instant connection monitoring with automatic reconnection\n• High Refresh-Rate Support: Smoother navigation and animations\n• Transfer Upgrades: Faster and more reliable uploads and downloads\n• Dark & Light Mode Polish: Clean and clear visual experience\n\nHow to Get the Update:\n1. In the DriveFlow Android app: Open the sidebar menu and tap 'App Update'.\n2. Web Portal: Log in at https://driveflowrupam.vercel.app/user/notifications\n\nBest regards,\nDriveFlow Operations Team`,
   },
   {
     name: '📢 New Feature',
-    subject: 'Exciting New Features Are Live on DriveFlow! 🚀',
-    message: `Hello,\n\nWe are thrilled to announce that brand new enhancements and performance upgrades have just rolled out to DriveFlow!\n\nWhat's new:\n• Faster upload speeds and enhanced cloud stability\n• Improved file preview and search capabilities\n• Seamless mobile app performance\n\nLog in now to explore the latest updates.\n\nBest regards,\nDriveFlow Team`,
+    subject: 'DriveFlow: New features and enhancements',
+    message: `Hello,\n\nWe have rolled out new enhancements and performance improvements to your DriveFlow workspace.\n\nWhat's new:\n• Faster upload speeds and enhanced cloud stability\n• Improved file preview and search capabilities\n• Seamless mobile app performance\n\nLog in to your account to explore the latest updates.\n\nBest regards,\nDriveFlow Team`,
   },
   {
     name: '⚠️ Scheduled Maintenance',
-    subject: 'Scheduled System Maintenance Notice 🛠️',
-    message: `Hello,\n\nPlease be advised that DriveFlow will undergo scheduled server maintenance to improve security, infrastructure resilience, and cloud performance.\n\n• Date: This weekend\n• Duration: Approximately 30-45 minutes\n\nDuring this brief window, file synchronization may experience temporary delays. Your data remains fully secure and encrypted.\n\nThank you for your patience and support.\n\nBest regards,\nDriveFlow Operations Team`,
+    subject: 'DriveFlow: Scheduled system maintenance',
+    message: `Hello,\n\nPlease be advised that DriveFlow will undergo scheduled server maintenance to improve security, infrastructure resilience, and cloud performance.\n\n• Date: This weekend\n• Duration: Approximately 30-45 minutes\n\nDuring this brief window, file synchronization may experience temporary delays. Your data remains fully secure and encrypted.\n\nThank you for your patience.\n\nBest regards,\nDriveFlow Operations Team`,
   },
   {
     name: '🔒 Security Advisory',
-    subject: 'Important Security Update from DriveFlow',
-    message: `Hello,\n\nAt DriveFlow, your privacy and data security are our top priorities. We regularly review our safety protocols to ensure complete end-to-end protection for all stored files.\n\nSecurity Reminders:\n• Never share your account password or verification codes with anyone.\n• Ensure you download the official DriveFlow application from trusted sources.\n• Review your active login sessions if you access your account on shared devices.\n\nIf you notice any unusual activity, please contact support immediately.\n\nBest regards,\nDriveFlow Security Operations`,
+    subject: 'DriveFlow: Important security update',
+    message: `Hello,\n\nAt DriveFlow, your privacy and data security are our top priorities. We regularly review our safety protocols to ensure complete protection for all stored files.\n\nSecurity Reminders:\n• Never share your account password or verification codes with anyone.\n• Review active login sessions if you access your account on shared devices.\n\nIf you notice any unusual activity, please contact support immediately.\n\nBest regards,\nDriveFlow Security Operations`,
   },
   {
     name: '📁 Storage Notice',
-    subject: 'DriveFlow Cloud Storage & File Notice',
+    subject: 'DriveFlow: Storage and account update',
     message: `Hello,\n\nWe wanted to share an update regarding cloud storage and system optimizations on DriveFlow. Our team has tuned storage performance to make your uploads, sharing, and downloads smoother than ever.\n\nFeel free to organize your folders, review shared items, and enjoy high-speed cloud access across all your devices.\n\nBest regards,\nDriveFlow Team`,
   },
 ];
