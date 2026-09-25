@@ -45,19 +45,30 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   } = useAppUpdater();
   const [authorized, setAuthorized] = useState(() => {
     if (typeof window === 'undefined') return true;
-    return !!(localStorage.getItem('token_admin') || localStorage.getItem('token'));
+    const adminToken = localStorage.getItem('token_admin');
+    const role = localStorage.getItem('role');
+    const genericToken = localStorage.getItem('token');
+    return !!(adminToken || (genericToken && role === 'admin'));
   });
   const router = useRouter();
   const pathname = usePathname();
 
-  // Combined Mount & Auth Check (Client-only)
+  // Combined Mount & Auth Check (Client-only with Strict Role Verification)
   useEffect(() => {
     try {
       setIsNativeApp(!!(window as any).Capacitor?.isNativePlatform?.());
-      const token = localStorage.getItem('token_admin') || localStorage.getItem('token');
-      if (token) {
+      const adminToken = localStorage.getItem('token_admin');
+      const role = localStorage.getItem('role');
+      const genericToken = localStorage.getItem('token');
+      const isAdmin = !!(adminToken || (genericToken && role === 'admin'));
+
+      if (isAdmin) {
         setAuthorized(true);
+      } else if (genericToken || localStorage.getItem('token_user')) {
+        // Normal user attempting to access admin route -> Bounce immediately to user dashboard
+        router.replace('/user/dashboard');
       } else {
+        // Unauthenticated visitor -> Redirect to login
         router.replace('/login');
       }
     } catch (e) {
