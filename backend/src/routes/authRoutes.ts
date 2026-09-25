@@ -7,7 +7,8 @@ import {
   getAppVersion,
   getProfile,
   updateProfile,
-  changePassword,
+  sendPasswordOtp,
+  verifyPasswordOtp,
   googleAuth
 } from '../controllers/authController';
 import { forgotPassword, resetPassword } from '../controllers/passwordController';
@@ -26,6 +27,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, updateProfile);
-router.post('/change-password', protect, changePassword);
+router.post('/send-password-otp', protect, sendPasswordOtp);
+router.post('/verify-password-otp', protect, verifyPasswordOtp);
 
 export default router;

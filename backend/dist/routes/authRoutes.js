@@ -19,6 +19,7 @@ router.post('/forgot-password', passwordController_1.forgotPassword);
 router.post('/reset-password', passwordController_1.resetPassword);
 router.get('/profile', authMiddleware_1.protect, authController_1.getProfile);
 router.put('/profile', authMiddleware_1.protect, authController_1.updateProfile);
-router.post('/change-password', authMiddleware_1.protect, authController_1.changePassword);
+router.post('/send-password-otp', authMiddleware_1.protect, authController_1.sendPasswordOtp);
+router.post('/verify-password-otp', authMiddleware_1.protect, authController_1.verifyPasswordOtp);
 exports.default = router;
 //# sourceMappingURL=authRoutes.js.map

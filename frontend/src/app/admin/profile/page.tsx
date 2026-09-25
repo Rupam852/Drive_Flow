@@ -5,11 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Mail, Shield, Camera, Edit2, Check, X, Key,
   AlertCircle, RefreshCw, CheckCircle2, Lock, Eye, EyeOff,
-  Calendar, Sparkles, Send, ExternalLink
+  Sparkles, Send, ShieldCheck, Timer
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import CloudLogo from '@/components/CloudLogo';
 
 interface AdminProfileData {
   _id: string;
@@ -37,18 +36,19 @@ export default function AdminProfilePage() {
   // Upload Avatar State
   const [uploadingPic, setUploadingPic] = useState(false);
 
-  // Change Password State
-  const [currentPassword, setCurrentPassword] = useState('');
+  // OTP-Protected Password Change State
+  const [otpStep, setOtpStep] = useState<'idle' | 'otp_sent'>('idle');
+  const [enteredOtp, setEnteredOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Forgot Password / Reset Link State
   const [sendingResetLink, setSendingResetLink] = useState(false);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
-  const [resetSentSuccess, setResetSentSuccess] = useState(false);
 
   // Feedback Alerts
   const [statusMessage, setStatusMessage] = useState<{
@@ -60,8 +60,17 @@ export default function AdminProfilePage() {
     setStatusMessage({ type, text });
     setTimeout(() => {
       setStatusMessage(null);
-    }, 5000);
+    }, 6000);
   };
+
+  // Resend Cooldown Timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // Fetch live profile from backend
   const fetchProfile = async () => {
@@ -71,7 +80,6 @@ export default function AdminProfilePage() {
         setProfile(res.data);
         setNameInput(res.data.name || '');
 
-        // Sync local storage user cache
         const localUserStr = localStorage.getItem('user');
         if (localUserStr) {
           const parsed = JSON.parse(localUserStr);
@@ -113,7 +121,6 @@ export default function AdminProfilePage() {
       setProfile((prev) => (prev ? { ...prev, name: updated.name } : null));
       setIsEditingName(false);
 
-      // Sync local storage
       const localUserStr = localStorage.getItem('user');
       if (localUserStr) {
         const parsed = JSON.parse(localUserStr);
@@ -146,7 +153,6 @@ export default function AdminProfilePage() {
     setUploadingPic(true);
 
     try {
-      // Compress and resize image to compact canvas Data URL
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (event) => {
@@ -186,13 +192,11 @@ export default function AdminProfilePage() {
         reader.readAsDataURL(file);
       });
 
-      // Save to backend
       const res = await api.put('/auth/profile', { profilePic: dataUrl });
       const updated = res.data.user;
 
       setProfile((prev) => (prev ? { ...prev, profilePic: updated.profilePic } : null));
 
-      // Sync local storage
       const localUserStr = localStorage.getItem('user');
       if (localUserStr) {
         const parsed = JSON.parse(localUserStr);
@@ -233,9 +237,29 @@ export default function AdminProfilePage() {
     }
   };
 
-  // Change Password
-  const handleChangePassword = async (e: React.FormEvent) => {
+  // Step 1: Send OTP to Admin's Email
+  const handleSendPasswordOtp = async () => {
+    setSendingOtp(true);
+    try {
+      const res = await api.post('/auth/send-password-otp');
+      setOtpStep('otp_sent');
+      setResendCooldown(60);
+      showStatus('success', res.data?.message || `6-digit OTP code has been sent to ${profile?.email}`);
+    } catch (err: any) {
+      showStatus('error', err.response?.data?.message || 'Failed to send OTP code. Please try again.');
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  // Step 2: Verify OTP and Change Password
+  const handleVerifyOtpAndChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!enteredOtp || enteredOtp.trim().length !== 6) {
+      showStatus('error', 'Please enter the valid 6-digit OTP received in your email.');
+      return;
+    }
 
     if (!newPassword || newPassword.length < 6 || newPassword.length > 9) {
       showStatus('error', 'New password must be between 6 and 9 characters long.');
@@ -247,25 +271,26 @@ export default function AdminProfilePage() {
       return;
     }
 
-    setSavingPassword(true);
+    setVerifyingOtp(true);
     try {
-      await api.post('/auth/change-password', {
-        currentPassword: currentPassword || undefined,
+      const res = await api.post('/auth/verify-password-otp', {
+        otp: enteredOtp.trim(),
         newPassword,
       });
 
-      showStatus('success', 'Password updated successfully! Keep your new credentials safe.');
-      setCurrentPassword('');
+      showStatus('success', res.data?.message || 'Password verified and updated successfully via Email OTP!');
+      setOtpStep('idle');
+      setEnteredOtp('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: any) {
-      showStatus('error', err.response?.data?.message || 'Failed to change password.');
+      showStatus('error', err.response?.data?.message || 'Invalid or expired OTP. Please try again.');
     } finally {
-      setSavingPassword(false);
+      setVerifyingOtp(false);
     }
   };
 
-  // Trigger Forgot Password (Send Reset Email)
+  // Trigger Forgot Password (Send Reset Email Link)
   const handleTriggerForgotPassword = async () => {
     if (!profile?.email) return;
 
@@ -273,7 +298,6 @@ export default function AdminProfilePage() {
     try {
       await api.post('/auth/forgot-password', { email: profile.email });
       setShowResetConfirmModal(false);
-      setResetSentSuccess(true);
       showStatus('success', `Password reset link sent to ${profile.email}! Check your inbox.`);
     } catch (err: any) {
       showStatus('error', err.response?.data?.message || 'Failed to send reset email.');
@@ -311,7 +335,7 @@ export default function AdminProfilePage() {
           Admin Profile
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Manage your administrator identity, profile photo, and security credentials.
+          Manage your administrator identity, profile photo, and OTP-secured credentials.
         </p>
       </div>
 
@@ -473,111 +497,168 @@ export default function AdminProfilePage() {
         <div className="mt-6 pt-5 border-t border-slate-100 dark:border-white/10 flex items-start gap-2.5 text-xs text-slate-500 dark:text-slate-400">
           <Sparkles className="w-4 h-4 text-purple-500 shrink-0 mt-0.5" />
           <p className="leading-relaxed">
-            <strong>Cross-Login Profile Picture Sync:</strong> Agar aap Google se login karte hain, toh aapki Google profile picture automatically yaha save ho jati hai. Uske baad agar aap password se bhi login karenge, toh wahi photo hamesha dikhayi degi. Aap chahe toh kabhi bhi upar se nayi photo bhi upload kar sakte hain.
+            <strong>Cross-Login Profile Picture Sync:</strong> Agar aap Google se login karte hain, toh aapki Google profile picture automatically yaha save ho jati hai. Uske baad password se login karne par bhi wahi photo hamesha dikhegi.
           </p>
         </div>
       </div>
 
       {/* Grid: Security & Password Settings */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Card 1: Change Password Directly */}
+        {/* Card 1: OTP-Verified Password Change (MANDATORY EMAIL VERIFICATION) */}
         <div className="bg-white dark:bg-[#121626] border border-slate-200/80 dark:border-white/10 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/20">
-                <Lock className="w-5 h-5" />
+                <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                  Change Password
+                  Change Password (OTP Protected)
                 </h4>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Update your admin login password (6 to 9 characters).
+                  Password change requires mandatory 6-digit email OTP verification.
                 </p>
               </div>
             </div>
 
-            <form onSubmit={handleChangePassword} className="space-y-3 pt-2">
-              {/* Current Password (optional if purely google, but recommended) */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Current Password
-                </label>
-                <div className="relative">
-                  <input
-                    type={showCurrentPass ? 'text' : 'password'}
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-purple-500 pr-10"
-                  />
+            {otpStep === 'idle' ? (
+              /* Step 1: Request OTP State */
+              <div className="space-y-4 pt-2">
+                <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/20 border border-purple-200/60 dark:border-purple-900/30 text-xs text-purple-900 dark:text-purple-300 space-y-2">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Lock className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                    <span>Two-Step Security Requirement</span>
+                  </div>
+                  <p className="leading-relaxed text-purple-800/90 dark:text-purple-300/80">
+                    Aap direct password change nahi kar sakte. Security ke liye pehle aapke registered email (<strong>{profile?.email}</strong>) par 6-digit OTP code bheja jayega. Us code ko enter karke hi naya password set hoga.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSendPasswordOtp}
+                  disabled={sendingOtp}
+                  className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-md shadow-purple-500/20 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {sendingOtp ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Sending OTP to {profile?.email}...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Send Verification OTP to Email</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            ) : (
+              /* Step 2: Enter OTP & Set New Password */
+              <form onSubmit={handleVerifyOtpAndChangePassword} className="space-y-3 pt-1">
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
+                  <div className="flex items-center gap-2 truncate">
+                    <Mail className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="truncate">OTP sent to <strong>{profile?.email}</strong></span>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => setShowCurrentPass(!showCurrentPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                    onClick={() => setOtpStep('idle')}
+                    className="text-[11px] underline text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white shrink-0 ml-2"
                   >
-                    {showCurrentPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    Cancel
                   </button>
                 </div>
-              </div>
 
-              {/* New Password */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  New Password (6-9 chars)
-                </label>
-                <div className="relative">
+                {/* 6-Digit OTP Code */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Enter 6-Digit Email OTP
+                  </label>
                   <input
-                    type={showNewPass ? 'text' : 'password'}
-                    value={newPassword}
+                    type="text"
+                    maxLength={6}
+                    value={enteredOtp}
+                    onChange={(e) => setEnteredOtp(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Enter 6-digit code (e.g. 542918)"
+                    className="w-full px-3.5 py-2.5 text-center font-mono text-base tracking-widest bg-slate-50 dark:bg-white/5 border border-purple-300 dark:border-purple-500/40 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-purple-500 font-bold"
+                    autoFocus
+                  />
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    New Password (6-9 characters)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPass ? 'text' : 'password'}
+                      value={newPassword}
+                      maxLength={9}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter new 6-9 character password"
+                      className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-purple-500 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPass(!showNewPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                    >
+                      {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
                     maxLength={9}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new 6-9 character password"
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-purple-500 pr-10"
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-purple-500"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowNewPass(!showNewPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-                  >
-                    {showNewPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
-              </div>
 
-              {/* Confirm Password */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Confirm New Password
-                </label>
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  maxLength={9}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter new password"
-                  className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-purple-500"
-                />
-              </div>
+                {/* Submit & Resend Controls */}
+                <div className="pt-2 space-y-2">
+                  <button
+                    type="submit"
+                    disabled={verifyingOtp || enteredOtp.length !== 6 || !newPassword || !confirmPassword}
+                    className="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-md shadow-purple-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    {verifyingOtp ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Verifying OTP & Updating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Verify OTP & Update Password</span>
+                      </>
+                    )}
+                  </button>
 
-              <button
-                type="submit"
-                disabled={savingPassword || !newPassword || !confirmPassword}
-                className="w-full mt-2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-xs font-bold transition-all shadow-md shadow-purple-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                {savingPassword ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Updating Password...</span>
-                  </>
-                ) : (
-                  <>
-                    <Key className="w-3.5 h-3.5" />
-                    <span>Update Password</span>
-                  </>
-                )}
-              </button>
-            </form>
+                  <div className="flex items-center justify-between text-[11px] pt-1 text-slate-500">
+                    <span>Didn&apos;t receive code?</span>
+                    <button
+                      type="button"
+                      onClick={handleSendPasswordOtp}
+                      disabled={resendCooldown > 0 || sendingOtp}
+                      className="text-purple-600 dark:text-purple-400 hover:underline font-semibold disabled:opacity-50 disabled:no-underline cursor-pointer"
+                    >
+                      {resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : 'Resend Code'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
           </div>
         </div>
 
@@ -600,7 +681,7 @@ export default function AdminProfilePage() {
 
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/60 dark:border-white/10 space-y-2">
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Agar aap apna password bhool gaye hain ya security reason se link ke zariye password reset karna chahte hain, toh yaha se direct reset link generate karke apne email par receive kar sakte hain:
+                Agar aap apna purana password bhool gaye hain, toh aap yaha se apne registered email address par password reset link bhej sakte hain:
               </p>
               <div className="p-2.5 rounded-xl bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 flex items-center gap-2 text-xs font-mono text-slate-800 dark:text-slate-200">
                 <Mail className="w-3.5 h-3.5 text-purple-500 shrink-0" />

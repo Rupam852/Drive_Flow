@@ -48,6 +48,8 @@ const userSchema = new mongoose_1.Schema({
     isEmailVerified: { type: Boolean, default: false },
     emailVerificationOtp: { type: String },
     otpExpires: { type: Date },
+    passwordResetOtp: { type: String },
+    passwordResetOtpExpires: { type: Date },
     googleId: { type: String },
     profilePic: { type: String },
 }, { timestamps: true });

@@ -270,3 +270,30 @@ export const sendCustomEmail = async (to: string, subject: string, html: string)
     }
   }
 };
+
+export const sendPasswordChangeOtpEmail = async (to: string, otp: string, userName: string = 'User') => {
+  const subject = `DriveFlow: Your Password Change Verification Code is ${otp}`;
+  const html = buildDriveFlowEmailHtml({
+    title: 'Password Change Verification',
+    userName,
+    messageHtml: `
+      <p style="margin: 0 0 12px; font-size: 14px; line-height: 22px; color: #334155;">
+        You recently requested to update your account password for <strong>DriveFlow</strong>. Please enter the following 6-digit one-time verification code (OTP) to verify your identity:
+      </p>
+      <div style="background-color: #f5f3ff; border: 1.5px dashed #a855f7; border-radius: 12px; padding: 18px; text-align: center; margin: 20px 0;">
+        <span style="font-family: 'Courier New', Courier, monospace; font-size: 34px; font-weight: 800; letter-spacing: 8px; color: #7c3aed; display: inline-block;">
+          ${otp}
+        </span>
+      </div>
+      <p style="margin: 0 0 8px; font-size: 13px; color: #64748b;">
+        This code is valid for <strong>10 minutes</strong>. Never share this code with anyone.
+      </p>
+      <p style="margin: 0; font-size: 12px; color: #94a3b8;">
+        If you did not initiate this password change, please contact administration immediately.
+      </p>
+    `,
+    noticeText: 'This automated security verification was sent to verify your password change request.',
+  });
+
+  return sendCustomEmail(to, subject, html);
+};

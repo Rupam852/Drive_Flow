@@ -6,7 +6,7 @@ import path from 'path';
 import { User, IUser } from '../models/User';
 import { logActivity } from '../utils/logger';
 import { ActivityLog } from '../models/ActivityLog';
-import { sendOtpEmail, sendCustomEmail, buildDriveFlowEmailHtml, cleanEmailSubject } from '../utils/mailer';
+import { sendOtpEmail, sendCustomEmail, buildDriveFlowEmailHtml, cleanEmailSubject, sendPasswordChangeOtpEmail } from '../utils/mailer';
 import crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
 
@@ -359,12 +359,11 @@ export const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Change password for authenticated user
-// @route   POST /api/auth/change-password
+// @desc    Send OTP to authenticated user's email for password change
+// @route   POST /api/auth/send-password-otp
 // @access  Private
-export const changePassword = async (req: Request, res: Response) => {
+export const sendPasswordOtp = async (req: Request, res: Response) => {
   try {
-    const { currentPassword, newPassword } = req.body;
     const userId = (req as any).user?._id;
     const user = await User.findById(userId);
 
@@ -373,27 +372,69 @@ export const changePassword = async (req: Request, res: Response) => {
       return;
     }
 
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.passwordResetOtp = otp;
+    user.passwordResetOtpExpires = otpExpires;
+    await user.save();
+
+    await sendPasswordChangeOtpEmail(user.email, otp, user.name);
+
+    res.json({
+      success: true,
+      message: `A 6-digit verification code has been sent to ${user.email}.`,
+      email: user.email,
+    });
+  } catch (error) {
+    res.status(500).json({ message: (error as Error).message });
+  }
+};
+
+// @desc    Verify OTP and change password for authenticated user
+// @route   POST /api/auth/verify-password-otp
+// @access  Private
+export const verifyPasswordOtp = async (req: Request, res: Response) => {
+  try {
+    const { otp, newPassword } = req.body;
+    const userId = (req as any).user?._id;
+
+    if (!otp || !otp.trim()) {
+      res.status(400).json({ message: 'Please enter the 6-digit verification code sent to your email.' });
+      return;
+    }
+
     if (!newPassword || newPassword.length < 6 || newPassword.length > 9) {
       res.status(400).json({ message: 'Password must be between 6 and 9 characters long.' });
       return;
     }
 
-    // Verify current password if user has password set
-    if (user.passwordHash && currentPassword) {
-      const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
-      if (!isMatch) {
-        res.status(400).json({ message: 'Current password does not match.' });
-        return;
-      }
+    const user = await User.findById(userId);
+
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    if (!user.passwordResetOtp || user.passwordResetOtp !== otp.trim()) {
+      res.status(400).json({ message: 'Invalid verification code. Please check your email and try again.' });
+      return;
+    }
+
+    if (!user.passwordResetOtpExpires || user.passwordResetOtpExpires < new Date()) {
+      res.status(400).json({ message: 'Verification code has expired. Please request a new code.' });
+      return;
     }
 
     const salt = await bcrypt.genSalt(10);
     user.passwordHash = await bcrypt.hash(newPassword, salt);
+    user.passwordResetOtp = undefined;
+    user.passwordResetOtpExpires = undefined;
     await user.save();
 
-    await logActivity(user._id.toString(), 'change_password', `Password changed successfully for ${user.email}`);
+    await logActivity(user._id.toString(), 'change_password_otp', `Password changed via email OTP verification for ${user.email}`);
 
-    res.json({ success: true, message: 'Password changed successfully.' });
+    res.json({ success: true, message: 'Password has been successfully verified and changed!' });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
   }

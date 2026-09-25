@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.googleAuth = exports.changePassword = exports.updateProfile = exports.getProfile = exports.getAppVersion = exports.seedAdmin = exports.resendOtp = exports.verifyEmail = exports.loginUser = exports.registerUser = void 0;
+exports.googleAuth = exports.verifyPasswordOtp = exports.sendPasswordOtp = exports.updateProfile = exports.getProfile = exports.getAppVersion = exports.seedAdmin = exports.resendOtp = exports.verifyEmail = exports.loginUser = exports.registerUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const fs_1 = __importDefault(require("fs"));
@@ -341,41 +341,75 @@ const updateProfile = async (req, res) => {
     }
 };
 exports.updateProfile = updateProfile;
-// @desc    Change password for authenticated user
-// @route   POST /api/auth/change-password
+// @desc    Send OTP to authenticated user's email for password change
+// @route   POST /api/auth/send-password-otp
 // @access  Private
-const changePassword = async (req, res) => {
+const sendPasswordOtp = async (req, res) => {
     try {
-        const { currentPassword, newPassword } = req.body;
         const userId = req.user?._id;
         const user = await User_1.User.findById(userId);
         if (!user) {
             res.status(404).json({ message: 'User not found' });
             return;
         }
-        if (!newPassword || newPassword.length < 6 || newPassword.length > 9) {
-            res.status(400).json({ message: 'Password must be between 6 and 9 characters long.' });
-            return;
-        }
-        // Verify current password if user has password set
-        if (user.passwordHash && currentPassword) {
-            const isMatch = await bcryptjs_1.default.compare(currentPassword, user.passwordHash);
-            if (!isMatch) {
-                res.status(400).json({ message: 'Current password does not match.' });
-                return;
-            }
-        }
-        const salt = await bcryptjs_1.default.genSalt(10);
-        user.passwordHash = await bcryptjs_1.default.hash(newPassword, salt);
+        const otp = crypto_1.default.randomInt(100000, 999999).toString();
+        const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+        user.passwordResetOtp = otp;
+        user.passwordResetOtpExpires = otpExpires;
         await user.save();
-        await (0, logger_1.logActivity)(user._id.toString(), 'change_password', `Password changed successfully for ${user.email}`);
-        res.json({ success: true, message: 'Password changed successfully.' });
+        await (0, mailer_1.sendPasswordChangeOtpEmail)(user.email, otp, user.name);
+        res.json({
+            success: true,
+            message: `A 6-digit verification code has been sent to ${user.email}.`,
+            email: user.email,
+        });
     }
     catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
-exports.changePassword = changePassword;
+exports.sendPasswordOtp = sendPasswordOtp;
+// @desc    Verify OTP and change password for authenticated user
+// @route   POST /api/auth/verify-password-otp
+// @access  Private
+const verifyPasswordOtp = async (req, res) => {
+    try {
+        const { otp, newPassword } = req.body;
+        const userId = req.user?._id;
+        if (!otp || !otp.trim()) {
+            res.status(400).json({ message: 'Please enter the 6-digit verification code sent to your email.' });
+            return;
+        }
+        if (!newPassword || newPassword.length < 6 || newPassword.length > 9) {
+            res.status(400).json({ message: 'Password must be between 6 and 9 characters long.' });
+            return;
+        }
+        const user = await User_1.User.findById(userId);
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+        if (!user.passwordResetOtp || user.passwordResetOtp !== otp.trim()) {
+            res.status(400).json({ message: 'Invalid verification code. Please check your email and try again.' });
+            return;
+        }
+        if (!user.passwordResetOtpExpires || user.passwordResetOtpExpires < new Date()) {
+            res.status(400).json({ message: 'Verification code has expired. Please request a new code.' });
+            return;
+        }
+        const salt = await bcryptjs_1.default.genSalt(10);
+        user.passwordHash = await bcryptjs_1.default.hash(newPassword, salt);
+        user.passwordResetOtp = undefined;
+        user.passwordResetOtpExpires = undefined;
+        await user.save();
+        await (0, logger_1.logActivity)(user._id.toString(), 'change_password_otp', `Password changed via email OTP verification for ${user.email}`);
+        res.json({ success: true, message: 'Password has been successfully verified and changed!' });
+    }
+    catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+exports.verifyPasswordOtp = verifyPasswordOtp;
 const googleClient = new google_auth_library_1.OAuth2Client();
 const googleAuth = async (req, res) => {
     try {
