@@ -7,7 +7,7 @@ import {
   Search, X, Sparkles, RefreshCw, Eye, Edit3, ArrowRight,
   ShieldCheck, Info, Check, AlertCircle, ChevronDown,
   Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText,
-  Clock, EyeOff, Copy, XCircle
+  Clock, EyeOff, Copy, XCircle, Lock, Unlock
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -274,6 +274,100 @@ export default function AdminNotificationsPage() {
     if (recipientMode === 'selected') return selectedUserIds.length;
     return 0;
   }, [recipientMode, users.length, currentSingleUser, selectedUserIds.length]);
+
+  // Target recipient emails resolved for Gmail batching
+  const targetRecipientEmails = useMemo(() => {
+    if (recipientMode === 'single') {
+      return currentSingleUser && currentSingleUser.email && currentSingleUser.email.includes('@')
+        ? [currentSingleUser.email.trim()]
+        : [];
+    }
+    if (recipientMode === 'selected') {
+      const selectedSet = new Set(selectedUserIds.map(String));
+      return users
+        .filter(u => selectedSet.has(String(u._id)) && u.email && u.email.includes('@'))
+        .map(u => u.email.trim());
+    }
+    // 'all'
+    return users
+      .filter(u => u.role !== 'admin' && u.email && u.email.includes('@'))
+      .map(u => u.email.trim());
+  }, [recipientMode, currentSingleUser, selectedUserIds, users]);
+
+  // Gmail batch size: 15 users per part for maximum safety & zero URL truncation
+  const GMAIL_BATCH_SIZE = 15;
+
+  const gmailBatches = useMemo(() => {
+    const batches: Array<{
+      batchIndex: number;
+      partNumber: number;
+      emails: string[];
+    }> = [];
+
+    for (let i = 0; i < targetRecipientEmails.length; i += GMAIL_BATCH_SIZE) {
+      batches.push({
+        batchIndex: Math.floor(i / GMAIL_BATCH_SIZE),
+        partNumber: Math.floor(i / GMAIL_BATCH_SIZE) + 1,
+        emails: targetRecipientEmails.slice(i, i + GMAIL_BATCH_SIZE),
+      });
+    }
+    return batches;
+  }, [targetRecipientEmails]);
+
+  // Gmail Dispatcher Modal State
+  const [showGmailModal, setShowGmailModal] = useState(false);
+  const [confirmedBatches, setConfirmedBatches] = useState<number[]>([]);
+  const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
+
+  const handleOpenGmailDispatcher = () => {
+    if (!validateForm()) return;
+    if (targetRecipientEmails.length === 0) {
+      setResultStatus({ type: 'error', text: 'No valid recipient emails found for the selected mode.' });
+      return;
+    }
+    setConfirmedBatches([]);
+    setShowGmailModal(true);
+  };
+
+  const handleToggleBatchConfirmed = (batchIndex: number) => {
+    setConfirmedBatches(prev => 
+      prev.includes(batchIndex) ? prev.filter(i => i !== batchIndex) : [...prev, batchIndex]
+    );
+  };
+
+  const handleLaunchGmailBatch = (emails: string[]) => {
+    if (!emails || emails.length === 0) return;
+
+    let fullBody = message.trim();
+    if (attachedLink.trim()) {
+      fullBody += `\n\nDirect Link:\n${attachedLink.trim()}`;
+    }
+
+    const isMobile = typeof navigator !== 'undefined' && /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isSingle = emails.length === 1;
+
+    let mailtoUrl = '';
+    if (isSingle) {
+      mailtoUrl = `mailto:${encodeURIComponent(emails[0])}?subject=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`;
+    } else {
+      mailtoUrl = `mailto:?bcc=${encodeURIComponent(emails.join(','))}&subject=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`;
+    }
+
+    if (isMobile) {
+      window.location.href = mailtoUrl;
+    } else {
+      const gmailWebUrl = isSingle
+        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(emails[0])}&su=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`
+        : `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(emails.join(','))}&su=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`;
+      window.open(gmailWebUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleCopyBatchEmails = (emails: string[], batchIndex: number) => {
+    navigator.clipboard.writeText(emails.join(', '));
+    setCopiedBatchIndex(batchIndex);
+    setTimeout(() => setCopiedBatchIndex(null), 2500);
+  };
 
   // Derived audit lists for active modal
   const { seenUsersList, unseenUsersList, auditSeenPercent } = useMemo(() => {
@@ -1190,7 +1284,7 @@ export default function AdminNotificationsPage() {
               </span>
             </div>
 
-            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
               <button
                 type="button"
                 onClick={() => {
@@ -1205,6 +1299,19 @@ export default function AdminNotificationsPage() {
               >
                 Clear
               </button>
+
+              {sendEmail && (
+                <button
+                  type="button"
+                  onClick={handleOpenGmailDispatcher}
+                  disabled={isSubmitting || recipientCount === 0 || !subject.trim() || !message.trim()}
+                  className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/20 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-95"
+                  title="Open and send directly from your personal Gmail app / Chrome in safe, sequential batches"
+                >
+                  <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <span>Send via Gmail App</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -1861,6 +1968,193 @@ export default function AdminNotificationsPage() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Batched Gmail App Dispatcher Modal */}
+      <AnimatePresence>
+        {showGmailModal && (
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowGmailModal(false);
+            }}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-3xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Header */}
+              <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3 bg-red-50/50 dark:bg-red-950/10">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center border border-red-500/20">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
+                      Send via Gmail App
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {targetRecipientEmails.length} recipient(s) • Divided into {gmailBatches.length} safe part{gmailBatches.length > 1 ? 's' : ''} (max {GMAIL_BATCH_SIZE}/part)
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowGmailModal(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Progress & Overview */}
+              <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/10 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    Progress: {confirmedBatches.length} of {gmailBatches.length} Parts Confirmed
+                  </span>
+                  <span className="font-bold text-red-600 dark:text-red-400">
+                    {gmailBatches.length > 0 ? Math.round((confirmedBatches.length / gmailBatches.length) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-red-500 to-emerald-500 transition-all duration-300 rounded-full"
+                    style={{
+                      width: `${gmailBatches.length > 0 ? Math.round((confirmedBatches.length / gmailBatches.length) * 100) : 0}%`
+                    }}
+                  />
+                </div>
+
+                {confirmedBatches.length === gmailBatches.length && gmailBatches.length > 0 && (
+                  <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <span className="font-medium">All parts have been sent and confirmed! You can now close this popup.</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Batches List */}
+              <div className="p-4 overflow-y-auto space-y-3 flex-1 max-h-[50vh]">
+                {gmailBatches.map((b) => {
+                  const isUnlocked = b.batchIndex === 0 || confirmedBatches.includes(b.batchIndex - 1);
+                  const isConfirmed = confirmedBatches.includes(b.batchIndex);
+
+                  return (
+                    <div
+                      key={b.batchIndex}
+                      className={`p-3.5 rounded-2xl border transition-all ${
+                        isConfirmed
+                          ? 'bg-emerald-50/50 dark:bg-emerald-950/15 border-emerald-300 dark:border-emerald-500/30'
+                          : isUnlocked
+                          ? 'bg-white dark:bg-[#161a2b] border-slate-300 dark:border-white/15 shadow-xs'
+                          : 'bg-slate-50 dark:bg-white/[0.02] border-slate-200 dark:border-white/5 opacity-60'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${
+                              isConfirmed
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : isUnlocked
+                                ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20'
+                                : 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+                            }`}>
+                              Part {b.partNumber} ({b.emails.length} Users)
+                            </span>
+
+                            {isConfirmed ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                <Check className="w-3.5 h-3.5" /> Sent
+                              </span>
+                            ) : !isUnlocked ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                                <Lock className="w-3 h-3" /> Locked
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-1 max-w-sm sm:max-w-xs">
+                            {b.emails.slice(0, 3).join(', ')}{b.emails.length > 3 ? ` +${b.emails.length - 3} more` : ''}
+                          </p>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyBatchEmails(b.emails, b.batchIndex)}
+                            className="p-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 text-xs transition-colors cursor-pointer"
+                            title="Copy email addresses for this part"
+                          >
+                            {copiedBatchIndex === b.batchIndex ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+
+                          {isUnlocked ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleLaunchGmailBatch(b.emails)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all shadow-xs active:scale-95 cursor-pointer"
+                                title="Open this part in Gmail App (Can re-click anytime)"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>{isConfirmed ? 'Re-open in Gmail' : 'Open in Gmail App'}</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleToggleBatchConfirmed(b.batchIndex)}
+                                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                                  isConfirmed
+                                    ? 'bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700'
+                                    : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
+                                }`}
+                                title={isConfirmed ? "Click to uncheck if not sent" : "Confirm you pressed send in Gmail"}
+                              >
+                                {isConfirmed ? '✓ Confirmed' : 'Mark as Sent'}
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">
+                              Complete Part {b.partNumber - 1} first
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                  <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Emails placed in BCC for complete privacy.</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowGmailModal(false)}
+                  className="w-full sm:w-auto px-5 py-2 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-white font-bold hover:bg-slate-300 dark:hover:bg-white/20 transition-colors cursor-pointer"
+                >
+                  Done / Close
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
