@@ -866,6 +866,7 @@ export default function AdminNotificationsPage() {
         type: recipientMode === 'all' ? 'broadcast' : recipientMode,
         targetUsers: recipientMode === 'single' ? [selectedUserId] : selectedUserIds,
         link: attachedLink.trim() || undefined,
+        sendInApp: sendInApp,
         sendEmail: sendEmail,
         senderName: loggedInAdminName || '',
       });

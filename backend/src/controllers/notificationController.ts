@@ -188,7 +188,7 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
 // @access  Private/Admin
 export const createAdminNotification = async (req: Request, res: Response) => {
   try {
-    const { title, message, type = 'broadcast', targetUsers = [], link, sendEmail = false } = req.body;
+    const { title, message, type = 'broadcast', targetUsers = [], link, sendEmail = false, sendInApp = true } = req.body;
     const adminId = (req as any).user?._id;
 
     if (!title || !title.trim() || !message || !message.trim()) {
@@ -196,14 +196,18 @@ export const createAdminNotification = async (req: Request, res: Response) => {
       return;
     }
 
-    const newNotification = await Notification.create({
-      title: title.trim(),
-      message: message.trim(),
-      type,
-      targetUsers: type === 'broadcast' ? [] : targetUsers,
-      sender: adminId,
-      link: link ? link.trim() : undefined,
-    });
+    // Only create an in-app notification record if sendInApp is true
+    let newNotification: any = null;
+    if (sendInApp) {
+      newNotification = await Notification.create({
+        title: title.trim(),
+        message: message.trim(),
+        type,
+        targetUsers: type === 'broadcast' ? [] : targetUsers,
+        sender: adminId,
+        link: link ? link.trim() : undefined,
+      });
+    }
 
     // Optional: send simultaneous email broadcast if requested
     if (sendEmail) {
@@ -275,29 +279,33 @@ export const createAdminNotification = async (req: Request, res: Response) => {
       })();
     }
 
-    // Send Real-Time Android Push Notification to System Status Bar
+    // Send Real-Time Android Push Notification only if in-app was created
     let pushResult: any = null;
-    try {
-      pushResult = await sendPushNotification({
-        title: title.trim(),
-        body: message.trim(),
-        targetUserIds: type === 'selected' || type === 'single' ? targetUsers : undefined,
-        data: {
-          notificationId: newNotification._id.toString(),
-          url: `/user/notifications?id=${newNotification._id.toString()}`,
-        },
-      });
-      console.log('[Admin Notification Push Result]:', pushResult);
-    } catch (err: any) {
-      console.error('[Firebase Push Notification Error]:', err);
-      pushResult = { success: false, error: err?.message };
+    if (newNotification) {
+      try {
+        pushResult = await sendPushNotification({
+          title: title.trim(),
+          body: message.trim(),
+          targetUserIds: type === 'selected' || type === 'single' ? targetUsers : undefined,
+          data: {
+            notificationId: newNotification._id.toString(),
+            url: `/user/notifications?id=${newNotification._id.toString()}`,
+          },
+        });
+        console.log('[Admin Notification Push Result]:', pushResult);
+      } catch (err: any) {
+        console.error('[Firebase Push Notification Error]:', err);
+        pushResult = { success: false, error: err?.message };
+      }
     }
 
     try {
       await logActivity(
         adminId,
-        'admin_notification_created',
-        `Created in-app notification "${title.trim()}" (${type})`
+        sendInApp ? 'admin_notification_created' : 'admin_email_sent',
+        sendInApp
+          ? `Created in-app notification "${title.trim()}" (${type})`
+          : `Sent email notification "${title.trim()}" (${type})`
       );
     } catch (logErr) {
       console.warn('Activity logging error:', logErr);
@@ -307,7 +315,9 @@ export const createAdminNotification = async (req: Request, res: Response) => {
       success: true,
       notification: newNotification,
       pushResult,
-      message: 'In-app notification published successfully.',
+      message: sendInApp
+        ? 'In-app notification published successfully.'
+        : 'Email notification sent successfully.',
     });
   } catch (error) {
     res.status(500).json({ message: (error as Error).message });
