@@ -422,13 +422,49 @@ export default function AdminNotificationsPage() {
   const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
 
   const handleOpenGmailDispatcher = () => {
-    if (!validateForm()) return;
+    setResultStatus(null);
+    if (!subject.trim()) {
+      setResultStatus({ type: 'error', text: 'Please enter a notification subject/title.' });
+      return;
+    }
+    if (!message.trim()) {
+      setResultStatus({ type: 'error', text: 'Please write your message body.' });
+      return;
+    }
+    if (!sendEmail) {
+      setResultStatus({ type: 'error', text: 'Please select Email Notification channel to dispatch via Gmail App.' });
+      return;
+    }
+    if (recipientMode === 'single' && !selectedUserId) {
+      setResultStatus({ type: 'error', text: 'Please choose a specific user recipient.' });
+      return;
+    }
+    if (recipientMode === 'selected' && selectedUserIds.length === 0) {
+      setResultStatus({ type: 'error', text: 'Please choose at least one user recipient.' });
+      return;
+    }
+    if (message.includes('[File Name]')) {
+      handleOpenFileNameModal();
+      setResultStatus({ type: 'error', text: "Please set the uploaded file name before sending." });
+      return;
+    }
+    if (message.includes('[Version Name]') || subject.includes('[Version Name]')) {
+      handleOpenVersionModal();
+      setResultStatus({ type: 'error', text: "Please set the release version name before sending." });
+      return;
+    }
     if (targetRecipientEmails.length === 0) {
       setResultStatus({ type: 'error', text: 'No valid recipient emails found for the selected mode.' });
       return;
     }
+
     setConfirmedBatches([]);
     setShowGmailModal(true);
+
+    // If batches exist, automatically open Part 1 in Gmail right away for seamless experience
+    if (gmailBatches.length > 0 && gmailBatches[0].emails.length > 0) {
+      handleLaunchGmailBatch(gmailBatches[0].emails);
+    }
   };
 
   const handleToggleBatchConfirmed = (batchIndex: number) => {
@@ -437,7 +473,7 @@ export default function AdminNotificationsPage() {
     );
   };
 
-  const handleLaunchGmailBatch = (emails: string[]) => {
+  const handleLaunchGmailBatch = (emails: string[], preferMailto = false) => {
     if (!emails || emails.length === 0) return;
 
     let fullBody = message.trim();
@@ -455,13 +491,26 @@ export default function AdminNotificationsPage() {
       mailtoUrl = `mailto:?bcc=${encodeURIComponent(emails.join(','))}&subject=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`;
     }
 
-    if (isMobile) {
-      window.location.href = mailtoUrl;
+    if (isMobile || preferMailto) {
+      const a = document.createElement('a');
+      a.href = mailtoUrl;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } else {
       const gmailWebUrl = isSingle
         ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(emails[0])}&su=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`
         : `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(emails.join(','))}&su=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`;
-      window.open(gmailWebUrl, '_blank', 'noopener,noreferrer');
+      
+      const newWin = window.open(gmailWebUrl, '_blank', 'noopener,noreferrer');
+      // If browser blocked the popup, fall back to mailto: anchor click
+      if (!newWin || newWin.closed || typeof newWin.closed === 'undefined') {
+        const a = document.createElement('a');
+        a.href = mailtoUrl;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
     }
   };
 
@@ -582,10 +631,6 @@ export default function AdminNotificationsPage() {
       setResultStatus({ type: 'error', text: 'Please select either In-App Bell Alert or Email Notification one at a time.' });
       return false;
     }
-    if (!sendInApp) {
-      setResultStatus({ type: 'error', text: 'Please select In-App Bell Alert to dispatch notifications to users\' phones.' });
-      return false;
-    }
     if (recipientMode === 'single' && !selectedUserId) {
       setResultStatus({ type: 'error', text: 'Please choose a specific user recipient.' });
       return false;
@@ -610,6 +655,11 @@ export default function AdminNotificationsPage() {
   // Submit dispatch handler (Phone & App Notification ONLY - No SMTP)
   const handleSendNotification = async () => {
     if (!validateForm()) return;
+
+    if (!sendInApp) {
+      setResultStatus({ type: 'error', text: "Please select In-App Bell Alert to dispatch notifications to users' phones." });
+      return;
+    }
 
     if (recipientMode === 'all' && !showConfirmModal) {
       setShowConfirmModal(true);
