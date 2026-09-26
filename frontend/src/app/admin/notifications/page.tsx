@@ -2521,11 +2521,11 @@ export default function AdminNotificationsPage() {
                 <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-500/30 flex items-start gap-2.5 text-[11px] text-amber-800 dark:text-amber-300">
                   <span className="text-base shrink-0">⚠️</span>
                   <div className="space-y-1">
-                    <p className="font-bold">Personal Gmail se bhejne par email Spam me ja sakta hai!</p>
+                    <p className="font-bold">Emails sent from personal Gmail accounts may land in Spam!</p>
                     <p className="text-amber-700 dark:text-amber-400">
-                      Agar aap apna <strong>personal account</strong> (jaise rupambairagya08@gmail.com) choose karte ho toh bulk send Spam me ja sakta hai.
+                      Sending bulk BCC from a personal account (e.g. rupambairagya08@gmail.com) is flagged as spam by Google.
                       <br />
-                      <strong>✅ Safe Option:</strong> Dropdown me se <strong>bott27124@gmail.com</strong> choose karo — woh dedicated bot account hai aur Inbox me jata hai.
+                      <strong>✅ Safe Option:</strong> Select <strong>bott27124@gmail.com</strong> from the dropdown — it is a dedicated bot account and emails will land in the <strong>Inbox</strong>.
                     </p>
                   </div>
                 </div>
