@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Key, CheckCircle2, AlertTriangle, RefreshCw,
   ExternalLink, Eye, EyeOff, Save, Play, X, ShieldCheck,
-  Cpu, Info, Check, AlertCircle, ArrowRight, Zap, Shield, Plus
+  Cpu, Info, Check, AlertCircle, ArrowRight, Zap, Shield, Plus, ChevronDown
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -441,59 +441,105 @@ export default function AdminAiConfigPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {AVAILABLE_MODELS.map(m => {
-              const isSelected = !showCustomModelBox && selectedModel === m.id;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedModel(m.id);
+          {/* Compact Dropdown Selector */}
+          <div className="space-y-3">
+            <div className="relative">
+              <select
+                value={showCustomModelBox ? '__custom__' : selectedModel}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '__custom__') {
+                    setShowCustomModelBox(true);
+                  } else {
                     setShowCustomModelBox(false);
-                  }}
-                  className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
-                    isSelected
-                      ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-500 ring-2 ring-purple-500/25 shadow-xs'
-                      : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/20'
-                  }`}
-                >
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
+                    setSelectedModel(val);
+                  }
+                }}
+                className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs appearance-none cursor-pointer transition-all hover:border-slate-400 dark:hover:border-white/25"
+              >
+                <optgroup label="Verified Gemini 3 Models">
+                  {AVAILABLE_MODELS.map(m => (
+                    <option key={m.id} value={m.id} className="dark:bg-[#121626] py-1.5 font-sans">
+                      {m.name} ({m.id}) {m.recommended ? '— ★ Recommended' : `— [${m.badge}]`}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Custom">
+                  {!AVAILABLE_MODELS.some(m => m.id === selectedModel) && selectedModel && selectedModel !== '__custom__' && (
+                    <option value={selectedModel} className="dark:bg-[#121626] py-1.5 font-sans">
+                      Current Custom: {selectedModel}
+                    </option>
+                  )}
+                  <option value="__custom__" className="dark:bg-[#121626] py-1.5 font-sans">
+                    ➕ Specify Custom Gemini Model ID...
+                  </option>
+                </optgroup>
+              </select>
+
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-400">
+                <ChevronDown className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Compact Active Model Information Card */}
+            {(() => {
+              const activeModel = AVAILABLE_MODELS.find(m => m.id === selectedModel);
+              if (!showCustomModelBox && activeModel) {
+                return (
+                  <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-500/25 bg-gradient-to-r from-purple-50/70 via-indigo-50/40 to-transparent dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                          isSelected ? 'border-purple-600 bg-purple-600 text-white' : 'border-slate-400 bg-white dark:bg-white/5'
+                        <span className="font-bold text-sm text-slate-900 dark:text-white">
+                          {activeModel.name}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          activeModel.recommended
+                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
+                            : 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/30'
                         }`}>
-                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                        </div>
-                        <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                          {m.name}
+                          {activeModel.badge}
+                        </span>
+                        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                          ({activeModel.id})
                         </span>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        m.recommended
-                          ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
-                          : 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-white/10'
-                      }`}>
-                        {m.badge}
-                      </span>
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        {activeModel.description}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
-                      {m.description}
-                    </p>
-                  </div>
 
-                  <div className="mt-2.5 flex items-center justify-between text-[11px] font-mono text-slate-400 dark:text-slate-500">
-                    <span>{m.id}</span>
-                    {isSelected && (
-                      <span className="flex items-center gap-1 font-bold text-purple-600 dark:text-purple-400">
-                        <Check className="w-3.5 h-3.5 stroke-[3]" /> Default Choice
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-400 shrink-0 bg-white/80 dark:bg-white/10 px-3 py-1.5 rounded-lg border border-purple-200 dark:border-white/10 self-start sm:self-auto">
+                      <Check className="w-3.5 h-3.5 stroke-[3] text-purple-600 dark:text-purple-400" />
+                      <span>Active Default</span>
+                    </div>
                   </div>
-                </button>
-              );
-            })}
+                );
+              } else if (!showCustomModelBox && selectedModel) {
+                return (
+                  <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-500/25 bg-gradient-to-r from-purple-50/70 via-indigo-50/40 to-transparent dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-900 dark:text-white">
+                          Custom Model
+                        </span>
+                        <span className="text-[11px] font-mono text-purple-600 dark:text-purple-400 font-bold">
+                          {selectedModel}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300">
+                        User-defined Google Gemini API model identifier.
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-400 shrink-0 bg-white/80 dark:bg-white/10 px-3 py-1.5 rounded-lg border border-purple-200 dark:border-white/10 self-start sm:self-auto">
+                      <Check className="w-3.5 h-3.5 stroke-[3] text-purple-600 dark:text-purple-400" />
+                      <span>Active Default</span>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           {/* Custom Model Option Box */}
