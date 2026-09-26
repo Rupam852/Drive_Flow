@@ -471,6 +471,17 @@ export default function AdminNotificationsPage() {
   const [showGmailModal, setShowGmailModal] = useState(false);
   const [confirmedBatches, setConfirmedBatches] = useState<number[]>([]);
   const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
+  const [senderAccount, setSenderAccount] = useState('0');
+  const [customSenderEmail, setCustomSenderEmail] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedAcc = localStorage.getItem('admin_gmail_sender');
+      if (savedAcc) setSenderAccount(savedAcc);
+      const savedCustom = localStorage.getItem('admin_gmail_sender_custom');
+      if (savedCustom) setCustomSenderEmail(savedCustom);
+    }
+  }, []);
 
   const handleOpenGmailDispatcher = () => {
     setResultStatus(null);
@@ -549,9 +560,33 @@ export default function AdminNotificationsPage() {
       a.click();
       document.body.removeChild(a);
     } else {
-      const gmailWebUrl = isSingle
-        ? `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(emails[0])}&su=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`
-        : `https://mail.google.com/mail/?view=cm&fs=1&bcc=${encodeURIComponent(emails.join(','))}&su=${encodeURIComponent(subject.trim())}&body=${encodeURIComponent(fullBody)}`;
+      const effectiveAccount = senderAccount === 'custom' && customSenderEmail.trim()
+        ? customSenderEmail.trim()
+        : senderAccount;
+
+      // Construct Gmail URL targeting the chosen account session
+      const baseUrl = effectiveAccount
+        ? `https://mail.google.com/mail/u/${encodeURIComponent(effectiveAccount)}/`
+        : `https://mail.google.com/mail/`;
+
+      const params = new URLSearchParams({
+        view: 'cm',
+        fs: '1',
+        su: subject.trim(),
+        body: fullBody,
+      });
+
+      if (effectiveAccount) {
+        params.set('authuser', effectiveAccount);
+      }
+
+      if (isSingle) {
+        params.set('to', emails[0]);
+      } else {
+        params.set('bcc', emails.join(','));
+      }
+
+      const gmailWebUrl = `${baseUrl}?${params.toString()}`;
       
       const newWin = window.open(gmailWebUrl, '_blank', 'noopener,noreferrer');
       // If browser blocked the popup, fall back to mailto: anchor click
@@ -2217,6 +2252,59 @@ export default function AdminNotificationsPage() {
                 >
                   <X className="w-4 h-4" />
                 </button>
+              </div>
+
+              {/* Sender Account Switcher (From) */}
+              <div className="px-4 py-3 bg-red-50/40 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/10 space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold">
+                    <User className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
+                    <span>Send From (Google Account / Profile):</span>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <select
+                      value={senderAccount}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSenderAccount(val);
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem('admin_gmail_sender', val);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-xs font-semibold text-slate-800 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs"
+                    >
+                      <option value="0">Google Account 1 (Default)</option>
+                      <option value="1">Google Account 2 (Work / Secondary)</option>
+                      <option value="2">Google Account 3</option>
+                      <option value="3">Google Account 4</option>
+                      <option value="custom">Specific Email ID...</option>
+                    </select>
+
+                    {senderAccount === 'custom' && (
+                      <input
+                        type="email"
+                        placeholder="e.g. sender@gmail.com"
+                        value={customSenderEmail}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCustomSenderEmail(val);
+                          if (typeof window !== 'undefined') {
+                            localStorage.setItem('admin_gmail_sender_custom', val);
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-xs font-medium text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 w-44 shadow-xs"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 leading-normal">
+                  <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <span>
+                    Agar aapke browser me multiple accounts hain to yahan se Account 2 ya apna email choose karein. Gmail window me bhi top par <strong>"From"</strong> par click karke change kar sakte hain.
+                  </span>
+                </p>
               </div>
 
               {/* Progress & Overview */}
