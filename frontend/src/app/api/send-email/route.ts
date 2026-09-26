@@ -20,7 +20,7 @@ function htmlToPlainText(html: string): string {
 
 export async function POST(request: Request) {
   try {
-    const { to, otp, subject, html } = await request.json();
+    const { to, otp, subject, html, senderName } = await request.json();
     const apiKey = request.headers.get('x-api-key');
 
     const serverApiKey = process.env.API_SECRET_KEY || 'default-secret-key-123';
@@ -128,8 +128,12 @@ function cleanEmailSubject(subject: string): string {
       ? `DriveFlow Account Verification\n\nYour one-time code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nSecurity Notice: Never share this code with anyone. If you did not request this code, you can safely ignore this email.\n\n-- DriveFlow Team`
       : htmlToPlainText(finalHtml);
 
+    const senderDisplayName = senderName && typeof senderName === 'string'
+      ? `"${senderName.trim()}" <${process.env.MAILER_EMAIL}>`
+      : `"DriveFlow" <${process.env.MAILER_EMAIL}>`;
+
     const mailOptions = {
-      from: `"DriveFlow Security & Alerts" <${process.env.MAILER_EMAIL}>`,
+      from: senderDisplayName,
       replyTo: process.env.MAILER_EMAIL,
       to,
       subject: finalSubject,
@@ -138,11 +142,6 @@ function cleanEmailSubject(subject: string): string {
       headers: {
         'X-Entity-Ref-ID': `driveflow-${Date.now()}`,
         'X-Auto-Response-Suppress': 'All',
-        'X-Priority': '1',
-        'Priority': 'urgent',
-        'Importance': 'high',
-        'X-MSMail-Priority': 'High',
-        'X-Mailer': 'DriveFlow System Core',
       },
     };
 

@@ -47,7 +47,8 @@ export function buildDriveFlowEmailHtml({
   messageHtml,
   buttonText,
   buttonUrl,
-  noticeText
+  noticeText,
+  senderName,
 }: {
   title: string;
   userName?: string;
@@ -55,7 +56,9 @@ export function buildDriveFlowEmailHtml({
   buttonText?: string;
   buttonUrl?: string;
   noticeText?: string;
+  senderName?: string;
 }): string {
+  const subtitle = senderName && senderName !== 'DriveFlow' ? `Message from ${senderName}` : 'Secure Notification';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -69,13 +72,13 @@ export function buildDriveFlowEmailHtml({
       <td align="center">
         <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);" cellspacing="0" cellpadding="0">
           <tr>
-            <td style="padding: 26px 32px 20px; text-align: center; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);">
+            <td style="padding: 24px 32px 18px; text-align: center; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);">
               <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">DriveFlow</h1>
-              <p style="margin: 4px 0 0; color: #e9d5ff; font-size: 13px; font-weight: 500;">Official System Notification</p>
+              <p style="margin: 4px 0 0; color: #e9d5ff; font-size: 13px; font-weight: 500;">${subtitle}</p>
             </td>
           </tr>
           <tr>
-            <td style="padding: 32px 32px 24px; color: #1e293b;">
+            <td style="padding: 28px 32px 24px; color: #1e293b;">
               <h2 style="margin: 0 0 12px; font-size: 18px; font-weight: 700; color: #0f172a;">${title}</h2>
               <p style="margin: 0 0 16px; font-size: 14px; line-height: 22px; color: #475569;">
                 Hello ${userName || 'User'},
@@ -86,8 +89,8 @@ export function buildDriveFlowEmailHtml({
               </div>
 
               ${buttonText && buttonUrl ? `
-                <div style="text-align: center; margin: 26px 0 14px;">
-                  <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 600; display: inline-block; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
+                <div style="text-align: center; margin: 24px 0 12px;">
+                  <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 600; display: inline-block;">
                     ${buttonText}
                   </a>
                 </div>
@@ -101,9 +104,9 @@ export function buildDriveFlowEmailHtml({
             </td>
           </tr>
           <tr>
-            <td style="padding: 20px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; line-height: 16px; color: #94a3b8;">
-              <p style="margin: 0 0 4px;">&copy; ${new Date().getFullYear()} DriveFlow Operations. All rights reserved.</p>
-              <p style="margin: 0;">This official transactional notice was sent to your registered account.</p>
+            <td style="padding: 18px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; line-height: 16px; color: #94a3b8;">
+              <p style="margin: 0 0 4px;">&copy; ${new Date().getFullYear()} DriveFlow. All rights reserved.</p>
+              <p style="margin: 0;">This notification was sent to your registered DriveFlow account.</p>
             </td>
           </tr>
         </table>
@@ -150,14 +153,20 @@ const getDirectTransporter = () => {
   return directTransporter;
 };
 
-export const sendDirectEmail = async (to: string, subject: string, html: string, text?: string) => {
+export const sendDirectEmail = async (
+  to: string,
+  subject: string,
+  html: string,
+  text?: string,
+  senderName: string = 'DriveFlow'
+) => {
   const creds = getMailerCredentials();
   const transporter = getDirectTransporter();
   const cleanSubj = cleanEmailSubject(subject);
   const plainText = text || htmlToPlainText(html);
 
   await transporter.sendMail({
-    from: `"DriveFlow Security & Alerts" <${creds.user}>`,
+    from: `"${senderName}" <${creds.user}>`,
     replyTo: creds.user,
     to,
     subject: cleanSubj,
@@ -166,11 +175,6 @@ export const sendDirectEmail = async (to: string, subject: string, html: string,
     headers: {
       'X-Entity-Ref-ID': `driveflow-${Date.now()}`,
       'X-Auto-Response-Suppress': 'All',
-      'X-Priority': '1',
-      'Priority': 'urgent',
-      'Importance': 'high',
-      'X-MSMail-Priority': 'High',
-      'X-Mailer': 'DriveFlow System Core',
     },
   });
 };
@@ -261,12 +265,12 @@ export const sendOtpEmail = async (to: string, otp: string) => {
   }
 };
 
-export const sendCustomEmail = async (to: string, subject: string, html: string) => {
+export const sendCustomEmail = async (to: string, subject: string, html: string, senderName?: string) => {
   const cleanSubj = cleanEmailSubject(subject);
 
   // 1. Send directly via Gmail SMTP first (Fast: 0.5s, 100% reliable)
   try {
-    await sendDirectEmail(to, cleanSubj, html);
+    await sendDirectEmail(to, cleanSubj, html, undefined, senderName);
     console.log(`Custom email sent directly to ${to} via Gmail SMTP`);
     return;
   } catch (directErr: any) {
@@ -278,7 +282,7 @@ export const sendCustomEmail = async (to: string, subject: string, html: string)
     const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
     await axios.post(
       `${frontendUrl}/api/send-email`,
-      { to, subject: cleanSubj, html },
+      { to, subject: cleanSubj, html, senderName },
       {
         headers: {
           'x-api-key': getApiKey(),

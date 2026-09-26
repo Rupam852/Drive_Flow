@@ -78,10 +78,9 @@ Thanks,
     subject: 'App ka naya update aa gaya hai ([Version Name])',
     message: `Hi,
 
-App ka naya update (Version [Version Name]) ready hai. Isme file transfer speed aur performance kafi improve ki gayi hai.
+App ka naya update (Version [Version Name]) release ho gaya hai. Isme file transfer speed aur performance kafi improve ki gayi hai.
 
-Aap niche diye link se update download kar sakte hain:
-https://neo-files-transfer.pages.dev/download/723586892fd0
+Aap app open karke Menu > 'App Update' par tap karein, ya DriveFlow portal se update check karein.
 
 Install karne me koi dikkat aaye to batana.
 
@@ -769,7 +768,7 @@ export default function AdminNotificationsPage() {
     setMessage(tmpl.message.replace(/\[Admin Name\]/g, adminName));
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
     if (tmpl.name.includes('App Update')) {
-      setAttachedLink('https://neo-files-transfer.pages.dev/download/723586892fd0');
+      setAttachedLink(`${origin}/user/notifications`);
     } else if (tmpl.name.includes('File') || tmpl.name.includes('file')) {
       setAttachedLink(`${origin}/user/files`);
     } else {
@@ -1529,18 +1528,19 @@ export default function AdminNotificationsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const downloadUrl = 'https://neo-files-transfer.pages.dev/download/723586892fd0';
-                    const downloadSnippet = `\n\n📲 Official DriveFlow Android App Download Link:\n${downloadUrl}`;
+                    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
+                    const portalUrl = `${origin}/user/notifications`;
+                    const portalSnippet = `\n\n📲 DriveFlow Portal (Update & Notifications):\n${portalUrl}`;
 
-                    if (!message.includes(downloadUrl)) {
+                    if (!message.includes(portalUrl)) {
                       setMessage(prev => {
                         if (!prev.trim()) {
-                          return `Hello,\n\nPlease download and install the official DriveFlow Android App for faster mobile file access, background uploads, and real-time alerts:\n${downloadUrl}`;
+                          return `Hello,\n\nAap DriveFlow portal open karke naye updates aur features check kar sakte hain:\n${portalUrl}`;
                         }
-                        return prev + downloadSnippet;
+                        return prev + portalSnippet;
                       });
                     }
-                    setAttachedLink(downloadUrl);
+                    setAttachedLink(portalUrl);
                     setLinkInserted(true);
                     setTimeout(() => setLinkInserted(false), 2500);
                   }}
@@ -1549,17 +1549,17 @@ export default function AdminNotificationsPage() {
                       ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
                       : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
                   }`}
-                  title="Insert official APK download link into message draft and attach link"
+                  title="Insert official portal link into message draft"
                 >
                   {linkInserted ? (
                     <>
                       <Check className="w-3.5 h-3.5" />
-                      <span>✓ APK Link Attached</span>
+                      <span>✓ Portal Link Added</span>
                     </>
                   ) : (
                     <>
                       <Smartphone className="w-3.5 h-3.5" />
-                      <span>+ Insert APK Link</span>
+                      <span>+ Insert Portal Link</span>
                     </>
                   )}
                 </button>
