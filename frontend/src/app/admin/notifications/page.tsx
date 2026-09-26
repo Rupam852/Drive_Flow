@@ -473,15 +473,68 @@ export default function AdminNotificationsPage() {
   const [copiedBatchIndex, setCopiedBatchIndex] = useState<number | null>(null);
   const [senderAccount, setSenderAccount] = useState('0');
   const [customSenderEmail, setCustomSenderEmail] = useState('');
+  const [loggedInAdminEmail, setLoggedInAdminEmail] = useState('');
+  const [savedSenderEmails, setSavedSenderEmails] = useState<string[]>([]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      try {
+        const localUserStr = localStorage.getItem('user');
+        if (localUserStr) {
+          const u = JSON.parse(localUserStr);
+          if (u.email) setLoggedInAdminEmail(u.email);
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      try {
+        const savedList = localStorage.getItem('admin_saved_sender_emails');
+        if (savedList) {
+          const parsed = JSON.parse(savedList);
+          if (Array.isArray(parsed)) setSavedSenderEmails(parsed);
+        }
+      } catch (e) {
+        // ignore
+      }
+
       const savedAcc = localStorage.getItem('admin_gmail_sender');
       if (savedAcc) setSenderAccount(savedAcc);
       const savedCustom = localStorage.getItem('admin_gmail_sender_custom');
       if (savedCustom) setCustomSenderEmail(savedCustom);
     }
   }, []);
+
+  const handleSaveSenderEmail = () => {
+    const trimmed = customSenderEmail.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes('@')) return;
+    if (!savedSenderEmails.includes(trimmed)) {
+      const updated = [...savedSenderEmails, trimmed];
+      setSavedSenderEmails(updated);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('admin_saved_sender_emails', JSON.stringify(updated));
+      }
+    }
+    setSenderAccount(trimmed);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin_gmail_sender', trimmed);
+    }
+    setCustomSenderEmail('');
+  };
+
+  const handleRemoveSenderEmail = (emailToRemove: string) => {
+    const updated = savedSenderEmails.filter(e => e !== emailToRemove);
+    setSavedSenderEmails(updated);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('admin_saved_sender_emails', JSON.stringify(updated));
+    }
+    if (senderAccount === emailToRemove) {
+      setSenderAccount('0');
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('admin_gmail_sender', '0');
+      }
+    }
+  };
 
   const handleOpenGmailDispatcher = () => {
     setResultStatus(null);
@@ -2255,7 +2308,7 @@ export default function AdminNotificationsPage() {
               </div>
 
               {/* Sender Account Switcher (From) */}
-              <div className="px-4 py-3 bg-red-50/40 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/10 space-y-2">
+              <div className="px-4 py-3 bg-red-50/40 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/10 space-y-2.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-bold">
                     <User className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0" />
@@ -2272,39 +2325,78 @@ export default function AdminNotificationsPage() {
                           localStorage.setItem('admin_gmail_sender', val);
                         }
                       }}
-                      className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-xs font-semibold text-slate-800 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs"
+                      className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-xs font-semibold text-slate-800 dark:text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs max-w-full sm:max-w-xs truncate"
                     >
-                      <option value="0">Google Account 1 (Default)</option>
-                      <option value="1">Google Account 2 (Work / Secondary)</option>
-                      <option value="2">Google Account 3</option>
-                      <option value="3">Google Account 4</option>
-                      <option value="custom">Specific Email ID...</option>
+                      {loggedInAdminEmail && (
+                        <option value={loggedInAdminEmail}>
+                          👤 Logged-in Admin ({loggedInAdminEmail})
+                        </option>
+                      )}
+                      <optgroup label="Browser Google Accounts">
+                        <option value="0">Google Account 1 (Default Browser Profile)</option>
+                        <option value="1">Google Account 2 (Work / Secondary Account)</option>
+                        <option value="2">Google Account 3</option>
+                        <option value="3">Google Account 4</option>
+                      </optgroup>
+                      {savedSenderEmails.length > 0 && (
+                        <optgroup label="Saved Phone / Work Emails">
+                          {savedSenderEmails.map((em) => (
+                            <option key={em} value={em}>
+                              📧 {em}
+                            </option>
+                          ))}
+                        </optgroup>
+                      )}
+                      <option value="custom">➕ Enter Phone / Custom Gmail ID...</option>
                     </select>
 
-                    {senderAccount === 'custom' && (
-                      <input
-                        type="email"
-                        placeholder="e.g. sender@gmail.com"
-                        value={customSenderEmail}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCustomSenderEmail(val);
-                          if (typeof window !== 'undefined') {
-                            localStorage.setItem('admin_gmail_sender_custom', val);
-                          }
-                        }}
-                        className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-xs font-medium text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 w-44 shadow-xs"
-                      />
+                    {savedSenderEmails.includes(senderAccount) && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSenderEmail(senderAccount)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 text-[10px] transition-colors cursor-pointer"
+                        title="Remove this email from saved list"
+                      >
+                        Remove
+                      </button>
                     )}
                   </div>
                 </div>
 
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 leading-normal">
-                  <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                  <span>
-                    Agar aapke browser me multiple accounts hain to yahan se Account 2 ya apna email choose karein. Gmail window me bhi top par <strong>"From"</strong> par click karke change kar sakte hain.
-                  </span>
-                </p>
+                {senderAccount === 'custom' && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="email"
+                      placeholder="Enter phone or work email (e.g. myname@gmail.com)"
+                      value={customSenderEmail}
+                      onChange={(e) => setCustomSenderEmail(e.target.value)}
+                      className="flex-1 px-3 py-1.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-xs text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs font-sans"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSaveSenderEmail}
+                      disabled={!customSenderEmail.trim() || !customSenderEmail.includes('@')}
+                      className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-xs disabled:opacity-50 cursor-pointer transition-all active:scale-95"
+                    >
+                      Save to List
+                    </button>
+                  </div>
+                )}
+
+                <div className="p-2.5 rounded-xl bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 space-y-1 text-[11px] text-slate-600 dark:text-slate-300">
+                  <div className="flex items-start gap-1.5 font-medium">
+                    <Smartphone className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Phone Users:</strong> Phone par Gmail app khulte hi sabse upar <strong>"From:"</strong> par tap karein — aapke phone me login sabhi Google accounts ki list turant khul jayegi.
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-blue-500 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Website / PC Users:</strong> Upar dropdown se apna login email ya Account 2 choose karein, Gmail automatically usi profile se open hoga.
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Progress & Overview */}
