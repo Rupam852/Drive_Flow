@@ -212,7 +212,8 @@ export const createAdminNotification = async (req: Request, res: Response) => {
           let recipients: Array<{ email: string; name?: string }> = [];
           if (type === 'broadcast') {
             const users = await User.find({
-              $or: [{ isEmailVerified: true }, { status: 'approved' }]
+              role: { $ne: 'admin' },
+              email: { $exists: true, $ne: '' }
             }).select('email name');
             recipients = users
               .filter(u => u.email && u.email.includes('@'))

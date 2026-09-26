@@ -845,8 +845,8 @@ export default function AdminNotificationsPage() {
   const handleSendNotification = async () => {
     if (!validateForm()) return;
 
-    if (!sendInApp) {
-      setResultStatus({ type: 'error', text: "Please select In-App Bell Alert to dispatch notifications to users' phones." });
+    if (!sendInApp && !sendEmail) {
+      setResultStatus({ type: 'error', text: "Please select at least one delivery channel: Phone / In-App Alert or Email Notification." });
       return;
     }
 
@@ -860,15 +860,19 @@ export default function AdminNotificationsPage() {
     setResultStatus(null);
 
     try {
-      // 1. Dispatch In-App Notification (Phone/Web Bell & Push)
+      // 1. Dispatch Notification (In-App Push & Direct 1-to-1 Server Email to Primary Inbox)
       await api.post('/notifications/admin', {
         title: subject.trim(),
         message: message.trim(),
         type: recipientMode === 'all' ? 'broadcast' : recipientMode,
         targetUsers: recipientMode === 'single' ? [selectedUserId] : selectedUserIds,
         link: attachedLink.trim() || undefined,
-        sendEmail: false,
+        sendEmail: sendEmail,
       });
+
+      const channelsUsed: string[] = [];
+      if (sendInApp) channelsUsed.push('🔔 In-App Bell & Phone Alert');
+      if (sendEmail) channelsUsed.push('✉️ Direct Server Email (Inbox Delivery)');
 
       // Launch detailed Delivery Confirmation Popup
       setDeliveryReport({
@@ -877,14 +881,20 @@ export default function AdminNotificationsPage() {
         totalRecipients: recipientCount,
         sentCount: recipientCount,
         failedCount: 0,
-        channels: ['🔔 In-App Bell & Phone Alert'],
+        channels: channelsUsed,
         subject: subject.trim(),
         recipientMode,
       });
 
+      const successMsg = sendInApp && sendEmail
+        ? `Successfully dispatched to ${recipientCount} user phone(s) and sent official email directly to their inbox!`
+        : sendInApp
+        ? `Successfully sent In-App notification & alert to ${recipientCount} user phone(s)!`
+        : `Successfully sent direct email to ${recipientCount} user inbox(es) via official server!`;
+
       setResultStatus({
         type: 'success',
-        text: `Successfully sent In-App notification & alert to ${recipientCount} user phone(s)!`,
+        text: successMsg,
       });
 
       if (recipientMode === 'single') setSelectedUserId('');
@@ -1640,46 +1650,56 @@ export default function AdminNotificationsPage() {
                   Clear
                 </button>
 
-                {/* Send via Gmail App Button - Visible when Email is selected */}
-                {sendEmail && (
-                  <button
-                    type="button"
-                    onClick={handleOpenGmailDispatcher}
-                    disabled={isSubmitting || recipientCount === 0 || !subject.trim() || !message.trim()}
-                    className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/20 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-95"
-                    title="Open and send directly from your personal Gmail app / Chrome in safe, sequential batches"
-                  >
-                    <Mail className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    <span>Send via Gmail App</span>
-                  </button>
-                )}
-
-                {/* Send to Phone & App Button - Visible when In-App Bell is selected */}
-                {sendInApp && (
+                {/* Primary Server Dispatch Button (In-App + Direct 1-to-1 Email to Inbox) */}
+                {(sendInApp || sendEmail) && (
                   <button
                     type="button"
                     onClick={handleSendNotification}
                     disabled={isSubmitting || recipientCount === 0 || !subject.trim() || !message.trim()}
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-purple-500/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                    title="Send instant notification and bell alert directly to users' phones and app"
+                    title={
+                      sendEmail
+                        ? "100% Primary Inbox Delivery via official server (same reliable delivery as OTP & Registration emails, zero spam)"
+                        : "Send instant notification and bell alert directly to users' phones and app"
+                    }
                   >
                     {isSubmitting ? (
                       <>
                         <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Sending to Phones...</span>
+                        <span>Sending to Users...</span>
                       </>
                     ) : (
                       <>
-                        <Smartphone className="w-4 h-4" />
+                        {sendEmail && sendInApp ? (
+                          <Send className="w-4 h-4" />
+                        ) : sendEmail ? (
+                          <Mail className="w-4 h-4" />
+                        ) : (
+                          <Smartphone className="w-4 h-4" />
+                        )}
                         <span>
-                          {recipientMode === 'all'
-                            ? `Send to Phone & App (All ${recipientCount})`
-                            : recipientMode === 'single'
-                            ? 'Send to Phone & App (Direct)'
-                            : `Send to Phone & App (${recipientCount})`}
+                          {sendEmail && sendInApp
+                            ? `Send to Inboxes & Phones (${recipientCount} Users)`
+                            : sendEmail
+                            ? `Send Direct to Inbox (${recipientCount} Users)`
+                            : `Send to Phone & App (${recipientCount} Users)`}
                         </span>
                       </>
                     )}
+                  </button>
+                )}
+
+                {/* Optional: Send via Personal Gmail App Button - Visible when Email is selected */}
+                {sendEmail && (
+                  <button
+                    type="button"
+                    onClick={handleOpenGmailDispatcher}
+                    disabled={isSubmitting || recipientCount === 0 || !subject.trim() || !message.trim()}
+                    className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-slate-700 dark:text-gray-300 hover:bg-slate-100 hover:text-slate-900 text-xs font-semibold transition-all disabled:opacity-50 cursor-pointer shadow-xs active:scale-95"
+                    title="Alternative: Open and send manually from your personal Gmail app"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-red-500" />
+                    <span>Or Send via Personal Gmail App</span>
                   </button>
                 )}
               </div>
