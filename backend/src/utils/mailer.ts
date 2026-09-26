@@ -163,10 +163,10 @@ export const sendDirectEmail = async (
   const cleanSubj = cleanEmailSubject(subject);
   const plainText = text || htmlToPlainText(html);
 
-  // If a senderName is provided, use it; otherwise use the email address directly without forcing "DriveFlow"
+  // Use provided senderName, or fallback to "DriveFlow Team"
   const fromAddress = senderName && senderName.trim()
     ? `"${senderName.trim()}" <${creds.user}>`
-    : creds.user;
+    : `"DriveFlow Team" <${creds.user}>`;
 
   await transporter.sendMail({
     from: fromAddress,

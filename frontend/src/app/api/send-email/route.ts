@@ -130,7 +130,7 @@ function cleanEmailSubject(subject: string): string {
 
     const senderDisplayName = senderName && typeof senderName === 'string' && senderName.trim()
       ? `"${senderName.trim()}" <${process.env.MAILER_EMAIL}>`
-      : process.env.MAILER_EMAIL;
+      : `"DriveFlow Team" <${process.env.MAILER_EMAIL}>`;
 
     const mailOptions = {
       from: senderDisplayName,
