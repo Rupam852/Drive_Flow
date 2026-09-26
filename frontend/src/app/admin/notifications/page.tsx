@@ -278,9 +278,44 @@ export default function AdminNotificationsPage() {
 
       const res = await api.post('/ai/assist', payload);
       if (res.data?.success) {
+        let rawSubj = res.data.subject || '';
+        let rawMsg = res.data.message || '';
+
+        // Extra client-side safety: If message accidentally contains raw JSON structure
+        if (rawMsg.trim().startsWith('{') && rawMsg.includes('"message"')) {
+          try {
+            const parsed = JSON.parse(rawMsg);
+            if (parsed.subject) rawSubj = parsed.subject;
+            if (parsed.message) rawMsg = parsed.message;
+          } catch {
+            const msgMatch = rawMsg.match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)/i);
+            if (msgMatch && msgMatch[1]) {
+              rawMsg = msgMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+            }
+            const subjMatch = rawMsg.match(/"subject"\s*:\s*"([^"\\]*)/i);
+            if (subjMatch && subjMatch[1]) {
+              rawSubj = subjMatch[1];
+            }
+          }
+        }
+
+        // Clean any markdown asterisks for human-readable email format
+        const cleanSubj = rawSubj
+          .replace(/\*\*(.*?)\*\*/g, '$1')
+          .replace(/\*/g, '')
+          .trim();
+
+        const cleanMsg = rawMsg
+          .replace(/\*\*(.*?)\*\*/g, '$1')
+          .replace(/(^|[^\*])\*(?!\s)([^*]+)\*(?!\*)/g, '$1$2')
+          .replace(/^[\*\-]\s+/gm, '• ')
+          .replace(/\*{2,}/g, '')
+          .replace(/\n{3,}/g, '\n\n')
+          .trim();
+
         setAiResult({
-          subject: res.data.subject,
-          message: res.data.message,
+          subject: cleanSubj,
+          message: cleanMsg,
           model: res.data.model,
           usedFallback: res.data.usedFallback,
           originalModel: res.data.originalModel,
@@ -307,8 +342,24 @@ export default function AdminNotificationsPage() {
 
   const handleApplyAiResult = () => {
     if (aiResult) {
-      if (aiResult.subject) setSubject(aiResult.subject);
-      if (aiResult.message) setMessage(aiResult.message);
+      let finalSubject = aiResult.subject || '';
+      let finalMessage = aiResult.message || '';
+
+      // Final pass: clean any markdown asterisks and format bullets
+      finalSubject = finalSubject
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/\*/g, '')
+        .trim();
+
+      finalMessage = finalMessage
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/(^|[^\*])\*(?!\s)([^*]+)\*(?!\*)/g, '$1$2')
+        .replace(/^[\*\-]\s+/gm, '• ')
+        .replace(/\*{2,}/g, '')
+        .trim();
+
+      if (finalSubject) setSubject(finalSubject);
+      if (finalMessage) setMessage(finalMessage);
       setShowAiModal(false);
       setAiResult(null);
       setResultStatus({

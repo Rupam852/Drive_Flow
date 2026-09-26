@@ -227,6 +227,89 @@ export const testAiConnection = async (req: Request, res: Response) => {
   }
 };
 
+// Helper to clean markdown asterisks, bullets, and spacing for human-readable emails
+const cleanEmailTextAndRemoveAsterisks = (text: string): string => {
+  if (!text) return '';
+  return text
+    // Replace markdown bold like **Heading** or **word** with just Heading or word
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    // Replace markdown italics like *word* with word
+    .replace(/(^|[^\*])\*(?!\s)([^*]+)\*(?!\*)/g, '$1$2')
+    // Replace markdown bullet points like '* ' or '- ' at beginning of lines with '• '
+    .replace(/^[\*\-]\s+/gm, '• ')
+    // Replace any remaining stray double/triple asterisks
+    .replace(/\*{2,}/g, '')
+    // Clean up multiple extra empty lines
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
+// Helper to robustly extract subject and message from Gemini output even if truncated or unclosed
+const extractSubjectAndMessage = (
+  rawText: string,
+  fallbackSubject: string
+): { subject: string; message: string } => {
+  if (!rawText) return { subject: fallbackSubject, message: '' };
+
+  let cleanText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+  // 1. Try standard JSON.parse first
+  try {
+    const parsed = JSON.parse(cleanText);
+    if (parsed && typeof parsed === 'object') {
+      const subj = typeof parsed.subject === 'string' ? parsed.subject : fallbackSubject;
+      const msg = typeof parsed.message === 'string' ? parsed.message : '';
+      if (msg) {
+        return {
+          subject: cleanEmailTextAndRemoveAsterisks(subj),
+          message: cleanEmailTextAndRemoveAsterisks(msg),
+        };
+      }
+    }
+  } catch (e) {
+    // If standard JSON.parse fails, do intelligent regex extraction
+  }
+
+  // 2. Intelligent Regex extraction for truncated or unescaped JSON
+  let extractedSubject = fallbackSubject;
+  let extractedMessage = '';
+
+  const subjectMatch = cleanText.match(/"subject"\s*:\s*"([^"\\]*(?:\\.[^"\\]*)*)"/i);
+  if (subjectMatch && subjectMatch[1]) {
+    try {
+      extractedSubject = JSON.parse(`"${subjectMatch[1]}"`);
+    } catch {
+      extractedSubject = subjectMatch[1].replace(/\\"/g, '"');
+    }
+  }
+
+  // Match message content until end of quote or end of string if truncated
+  const messageMatch = cleanText.match(/"message"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|\s*$)/i);
+  if (messageMatch && messageMatch[1]) {
+    try {
+      extractedMessage = JSON.parse(`"${messageMatch[1]}"`);
+    } catch {
+      extractedMessage = messageMatch[1]
+        .replace(/\\n/g, '\n')
+        .replace(/\\"/g, '"')
+        .replace(/\\t/g, '\t');
+    }
+  } else {
+    // If no explicit "message" key found, strip any leading JSON brackets/keys
+    let stripped = cleanText;
+    if (stripped.startsWith('{') && stripped.includes('"message"')) {
+      const idx = stripped.indexOf('"message"');
+      stripped = stripped.substring(idx + 9).replace(/^\s*:\s*"/, '').replace(/"\s*\}?$/, '');
+    }
+    extractedMessage = stripped;
+  }
+
+  return {
+    subject: cleanEmailTextAndRemoveAsterisks(extractedSubject || fallbackSubject || 'DriveFlow System Notice'),
+    message: cleanEmailTextAndRemoveAsterisks(extractedMessage || cleanText),
+  };
+};
+
 // @desc    Draft or Polish notification with Gemini AI (Admin only)
 // @route   POST /api/ai/assist
 // @access  Private/Admin
@@ -243,7 +326,7 @@ export const assistNotification = async (req: Request, res: Response) => {
       return;
     }
 
-    const primaryModel = config.selectedModel || 'gemini-2.5-flash';
+    const primaryModel = config.selectedModel || 'gemini-3.8-flash';
 
     let systemInstruction = '';
     let userContent = '';
@@ -256,15 +339,16 @@ export const assistNotification = async (req: Request, res: Response) => {
 
       systemInstruction = `You are the lead communications specialist for DriveFlow, a high-performance cloud storage and file management platform.
 Your task is to draft a professional, clear notification and email announcement based on the administrator's request.
-CRITICAL DELIVERABILITY RULES (GMAIL PRIMARY INBOX COMPLIANCE):
-1. Subject must be clean, informative, and transactional. Use professional prefixes like "System Notice: ...", "Account Notice: ...", or "Update Advisory: ...".
-2. NEVER use promotional hype or spam trigger words like FREE, ACT NOW, HURRY, EXCLUSIVE, BEST DEAL, WINNER, LIMITED OFFER.
-3. Message body must be polite, concise, professional, with bullet points where appropriate.
-4. Output MUST be valid, parseable JSON with exactly two fields: "subject" and "message".
+CRITICAL FORMATTING & DELIVERABILITY RULES:
+1. DO NOT use markdown asterisks (no **bold**, no *italic*, and no * for bullets). In plain text email boxes, asterisks look messy and unrendered.
+2. For headings/sections, use clean plain text followed by a colon (e.g. "MAINTENANCE SCHEDULE:" or "Details:").
+3. For lists, use the bullet character "• " instead of asterisks "* ".
+4. Subject must be informative and transactional (e.g., "DriveFlow Service Notice: ...", "Account Notice: ...").
+5. Output MUST be strictly valid JSON with exactly two fields: "subject" and "message".
 Example:
 {
-  "subject": "System Notice: Scheduled Storage Infrastructure Upgrade",
-  "message": "Hello,\\n\\nPlease be advised that DriveFlow will undergo scheduled storage upgrades...\\n\\nBest regards,\\nDriveFlow Operations"
+  "subject": "DriveFlow Service Notice: Scheduled Infrastructure Maintenance",
+  "message": "Hello,\\n\\nPlease be advised that DriveFlow will undergo scheduled system maintenance to improve platform reliability, security, and cloud performance.\\n\\n• Date: This weekend\\n• Duration: Approximately 30-45 minutes\\n\\nDuring this brief window, file synchronization may experience temporary delays. Your data remains fully secure and encrypted.\\n\\nThank you for your patience and support.\\n\\nBest regards,\\nDriveFlow Operations Team"
 }`;
       userContent = `Create a notification draft for: ${prompt.trim()}`;
     } else if (mode === 'polish') {
@@ -274,12 +358,12 @@ Example:
       }
 
       systemInstruction = `You are an expert copy editor for DriveFlow cloud platform.
-Your task is to refine, grammar-check, and elevate the provided email draft.
-CRITICAL DELIVERABILITY RULES:
-1. Ensure the tone is clear, authoritative, and helpful.
-2. Remove any grammar, spelling, or punctuation errors.
-3. Remove any spam triggers or overly promotional phrasing so the email lands directly in Gmail's Primary Inbox.
-4. Output MUST be valid, parseable JSON with exactly two fields: "subject" and "message".`;
+Your task is to refine, grammar-check, and elevate the provided email draft into a clean, professional email.
+CRITICAL FORMATTING & DELIVERABILITY RULES:
+1. DO NOT use markdown asterisks (no **bold**, no *italic*, and no * for bullets).
+2. For lists, use clean bullets "• " instead of asterisks "* ".
+3. Ensure professional, authoritative tone and remove spam triggers so the email lands in Gmail Primary Inbox.
+4. Output MUST be strictly valid JSON with exactly two fields: "subject" and "message".`;
       userContent = `Subject: ${currentSubject || ''}\n\nMessage Body:\n${currentMessage}`;
     } else {
       res.status(400).json({ success: false, message: "Invalid mode. Must be 'draft' or 'polish'." });
@@ -330,7 +414,8 @@ CRITICAL DELIVERABILITY RULES:
             ],
             generationConfig: {
               temperature: config.temperature ?? 0.7,
-              maxOutputTokens: 1024,
+              maxOutputTokens: 2048,
+              responseMimeType: 'application/json',
             },
           },
           {
@@ -340,17 +425,7 @@ CRITICAL DELIVERABILITY RULES:
         );
 
         const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-        const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-
-        let parsedResult: { subject?: string; message?: string } = {};
-        try {
-          parsedResult = JSON.parse(cleanJson);
-        } catch (parseError) {
-          parsedResult = {
-            subject: currentSubject || 'DriveFlow System Notice',
-            message: rawText,
-          };
-        }
+        const parsedResult = extractSubjectAndMessage(rawText, currentSubject || 'DriveFlow System Notice');
 
         if (parsedResult.message) {
           successfulResult = parsedResult;
