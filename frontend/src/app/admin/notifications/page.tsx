@@ -7,8 +7,9 @@ import {
   Search, X, Sparkles, RefreshCw, Eye, Edit3, ArrowRight,
   ShieldCheck, Info, Check, AlertCircle, ChevronDown,
   Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText,
-  Clock, EyeOff, Copy, XCircle, Lock, Unlock
+  Clock, EyeOff, Copy, XCircle, Lock, Unlock, Wand2
 } from 'lucide-react';
+import Link from 'next/link';
 import api from '@/lib/api';
 
 interface UserItem {
@@ -214,6 +215,103 @@ export default function AdminNotificationsPage() {
     }
     setShowVersionModal(false);
     setVersionInput('');
+  };
+
+  // Gemini AI Assistant State
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiMode, setAiMode] = useState<'polish' | 'draft'>('polish');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState<{
+    subject: string;
+    message: string;
+    model?: string;
+  } | null>(null);
+
+  // AI Error Popup Modal State
+  const [aiErrorModal, setAiErrorModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    details?: string;
+    isApiKeyError?: boolean;
+  } | null>(null);
+
+  const handleOpenAiModal = (mode: 'polish' | 'draft' = 'polish') => {
+    setAiMode(mode);
+    setAiResult(null);
+    setShowAiModal(true);
+  };
+
+  const handleRunAiAssist = async () => {
+    if (aiMode === 'draft' && !aiPrompt.trim()) {
+      setAiErrorModal({
+        isOpen: true,
+        title: 'Draft Prompt Required',
+        message: 'Please write a brief description of what announcement or notification you want Gemini to draft.',
+      });
+      return;
+    }
+
+    if (aiMode === 'polish' && !message.trim()) {
+      setAiErrorModal({
+        isOpen: true,
+        title: 'Empty Message Body',
+        message: 'Your message body is currently empty. Please write some text first, or switch to "Draft with AI" to generate a complete draft.',
+      });
+      return;
+    }
+
+    setIsAiLoading(true);
+    try {
+      const payload: any = {
+        mode: aiMode,
+      };
+      if (aiMode === 'draft') {
+        payload.prompt = aiPrompt.trim();
+      } else {
+        payload.currentSubject = subject.trim();
+        payload.currentMessage = message.trim();
+      }
+
+      const res = await api.post('/ai/assist', payload);
+      if (res.data?.success) {
+        setAiResult({
+          subject: res.data.subject,
+          message: res.data.message,
+          model: res.data.model,
+        });
+      } else {
+        throw new Error(res.data?.message || 'Gemini could not generate content.');
+      }
+    } catch (err: any) {
+      console.error('AI Assist error:', err);
+      const msg = err.response?.data?.message || err.message || 'Gemini AI request failed.';
+      const isApiKeyErr = msg.toLowerCase().includes('key') || msg.toLowerCase().includes('api_key') || msg.toLowerCase().includes('not configured');
+
+      setAiErrorModal({
+        isOpen: true,
+        title: 'Gemini AI Error',
+        message: msg,
+        details: err.response?.data?.details ? JSON.stringify(err.response.data.details, null, 2) : undefined,
+        isApiKeyError: isApiKeyErr,
+      });
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleApplyAiResult = () => {
+    if (aiResult) {
+      if (aiResult.subject) setSubject(aiResult.subject);
+      if (aiResult.message) setMessage(aiResult.message);
+      setShowAiModal(false);
+      setAiResult(null);
+      setResultStatus({
+        type: 'success',
+        text: 'Gemini AI generated content successfully applied to notification form!',
+      });
+    }
   };
 
   // Fetch users for targeting
@@ -1168,6 +1266,17 @@ export default function AdminNotificationsPage() {
                 Message Body Text:
               </label>
               <div className="flex items-center gap-2">
+                {/* Gemini AI Assistant Button */}
+                <button
+                  type="button"
+                  onClick={() => handleOpenAiModal(message.trim() ? 'polish' : 'draft')}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-purple-400/40 ring-2 ring-purple-500/20"
+                  title="Draft or Polish notification with Gemini AI"
+                >
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse text-amber-300" />
+                  <span>✨ Gemini AI</span>
+                </button>
+
                 {(selectedTemplateName?.includes('File Upload') || message.includes('[File Name]') || subject.includes('[File Name]')) && (
                   <button
                     type="button"
@@ -2381,6 +2490,356 @@ export default function AdminNotificationsPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ============================================================== */}
+      {/* GEMINI AI ASSISTANT MODAL (POLISH / DRAFT NOTIFICATIONS)       */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {showAiModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-white/10 flex items-start justify-between gap-3 bg-gradient-to-r from-purple-500/10 via-indigo-500/5 to-transparent">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center shadow-md shrink-0">
+                    <Sparkles className="w-5 h-5 text-amber-300 animate-pulse" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>Gemini AI Notification Assistant</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Check deliverability, refine tone, or draft notifications instantly
+                    </p>
+                  </div>
+                </div>
+
+                {/* Close Icon (✖) */}
+                <button
+                  type="button"
+                  onClick={() => setShowAiModal(false)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close AI Assistant"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Tabs: Polish vs Draft */}
+              <div className="flex items-center px-4 pt-3 border-b border-slate-100 dark:border-white/10 gap-2 bg-slate-50/50 dark:bg-white/[0.01]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAiMode('polish');
+                    setAiResult(null);
+                  }}
+                  className={`pb-2.5 px-3 text-xs font-bold transition-all relative cursor-pointer flex items-center gap-1.5 ${
+                    aiMode === 'polish'
+                      ? 'text-purple-600 dark:text-purple-400'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>Polish Current Draft</span>
+                  {aiMode === 'polish' && (
+                    <motion.div
+                      layoutId="aiModeTabIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-600 dark:bg-purple-400 rounded-full"
+                    />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAiMode('draft');
+                    setAiResult(null);
+                  }}
+                  className={`pb-2.5 px-3 text-xs font-bold transition-all relative cursor-pointer flex items-center gap-1.5 ${
+                    aiMode === 'draft'
+                      ? 'text-indigo-600 dark:text-indigo-400'
+                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>Draft New with AI</span>
+                  {aiMode === 'draft' && (
+                    <motion.div
+                      layoutId="aiModeTabIndicator"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-indigo-600 dark:bg-indigo-400 rounded-full"
+                    />
+                  )}
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+                {aiMode === 'polish' ? (
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 text-purple-900 dark:text-purple-200 text-xs space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                        <span>Deliverability & Anti-Spam Check</span>
+                      </div>
+                      <p className="text-[11px] text-purple-800 dark:text-purple-300 leading-relaxed">
+                        Gemini will review your subject line and message body, fix any grammar or spelling mistakes, and remove promotional hype words so the email lands directly in users' <strong>Gmail Primary Inbox</strong>.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="font-bold text-slate-700 dark:text-gray-300">Current Subject:</span>
+                        <div className="mt-1 p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 font-medium">
+                          {subject.trim() || <span className="text-slate-400 italic">No subject entered yet</span>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-slate-700 dark:text-gray-300">Current Message Body:</span>
+                        <div className="mt-1 p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 font-medium whitespace-pre-wrap max-h-36 overflow-y-auto text-xs leading-relaxed">
+                          {message.trim() || <span className="text-slate-400 italic">No message body text written yet</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-900 dark:text-indigo-200 text-xs space-y-1">
+                      <div className="flex items-center gap-1.5 font-bold">
+                        <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <span>Smart Notification Generator</span>
+                      </div>
+                      <p className="text-[11px] text-indigo-800 dark:text-indigo-300 leading-relaxed">
+                        Describe what you need in simple words. Gemini will craft an appropriate, professional notification with an optimized transactional subject and clear bullet points.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 dark:text-gray-200 mb-1.5">
+                        What would you like to announce to your users?
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={aiPrompt}
+                        onChange={e => setAiPrompt(e.target.value)}
+                        placeholder="e.g. Advise all users about scheduled cloud storage maintenance this Saturday night for 30 minutes, files are safe..."
+                        className="w-full p-3 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs resize-none"
+                      />
+                    </div>
+
+                    {/* Quick suggestion chips */}
+                    <div className="space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Quick Ideas:
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {[
+                          'Scheduled server maintenance for 30 minutes',
+                          'DriveFlow Android App update with fast background sync',
+                          'Security recommendation to update passwords',
+                          'Cloud storage performance and speed boost',
+                        ].map(idea => (
+                          <button
+                            key={idea}
+                            type="button"
+                            onClick={() => setAiPrompt(idea)}
+                            className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-gray-300 text-[11px] transition-colors text-left"
+                          >
+                            + {idea}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Result Preview (if generated) */}
+                {aiResult && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/20 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>Gemini Enhanced Output</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full">
+                        {aiResult.model || 'Gemini'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-xs">
+                      <div>
+                        <span className="font-bold text-slate-700 dark:text-gray-300">Generated Subject:</span>
+                        <p className="mt-1 p-2 rounded-lg bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 font-semibold text-slate-900 dark:text-white">
+                          {aiResult.subject}
+                        </p>
+                      </div>
+
+                      <div>
+                        <span className="font-bold text-slate-700 dark:text-gray-300">Generated Message Body:</span>
+                        <div className="mt-1 p-3 rounded-lg bg-white dark:bg-black/30 border border-slate-200 dark:border-white/10 text-slate-800 dark:text-gray-200 whitespace-pre-wrap max-h-48 overflow-y-auto leading-relaxed">
+                          {aiResult.message}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleApplyAiResult}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer"
+                      >
+                        <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        <span>Apply to Message Form</span>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <Link
+                  href="/admin/ai-config"
+                  className="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 font-semibold"
+                >
+                  <span>Open AI Settings (Change Model or API Key)</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => setShowAiModal(false)}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-300 dark:hover:bg-white/20 transition-colors cursor-pointer"
+                  >
+                    Close
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleRunAiAssist}
+                    disabled={isAiLoading}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  >
+                    {isAiLoading ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Processing with Gemini...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{aiMode === 'polish' ? 'Check & Polish Draft' : 'Generate with Gemini'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ============================================================== */}
+      {/* POPUP MODAL FOR AI ERRORS WITH ✖ CLOSE ICON AND OK BUTTON       */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {aiErrorModal?.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* Header with Red Warning + Close ✖ Icon */}
+              <div className="p-4 sm:p-5 border-b bg-rose-50/70 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-rose-900 dark:text-rose-200">
+                      {aiErrorModal.title || 'Gemini AI Error'}
+                    </h3>
+                    <p className="text-xs text-rose-700/80 dark:text-rose-300/80 mt-0.5">
+                      Request could not be completed
+                    </p>
+                  </div>
+                </div>
+
+                {/* Close Icon (✖) */}
+                <button
+                  type="button"
+                  onClick={() => setAiErrorModal(null)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Close popup"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Body with Error Details */}
+              <div className="p-5 space-y-3 text-xs">
+                <div className="p-3.5 rounded-xl border bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-900 dark:text-rose-200 leading-relaxed">
+                  <p className="font-semibold text-xs">{aiErrorModal.message}</p>
+                  {aiErrorModal.details && (
+                    <pre className="mt-2 p-2 rounded-lg bg-black/5 dark:bg-black/40 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap">
+                      {aiErrorModal.details}
+                    </pre>
+                  )}
+                </div>
+
+                {aiErrorModal.isApiKeyError ? (
+                  <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 space-y-2">
+                    <p className="text-purple-900 dark:text-purple-200 font-medium">
+                      Would you like to configure your Google Gemini API key now?
+                    </p>
+                    <Link
+                      href="/admin/ai-config"
+                      onClick={() => setAiErrorModal(null)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-colors shadow-xs"
+                    >
+                      <span>Open AI Settings</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-1 text-slate-500 dark:text-slate-400 px-1">
+                    <p className="font-bold text-slate-700 dark:text-slate-300">Troubleshooting:</p>
+                    <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
+                      <li>Ensure your Gemini API key is valid and has remaining quota.</li>
+                      <li>Check your network connection and retry.</li>
+                      <li>Visit the AI Settings menu to test your model connection.</li>
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer with OK Button */}
+              <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/10 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setAiErrorModal(null)}
+                  className="w-full sm:w-auto px-6 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                >
+                  OK
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
+

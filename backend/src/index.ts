@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import fileRoutes from './routes/fileRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import aiRoutes from './routes/aiRoutes';
 import { errorHandler } from './middleware/errorMiddleware';
 import { sanitizeNoSql } from './middleware/sanitizeMiddleware';
 import { seedAdmin } from './controllers/authController';
@@ -109,6 +110,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Error Middleware
 app.use(errorHandler);
