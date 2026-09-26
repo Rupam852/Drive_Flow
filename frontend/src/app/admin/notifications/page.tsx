@@ -2521,11 +2521,11 @@ export default function AdminNotificationsPage() {
                 <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-500/30 flex items-start gap-2.5 text-[11px] text-amber-800 dark:text-amber-300">
                   <span className="text-base shrink-0">⚠️</span>
                   <div className="space-y-1">
-                    <p className="font-bold">Personal Gmail se bheja hua email Spam me ja sakta hai!</p>
+                    <p className="font-bold">Personal Gmail se bhejne par email Spam me ja sakta hai!</p>
                     <p className="text-amber-700 dark:text-amber-400">
-                      Gmail personal accounts se bulk send (BCC) karne par Google automatically spam me daalta hai.
+                      Agar aap apna <strong>personal account</strong> (jaise rupambairagya08@gmail.com) choose karte ho toh bulk send Spam me ja sakta hai.
                       <br />
-                      <strong>Best Option:</strong> "Email Notification" channel use karo — woh server se 1-to-1 bhejta hai aur hamesha <strong>Inbox</strong> me jata hai. ✅
+                      <strong>✅ Safe Option:</strong> Dropdown me se <strong>bott27124@gmail.com</strong> choose karo — woh dedicated bot account hai aur Inbox me jata hai.
                     </p>
                   </div>
                 </div>
