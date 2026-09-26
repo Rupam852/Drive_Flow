@@ -4,13 +4,13 @@ import { AiConfig } from '../models/AiConfig';
 import { logActivity } from '../utils/logger';
 
 const DEFAULT_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.5-pro',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-flash',
-  'gemini-1.5-pro',
-  'gemini-1.5-flash-8b',
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3-flash-preview',
 ];
 
 // Helper to get or create the single AI config document
@@ -19,7 +19,7 @@ const getOrCreateAiConfig = async () => {
   if (!config) {
     config = await AiConfig.create({
       geminiApiKey: process.env.GEMINI_API_KEY || '',
-      selectedModel: 'gemini-2.5-flash',
+      selectedModel: 'gemini-3.8-flash',
       availableModels: DEFAULT_MODELS,
       enableAutoFallback: true,
       temperature: 0.7,
@@ -27,20 +27,30 @@ const getOrCreateAiConfig = async () => {
     return config;
   }
 
-  // Ensure newly supported models are present
   const doc = config;
-  const existing = new Set(doc.availableModels || []);
   let modified = false;
-  DEFAULT_MODELS.forEach(m => {
-    if (!existing.has(m)) {
-      doc.availableModels.push(m);
-      modified = true;
-    }
-  });
+
+  // Set default to gemini-3.8-flash if old deprecated model was selected
+  if (!doc.selectedModel || doc.selectedModel.startsWith('gemini-2.') || doc.selectedModel.startsWith('gemini-1.')) {
+    doc.selectedModel = 'gemini-3.8-flash';
+    modified = true;
+  }
+
+  // Update available models to verified Gemini 3 models
+  doc.availableModels = DEFAULT_MODELS;
+  modified = true;
+
   if (doc.enableAutoFallback === undefined) {
     doc.enableAutoFallback = true;
     modified = true;
   }
+
+  // If database key is empty, populate from process.env if available
+  if (!doc.geminiApiKey && process.env.GEMINI_API_KEY) {
+    doc.geminiApiKey = process.env.GEMINI_API_KEY;
+    modified = true;
+  }
+
   if (modified) await doc.save();
   return doc;
 };
@@ -281,13 +291,13 @@ CRITICAL DELIVERABILITY RULES:
 
     if (config.enableAutoFallback !== false) {
       const fallbackCandidates = [
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-2.0-flash-lite',
-        'gemini-1.5-pro',
-        'gemini-2.5-pro',
-        'gemini-1.5-flash-8b',
+        'gemini-3.8-flash',
+        'gemini-3.7-flash',
+        'gemini-3.6-flash',
+        'gemini-3.5-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.1-flash-lite',
+        'gemini-3-flash-preview',
       ];
       fallbackCandidates.forEach(m => {
         if (!modelsToTry.includes(m)) {

@@ -19,47 +19,47 @@ interface ModelOption {
 
 const AVAILABLE_MODELS: ModelOption[] = [
   {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
+    id: 'gemini-3.8-flash',
+    name: 'Gemini 3.8 Flash',
     badge: 'Recommended',
-    description: 'Fastest response time, state-of-the-art accuracy, ideal for real-time notification drafts.',
+    description: 'Most intelligent Flash model, ultra-fast response, ideal for autonomous agents & email drafting.',
     recommended: true,
   },
   {
-    id: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
-    badge: 'Deep Reasoning',
-    description: 'Highest reasoning quality for nuanced, formal executive announcements and complex text.',
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    badge: 'Agentic & Coding',
+    description: 'High-speed execution for complex multi-step workflows and reliable text generation.',
   },
   {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    badge: 'Next-Gen Flash',
-    description: 'Next-generation high-speed multimodal model with great efficiency and throughput.',
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
+    badge: 'Balanced Speed',
+    description: 'Balanced speed and multimodal capabilities across general notification drafting.',
   },
   {
-    id: 'gemini-2.0-flash-lite',
-    name: 'Gemini 2.0 Flash Lite',
+    id: 'gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    badge: 'High Throughput',
+    description: 'Reliable baseline speed and foundational performance for high-volume notification tasks.',
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash Lite',
     badge: 'Ultra Fast',
-    description: 'Lightweight, rapid-fire responses with low resource usage and high rate limits.',
+    description: 'Fastest, highly cost-effective model for instantaneous notification output.',
   },
   {
-    id: 'gemini-1.5-flash',
-    name: 'Gemini 1.5 Flash',
-    badge: 'Stable Standard',
-    description: 'Dependable, fast fallback model for everyday notification checking.',
+    id: 'gemini-3.1-flash-lite',
+    name: 'Gemini 3.1 Flash Lite',
+    badge: 'Lightweight',
+    description: 'Frontier-class performance rivaling larger models with ultra-low latency.',
   },
   {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
-    badge: 'High Precision',
-    description: 'Complex long-context reasoning with robust linguistic precision.',
-  },
-  {
-    id: 'gemini-1.5-flash-8b',
-    name: 'Gemini 1.5 Flash 8B',
-    badge: 'High Volume',
-    description: 'High frequency, low latency model optimized for quick short prompts.',
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash Preview',
+    badge: 'Next-Gen Preview',
+    description: 'Next-generation Gemini 3 preview model with frontier intelligence.',
   },
 ];
 
@@ -77,7 +77,7 @@ export default function AdminAiConfigPage() {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [maskedKey, setMaskedKey] = useState('');
   const [hasExistingKey, setHasExistingKey] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-3.8-flash');
   const [customModelInput, setCustomModelInput] = useState('');
   const [showCustomModelBox, setShowCustomModelBox] = useState(false);
   const [enableAutoFallback, setEnableAutoFallback] = useState(true);
@@ -572,7 +572,7 @@ export default function AdminAiConfigPage() {
               </p>
               <div className="pt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                 <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span>Fallback Sequence: {selectedModel} ➔ gemini-2.0-flash ➔ gemini-1.5-flash ➔ gemini-1.5-pro</span>
+                <span>Fallback Sequence: {selectedModel} ➔ gemini-3.7-flash ➔ gemini-3.6-flash ➔ gemini-3.5-flash ➔ gemini-3.5-flash-lite</span>
               </div>
             </div>
           </div>
