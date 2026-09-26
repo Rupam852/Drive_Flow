@@ -227,15 +227,17 @@ export const sendNotification = async (req: Request, res: Response) => {
       await Promise.all(
         chunk.map(async (r) => {
           try {
+            const senderName = (req.body.senderName && typeof req.body.senderName === 'string' && req.body.senderName.trim()) || '';
             const html = buildDriveFlowEmailHtml({
-              title: sanitizedSubject.replace(/^DriveFlow:\s*/i, ''),
+              title: sanitizedSubject,
               userName: r.name || 'User',
               messageHtml: `<div style="font-size: 14px; line-height: 22px; color: #334155;">${escapedBody}</div>`,
               buttonText,
               buttonUrl,
-              noticeText: 'This automated notification was sent to your registered DriveFlow account.',
+              noticeText: 'This automated notification was sent to your registered account.',
+              senderName,
             });
-            await sendCustomEmail(r.email, sanitizedSubject, html);
+            await sendCustomEmail(r.email, sanitizedSubject, html, senderName);
             sentCount++;
           } catch (err: any) {
             const reason = err?.message || 'SMTP delivery rejected or connection timeout';

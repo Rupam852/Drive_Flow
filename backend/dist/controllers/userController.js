@@ -228,15 +228,17 @@ const sendNotification = async (req, res) => {
             const chunk = recipients.slice(i, i + CHUNK_SIZE);
             await Promise.all(chunk.map(async (r) => {
                 try {
+                    const senderName = (req.body.senderName && typeof req.body.senderName === 'string' && req.body.senderName.trim()) || '';
                     const html = (0, mailer_1.buildDriveFlowEmailHtml)({
-                        title: sanitizedSubject.replace(/^DriveFlow:\s*/i, ''),
+                        title: sanitizedSubject,
                         userName: r.name || 'User',
                         messageHtml: `<div style="font-size: 14px; line-height: 22px; color: #334155;">${escapedBody}</div>`,
                         buttonText,
                         buttonUrl,
-                        noticeText: 'This automated notification was sent to your registered DriveFlow account.',
+                        noticeText: 'This automated notification was sent to your registered account.',
+                        senderName,
                     });
-                    await (0, mailer_1.sendCustomEmail)(r.email, sanitizedSubject, html);
+                    await (0, mailer_1.sendCustomEmail)(r.email, sanitizedSubject, html, senderName);
                     sentCount++;
                 }
                 catch (err) {

@@ -80,7 +80,7 @@ Thanks,
 
 App ka naya update (Version [Version Name]) release ho gaya hai. Isme file transfer speed aur performance kafi improve ki gayi hai.
 
-Aap app open karke Menu > 'App Update' par tap karein, ya DriveFlow portal se update check karein.
+Aap app open karke Menu > 'App Update' par tap karein, ya portal se update check karein.
 
 Install karne me koi dikkat aaye to batana.
 
@@ -867,6 +867,7 @@ export default function AdminNotificationsPage() {
         targetUsers: recipientMode === 'single' ? [selectedUserId] : selectedUserIds,
         link: attachedLink.trim() || undefined,
         sendEmail: sendEmail,
+        senderName: loggedInAdminName || '',
       });
 
       const channelsUsed: string[] = [];

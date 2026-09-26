@@ -30,15 +30,13 @@ function htmlToPlainText(html: string): string {
 }
 
 export function cleanEmailSubject(subject: string): string {
-  if (!subject) return 'DriveFlow Notification';
-  // 1. Strip all unicode emojis (e.g. 🚀, 🛠️, 🎉, etc.)
+  if (!subject) return 'Notification';
+  // Strip unicode emojis (e.g. 🚀, 🛠️, 🎉, etc.)
   let clean = subject.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}\u{FE00}-\u{FE0F}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}]/gu, '');
-  // 2. Strip brackets and exclamation marks that trigger spam filters
+  // Strip brackets and exclamation marks that trigger spam filters
   clean = clean.replace(/[!\[\]]/g, '').trim();
-  // 3. Normalize leading brand prefix
-  clean = clean.replace(/^driveflow[:\s-]*/i, '').trim();
   clean = clean.replace(/\s+/g, ' ').trim();
-  return clean ? `DriveFlow: ${clean}` : 'DriveFlow Notification';
+  return clean || 'Notification';
 }
 
 export function buildDriveFlowEmailHtml({
@@ -58,7 +56,7 @@ export function buildDriveFlowEmailHtml({
   noticeText?: string;
   senderName?: string;
 }): string {
-  const subtitle = senderName && senderName !== 'DriveFlow' ? `Message from ${senderName}` : 'Secure Notification';
+  const headerTitle = senderName && senderName.trim() ? senderName.trim() : title;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,19 +65,20 @@ export function buildDriveFlowEmailHtml({
   <title>${title}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 30px 15px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 24px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);" cellspacing="0" cellpadding="0">
+        <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);" cellspacing="0" cellpadding="0">
+          ${senderName && senderName.trim() ? `
           <tr>
-            <td style="padding: 24px 32px 18px; text-align: center; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);">
-              <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700; letter-spacing: -0.5px;">DriveFlow</h1>
-              <p style="margin: 4px 0 0; color: #e9d5ff; font-size: 13px; font-weight: 500;">${subtitle}</p>
+            <td style="padding: 16px 28px; background-color: #f8fafc; border-bottom: 1px solid #f1f5f9;">
+              <p style="margin: 0; font-size: 13px; font-weight: 600; color: #475569;">${senderName.trim()}</p>
             </td>
           </tr>
+          ` : ''}
           <tr>
-            <td style="padding: 28px 32px 24px; color: #1e293b;">
-              <h2 style="margin: 0 0 12px; font-size: 18px; font-weight: 700; color: #0f172a;">${title}</h2>
+            <td style="padding: 28px 28px 24px; color: #1e293b;">
+              <h2 style="margin: 0 0 14px; font-size: 18px; font-weight: 600; color: #0f172a;">${title}</h2>
               <p style="margin: 0 0 16px; font-size: 14px; line-height: 22px; color: #475569;">
                 Hello ${userName || 'User'},
               </p>
@@ -90,7 +89,7 @@ export function buildDriveFlowEmailHtml({
 
               ${buttonText && buttonUrl ? `
                 <div style="text-align: center; margin: 24px 0 12px;">
-                  <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 10px; font-size: 14px; font-weight: 600; display: inline-block;">
+                  <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
                     ${buttonText}
                   </a>
                 </div>
@@ -104,9 +103,8 @@ export function buildDriveFlowEmailHtml({
             </td>
           </tr>
           <tr>
-            <td style="padding: 18px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; line-height: 16px; color: #94a3b8;">
-              <p style="margin: 0 0 4px;">&copy; ${new Date().getFullYear()} DriveFlow. All rights reserved.</p>
-              <p style="margin: 0;">This notification was sent to your registered DriveFlow account.</p>
+            <td style="padding: 16px 28px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; line-height: 16px; color: #94a3b8;">
+              <p style="margin: 0;">This email was sent to your registered account.</p>
             </td>
           </tr>
         </table>
@@ -158,22 +156,27 @@ export const sendDirectEmail = async (
   subject: string,
   html: string,
   text?: string,
-  senderName: string = 'DriveFlow'
+  senderName?: string
 ) => {
   const creds = getMailerCredentials();
   const transporter = getDirectTransporter();
   const cleanSubj = cleanEmailSubject(subject);
   const plainText = text || htmlToPlainText(html);
 
+  // If a senderName is provided, use it; otherwise use the email address directly without forcing "DriveFlow"
+  const fromAddress = senderName && senderName.trim()
+    ? `"${senderName.trim()}" <${creds.user}>`
+    : creds.user;
+
   await transporter.sendMail({
-    from: `"${senderName}" <${creds.user}>`,
+    from: fromAddress,
     replyTo: creds.user,
     to,
     subject: cleanSubj,
     text: plainText,
     html,
     headers: {
-      'X-Entity-Ref-ID': `driveflow-${Date.now()}`,
+      'X-Entity-Ref-ID': `msg-${Date.now()}`,
       'X-Auto-Response-Suppress': 'All',
     },
   });

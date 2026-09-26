@@ -243,8 +243,9 @@ export const createAdminNotification = async (req: Request, res: Response) => {
             }
           }
 
+          const customSender = (req.body.senderName && typeof req.body.senderName === 'string' && req.body.senderName.trim()) || '';
           const adminUser = adminId ? await User.findById(adminId).select('name') : null;
-          const adminDisplayName = adminUser?.name || 'Rupam';
+          const adminDisplayName = customSender || adminUser?.name || '';
 
           const CHUNK_SIZE = 5;
           for (let i = 0; i < recipients.length; i += CHUNK_SIZE) {
@@ -253,12 +254,12 @@ export const createAdminNotification = async (req: Request, res: Response) => {
               chunk.map(async (r) => {
                 try {
                   const html = buildDriveFlowEmailHtml({
-                    title: cleanSubject.replace(/^DriveFlow:\s*/i, ''),
+                    title: cleanSubject,
                     userName: r.name || 'User',
                     messageHtml: `<div style="font-size: 14px; line-height: 22px; color: #334155;">${cleanBody}</div>`,
                     buttonText,
                     buttonUrl,
-                    noticeText: 'This automated notification was sent to your registered DriveFlow account.',
+                    noticeText: 'This automated notification was sent to your registered account.',
                     senderName: adminDisplayName,
                   });
                   await sendCustomEmail(r.email, cleanSubject, html, adminDisplayName);
