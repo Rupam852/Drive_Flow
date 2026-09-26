@@ -2516,6 +2516,21 @@ export default function AdminNotificationsPage() {
                 </div>
               </div>
 
+              {/* ⚠️ Spam Warning Banner */}
+              <div className="px-4 pt-3 pb-1">
+                <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-500/30 flex items-start gap-2.5 text-[11px] text-amber-800 dark:text-amber-300">
+                  <span className="text-base shrink-0">⚠️</span>
+                  <div className="space-y-1">
+                    <p className="font-bold">Personal Gmail se bheja hua email Spam me ja sakta hai!</p>
+                    <p className="text-amber-700 dark:text-amber-400">
+                      Gmail personal accounts se bulk send (BCC) karne par Google automatically spam me daalta hai.
+                      <br />
+                      <strong>Best Option:</strong> "Email Notification" channel use karo — woh server se 1-to-1 bhejta hai aur hamesha <strong>Inbox</strong> me jata hai. ✅
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Progress & Overview */}
               <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-b border-slate-100 dark:border-white/10 space-y-2">
                 <div className="flex items-center justify-between text-xs">
