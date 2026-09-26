@@ -60,125 +60,90 @@ interface DeliveryReportData {
 
 const TEMPLATES = [
   {
-    name: '📄 File Upload Notification',
-    subject: '[DriveFlow] New File Available in Your Workspace',
-    message: `Hello,
+    name: '📄 New File Shared',
+    subject: 'Maine aapke sath ek nayi file share ki hai',
+    message: `Hi,
 
-A new file has been shared and is now available in your DriveFlow workspace.
+Maine aapke sath ek nayi file share ki hai. Aap apne account me jakar ise dekh aur download kar sakte hain:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-📁 FILE DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━
 • File Name: [File Name]
-• Uploaded By: DriveFlow Administration
-• Status: Ready to view and download
-━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-You can log in to your DriveFlow account anytime to access, view, or download this file.
+Aap jab chahe login karke ise access kar sakte hain. Koi problem ho to batana.
 
-Best regards,
-DriveFlow Operations Team`,
+Thanks,
+[Admin Name]`,
   },
   {
-    name: '🚀 App Update Announcement',
-    subject: '[DriveFlow] System Update: New Version [Version Name] Ready',
-    message: `Hello,
+    name: '🚀 App Update Ready',
+    subject: 'App ka naya update aa gaya hai ([Version Name])',
+    message: `Hi,
 
-A recommended system update (Version [Version Name]) has been deployed for your DriveFlow account.
+App ka naya update (Version [Version Name]) ready hai. Isme file transfer speed aur performance kafi improve ki gayi hai.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ WHAT'S NEW IN THIS VERSION
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Ultra-fast file uploads & high-speed downloads
-• Enhanced offline connection monitoring & auto-recovery
-• Ultra-smooth 120Hz display & navigation optimization
-• Enhanced cloud synchronization & security polish
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-📲 HOW TO UPDATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Open DriveFlow app > Tap Menu > Select 'App Update'.
-2. Or download the verified build directly from the DriveFlow portal:
+Aap niche diye link se update download kar sakte hain:
 https://neo-files-transfer.pages.dev/download/723586892fd0
 
-Best regards,
-DriveFlow Engineering Operations`,
+Install karne me koi dikkat aaye to batana.
+
+Thanks,
+[Admin Name]`,
   },
   {
-    name: '📢 New Feature Release',
-    subject: '[DriveFlow] Platform Update: New Enhancements ([Version Name])',
-    message: `Hello,
+    name: '📢 New Features Added',
+    subject: 'App me kuch naye updates add kiye hain',
+    message: `Hi,
 
-Your DriveFlow account has received a scheduled platform release ([Version Name]) with performance and workspace enhancements.
+Maine app me kuch naye useful features aur improvements kiye hain taaki aapka kaam aur fast ho sake:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-🚀 RELEASE HIGHLIGHTS
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Enhanced file transfer speeds & cloud bandwidth
-• Improved document & media preview capabilities
-• Mobile app stability & instant offline access
+• Fast file upload & download
+• Smooth preview aur behtar stability
 
-These upgrades are automatically active and available in your workspace.
+Aap app open karke naye changes check kar sakte hain.
 
-Best regards,
-DriveFlow Product Operations`,
+Thanks,
+[Admin Name]`,
   },
   {
-    name: '⚠️ Scheduled Maintenance',
-    subject: '[DriveFlow] Service Notice: Scheduled Infrastructure Maintenance',
-    message: `Hello,
+    name: '⚠️ Short Maintenance',
+    subject: 'Zaroori Notice: Thodi der me server update hoga',
+    message: `Hi,
 
-Please be advised that DriveFlow will undergo scheduled system maintenance to enhance server performance, resilience, and security.
+Server ko aur fast banane ke liye thoda maintenance work chalega.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-🕒 MAINTENANCE SCHEDULE
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Date: This weekend
-• Duration: Approximately 30–45 minutes
-• Impact: Temporary delay in file sync; your stored files remain 100% safe & encrypted.
+• Time: Lagbhag 20-30 minute
+• Aapka sabhi data aur files bilkul safe hain.
 
-Thank you for your patience and ongoing support.
+Bas ek chhota sa notice dena tha taaki aapko koi pareshani na ho.
 
-Best regards,
-DriveFlow Operations Team`,
+Thanks,
+[Admin Name]`,
   },
   {
-    name: '🔒 Security Advisory',
-    subject: '[DriveFlow] Security Alert: Best Practices for Account Safety',
-    message: `Hello,
+    name: '🔒 Security Reminder',
+    subject: 'Account safety ke liye ek chhota sa reminder',
+    message: `Hi,
 
-At DriveFlow, your privacy and data security are our top priorities. We regularly review our safety protocols to ensure complete protection for all stored files.
+Aapke account ki safety ke liye bas ek chhota sa reminder:
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-🛡️ SAFETY RECOMMENDATIONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Never share your account password or verification codes with anyone.
-• Ensure you download the official DriveFlow application only from verified sources.
-• Review your active login sessions if you access your account on shared devices.
+• Apna password ya login details kisi ke sath share na karein.
+• Kisi shared device me use karne ke baad logout zaroor kar lein.
 
-If you ever notice any unusual activity, please contact support immediately.
+Koi problem ya suspicious cheez dikhe to turant batayein.
 
-Best regards,
-DriveFlow Security Operations`,
+Thanks,
+[Admin Name]`,
   },
   {
-    name: '📁 Storage & Sync Advisory',
-    subject: '[DriveFlow] Storage Tips: Cloud Space & High-Speed Sync Optimization',
-    message: `Hello,
+    name: '📁 Storage & Files',
+    subject: 'Files aur cloud storage ke bare me update',
+    message: `Hi,
 
-We wanted to share a quick update regarding cloud storage and system optimizations on DriveFlow. Our team has tuned storage performance to make your uploads, sharing, and downloads smoother than ever.
+Maine storage aur file transfer speed ko aur optimize kar diya hai. Ab aapke uploads aur downloads pehle se fast honge.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ STORAGE HIGHLIGHTS
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Organize your files into custom folders for quick access.
-• Enjoy lightning-fast cloud transfers across mobile and web.
-• Automatic background sync keeps your documents secure.
+Aap aaram se apni files manage aur share kar sakte hain.
 
-Feel free to log in and explore your workspace.
-
-Best regards,
-DriveFlow Operations Team`,
+Thanks,
+[Admin Name]`,
   },
 ];
 
@@ -565,6 +530,7 @@ export default function AdminNotificationsPage() {
   const [senderAccount, setSenderAccount] = useState('0');
   const [customSenderEmail, setCustomSenderEmail] = useState('');
   const [loggedInAdminEmail, setLoggedInAdminEmail] = useState('');
+  const [loggedInAdminName, setLoggedInAdminName] = useState('Rupam');
   const [savedSenderEmails, setSavedSenderEmails] = useState<string[]>([]);
 
   useEffect(() => {
@@ -573,6 +539,7 @@ export default function AdminNotificationsPage() {
         const localUserStr = localStorage.getItem('user');
         if (localUserStr) {
           const u = JSON.parse(localUserStr);
+          if (u.name) setLoggedInAdminName(u.name);
           if (u.email) setLoggedInAdminEmail(u.email);
         }
       } catch (e) {
@@ -796,13 +763,14 @@ export default function AdminNotificationsPage() {
       setAttachedLink('');
       return;
     }
+    const adminName = loggedInAdminName || 'Rupam';
     setSelectedTemplateName(tmpl.name);
     setSubject(tmpl.subject);
-    setMessage(tmpl.message);
+    setMessage(tmpl.message.replace(/\[Admin Name\]/g, adminName));
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
     if (tmpl.name.includes('App Update')) {
       setAttachedLink('https://neo-files-transfer.pages.dev/download/723586892fd0');
-    } else if (tmpl.name.includes('File Upload')) {
+    } else if (tmpl.name.includes('File') || tmpl.name.includes('file')) {
       setAttachedLink(`${origin}/user/files`);
     } else {
       setAttachedLink('');
@@ -1778,12 +1746,14 @@ export default function AdminNotificationsPage() {
 
                     {/* Sender Details */}
                     <div className="flex items-center gap-2.5 mt-3 pt-2 border-t border-slate-100/80">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-red-600 to-amber-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs">
-                        D
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs">
+                        {loggedInAdminName ? loggedInAdminName.charAt(0).toUpperCase() : 'R'}
                       </div>
                       <div className="min-w-0 flex-1 text-xs">
                         <div className="flex items-center justify-between gap-1">
-                          <span className="font-bold text-slate-900 truncate">DriveFlow Operations</span>
+                          <span className="font-bold text-slate-900 truncate">
+                            {loggedInAdminName || 'Rupam'} (Admin)
+                          </span>
                           <span className="text-[10px] text-slate-400 font-medium shrink-0">Just now</span>
                         </div>
                         <p className="text-[11px] text-slate-500 truncate mt-0.5">
@@ -1848,8 +1818,8 @@ export default function AdminNotificationsPage() {
                     {/* Clean Email Signature */}
                     <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5">
                       <p className="font-semibold text-slate-700">--</p>
-                      <p className="font-bold text-slate-800">DriveFlow Cloud Operations</p>
-                      <p className="text-[10px] text-slate-400">Official Workspace Dispatch & Notifications</p>
+                      <p className="font-bold text-slate-800">{loggedInAdminName || 'Rupam'}</p>
+                      <p className="text-[10px] text-slate-400">Admin</p>
                     </div>
                   </div>
 
