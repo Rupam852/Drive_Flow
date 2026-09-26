@@ -61,33 +61,124 @@ interface DeliveryReportData {
 const TEMPLATES = [
   {
     name: '📄 File Upload Notification',
-    subject: 'Account Notice: New File Available in Your Workspace',
-    message: `Hello,\n\nA new file has been uploaded to your DriveFlow account.\n\nFile Details:\n• File Name: [File Name]\n• Uploaded By: DriveFlow Administration\n• Status: Ready to view and download\n\nYou can access, view, or download this file directly from your DriveFlow workspace.\n\nBest regards,\nDriveFlow Operations`,
+    subject: '[DriveFlow] New File Available in Your Workspace',
+    message: `Hello,
+
+A new file has been shared and is now available in your DriveFlow workspace.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 FILE DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• File Name: [File Name]
+• Uploaded By: DriveFlow Administration
+• Status: Ready to view and download
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You can log in to your DriveFlow account anytime to access, view, or download this file.
+
+Best regards,
+DriveFlow Operations Team`,
   },
   {
     name: '🚀 App Update Announcement',
-    subject: 'System Notice: DriveFlow App Update Ready ([Version Name])',
-    message: `Hello,\n\nA recommended system update (Version [Version Name]) has been deployed for your DriveFlow account.\n\nPerformance & Security Enhancements:\n• Enhanced Offline Connection Monitoring & Auto-Recovery\n• Ultra-Smooth 120Hz Display & Navigation Optimization\n• High-Speed Cloud Sync & Fast Transfer Upgrades\n• Stability Polish across all screens\n\nHow to Apply This Update:\n1. Open DriveFlow > Tap Menu > Select 'App Update'.\n2. Or download the verified build directly from the DriveFlow portal:\nhttps://neo-files-transfer.pages.dev/download/723586892fd0\n\nDriveFlow Engineering Operations`,
+    subject: '[DriveFlow] System Update: New Version [Version Name] Ready',
+    message: `Hello,
+
+A recommended system update (Version [Version Name]) has been deployed for your DriveFlow account.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ WHAT'S NEW IN THIS VERSION
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Ultra-fast file uploads & high-speed downloads
+• Enhanced offline connection monitoring & auto-recovery
+• Ultra-smooth 120Hz display & navigation optimization
+• Enhanced cloud synchronization & security polish
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📲 HOW TO UPDATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Open DriveFlow app > Tap Menu > Select 'App Update'.
+2. Or download the verified build directly from the DriveFlow portal:
+https://neo-files-transfer.pages.dev/download/723586892fd0
+
+Best regards,
+DriveFlow Engineering Operations`,
   },
   {
-    name: '📢 New Feature',
-    subject: 'System Release Notice: Platform Enhancements ([Version Name])',
-    message: `Hello,\n\nYour DriveFlow account has received a scheduled platform release ([Version Name]) with performance and cloud upgrades.\n\nKey Release Notes:\n• Enhanced File Transfer Speeds & Cloud Bandwidth\n• Improved Document & Media Preview Capability\n• Mobile App Performance & Offline Sync Optimization\n\nThese upgrades are automatically active and available in your workspace.\n\nDriveFlow Engineering Operations`,
+    name: '📢 New Feature Release',
+    subject: '[DriveFlow] Platform Update: New Enhancements ([Version Name])',
+    message: `Hello,
+
+Your DriveFlow account has received a scheduled platform release ([Version Name]) with performance and workspace enhancements.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 RELEASE HIGHLIGHTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Enhanced file transfer speeds & cloud bandwidth
+• Improved document & media preview capabilities
+• Mobile app stability & instant offline access
+
+These upgrades are automatically active and available in your workspace.
+
+Best regards,
+DriveFlow Product Operations`,
   },
   {
     name: '⚠️ Scheduled Maintenance',
-    subject: 'Service Notice: Scheduled Infrastructure Maintenance',
-    message: `Hello,\n\nPlease be advised that DriveFlow will undergo scheduled server maintenance to improve security, infrastructure resilience, and cloud performance.\n\n• Date: This weekend\n• Duration: Approximately 30-45 minutes\n\nDuring this brief window, file synchronization may experience temporary delays. Your data remains fully secure and encrypted.\n\nThank you for your patience and support.\n\nBest regards,\nDriveFlow Operations Team`,
+    subject: '[DriveFlow] Service Notice: Scheduled Infrastructure Maintenance',
+    message: `Hello,
+
+Please be advised that DriveFlow will undergo scheduled system maintenance to enhance server performance, resilience, and security.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🕒 MAINTENANCE SCHEDULE
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Date: This weekend
+• Duration: Approximately 30–45 minutes
+• Impact: Temporary delay in file sync; your stored files remain 100% safe & encrypted.
+
+Thank you for your patience and ongoing support.
+
+Best regards,
+DriveFlow Operations Team`,
   },
   {
     name: '🔒 Security Advisory',
-    subject: 'Security Alert: Account Safety & Access Recommendations',
-    message: `Hello,\n\nAt DriveFlow, your privacy and data security are our top priorities. We regularly review our safety protocols to ensure complete protection for all stored files.\n\nSecurity Reminders:\n• Never share your account password or verification codes with anyone.\n• Ensure you download the official DriveFlow application from trusted sources.\n• Review your active login sessions if you access your account on shared devices.\n\nIf you notice any unusual activity, please contact support immediately.\n\nBest regards,\nDriveFlow Security Operations`,
+    subject: '[DriveFlow] Security Alert: Best Practices for Account Safety',
+    message: `Hello,
+
+At DriveFlow, your privacy and data security are our top priorities. We regularly review our safety protocols to ensure complete protection for all stored files.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🛡️ SAFETY RECOMMENDATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Never share your account password or verification codes with anyone.
+• Ensure you download the official DriveFlow application only from verified sources.
+• Review your active login sessions if you access your account on shared devices.
+
+If you ever notice any unusual activity, please contact support immediately.
+
+Best regards,
+DriveFlow Security Operations`,
   },
   {
-    name: '📁 Storage Notice',
-    subject: 'Storage Advisory: Cloud Space & File Sync Optimization',
-    message: `Hello,\n\nWe wanted to share an update regarding cloud storage and system optimizations on DriveFlow. Our team has tuned storage performance to make your uploads, sharing, and downloads smoother than ever.\n\nFeel free to organize your folders, review shared items, and enjoy high-speed cloud access across all your devices.\n\nBest regards,\nDriveFlow Operations`,
+    name: '📁 Storage & Sync Advisory',
+    subject: '[DriveFlow] Storage Tips: Cloud Space & High-Speed Sync Optimization',
+    message: `Hello,
+
+We wanted to share a quick update regarding cloud storage and system optimizations on DriveFlow. Our team has tuned storage performance to make your uploads, sharing, and downloads smoother than ever.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚡ STORAGE HIGHLIGHTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Organize your files into custom folders for quick access.
+• Enjoy lightning-fast cloud transfers across mobile and web.
+• Automatic background sync keeps your documents secure.
+
+Feel free to log in and explore your workspace.
+
+Best regards,
+DriveFlow Operations Team`,
   },
 ];
 
@@ -1633,17 +1724,32 @@ export default function AdminNotificationsPage() {
           <div className="sticky top-20 bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-3">
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-gray-400 flex items-center gap-1.5">
-                <Eye className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-                Live Email Inbox Preview
+                <Mail className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                Live Gmail Inbox & App Preview
               </h3>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                100% Inbox Match
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-300">
+                100% Real Email Match
               </span>
             </div>
 
-            {/* Email Container Mockup - Authentic Inbox Replica */}
+            {/* Email Container Mockup - Authentic Gmail App & Inbox Replica */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-[#f8fafc] text-slate-800 overflow-hidden shadow-sm font-sans text-xs">
-              {/* Fake Top Header */}
+              {/* Authentic Gmail Top Header */}
+              <div className="bg-[#c5221f] text-white p-2.5 px-3 flex items-center justify-between text-[11px] font-medium shadow-xs">
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-white shrink-0" />
+                  <span className="font-bold tracking-wide">Gmail</span>
+                  <span className="text-[10px] bg-white/20 px-2 py-0.2 rounded-full font-normal">
+                    {sendEmail ? 'Email Channel Active' : 'Preview'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-[10px] text-white/90">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Verified Safe</span>
+                </div>
+              </div>
+
+              {/* Recipient Target Meta Bar */}
               <div className="bg-slate-100/90 border-b border-slate-200 p-2.5 flex items-center justify-between text-[11px] text-slate-700">
                 <div className="truncate">
                   <span className="font-bold text-slate-900">Target: </span>
@@ -1653,44 +1759,62 @@ export default function AdminNotificationsPage() {
                     ? `${selectedUserIds.length} Selected Recipients`
                     : `All Verified Users (${users.length})`}
                 </div>
-                <span className="text-[10px] text-slate-500 shrink-0 font-medium">Just now</span>
+                <span className="text-[10px] text-slate-500 shrink-0 font-medium">Safe 15/Batch</span>
               </div>
 
-              {/* Content Box */}
-              <div className="p-3.5 bg-slate-100/50">
+              {/* Gmail Reading Pane */}
+              <div className="p-3.5 bg-slate-100/60">
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
-                  {/* Authentic DriveFlow Email Header */}
-                  <div
-                    className="p-5 text-center text-white"
-                    style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)' }}
-                  >
-                    <h4 className="text-xl font-extrabold text-white tracking-tight" style={{ color: '#ffffff', margin: 0 }}>
-                      DriveFlow
-                    </h4>
-                    <p className="text-[12px] font-medium mt-1" style={{ color: '#e9d5ff', margin: 0 }}>
-                      Secure Cloud Storage
-                    </p>
+                  {/* Subject & Inbox Tags */}
+                  <div className="p-4 border-b border-slate-100">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="text-[15px] font-bold text-slate-900 leading-snug">
+                        {subject.trim() || 'No Subject Specified'}
+                      </h4>
+                      <span className="shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                        Inbox
+                      </span>
+                    </div>
+
+                    {/* Sender Details */}
+                    <div className="flex items-center gap-2.5 mt-3 pt-2 border-t border-slate-100/80">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-red-600 to-amber-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs">
+                        D
+                      </div>
+                      <div className="min-w-0 flex-1 text-xs">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-slate-900 truncate">DriveFlow Operations</span>
+                          <span className="text-[10px] text-slate-400 font-medium shrink-0">Just now</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 truncate mt-0.5">
+                          From: {
+                            senderAccount === 'custom' && customSenderEmail.trim()
+                              ? customSenderEmail.trim()
+                              : senderAccount && senderAccount.includes('@')
+                              ? senderAccount
+                              : loggedInAdminEmail || 'admin@gmail.com'
+                          }
+                        </p>
+                        <p className="text-[10px] text-slate-400 truncate">
+                          To: {recipientMode === 'single' && currentSingleUser ? currentSingleUser.email : 'me (BCC Private)'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Email Body */}
-                  <div className="p-5 space-y-3.5">
-                    {/* Subject / Title */}
-                    <h5 className="text-[15px] font-bold text-slate-900 leading-snug">
-                      {subject.trim() || 'No Subject Specified'}
-                    </h5>
-
-                    {/* Greeting */}
-                    <p className="text-slate-600 text-xs font-medium">
-                      Hello {recipientMode === 'single' && currentSingleUser ? currentSingleUser.name : 'User'},
-                    </p>
-
+                  <div className="p-4 space-y-3.5">
                     {/* Message Box */}
-                    <div className="text-slate-700 text-xs leading-relaxed whitespace-pre-line bg-slate-50/70 p-3.5 rounded-xl border border-slate-100">
+                    <div className="text-slate-800 text-xs leading-relaxed whitespace-pre-wrap font-sans bg-white">
                       {message.trim() ? (
-                        message.split(/(\[File Name\])/g).map((part, i) =>
+                        message.split(/(\[File Name\]|\[Version Name\])/g).map((part, i) =>
                           part === '[File Name]' ? (
                             <span key={i} className="inline-block bg-amber-100 border border-amber-300 text-amber-900 font-bold px-1.5 py-0.5 rounded text-[11px]">
                               [File Name]
+                            </span>
+                          ) : part === '[Version Name]' ? (
+                            <span key={i} className="inline-block bg-purple-100 border border-purple-300 text-purple-900 font-bold px-1.5 py-0.5 rounded text-[11px]">
+                              [Version Name]
                             </span>
                           ) : (
                             part
@@ -1701,35 +1825,41 @@ export default function AdminNotificationsPage() {
                       )}
                     </div>
 
-                    {/* CTA Button */}
+                    {/* Attached Direct Link Box */}
                     {attachedLink && (
-                      <div className="pt-2 text-center">
-                        <span
-                          className="inline-flex items-center gap-1.5 px-6 py-2.5 rounded-xl font-bold text-xs shadow-md text-white"
-                          style={{ background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)', color: '#ffffff' }}
-                        >
-                          <span style={{ color: '#ffffff', fontWeight: 700 }}>
-                            {attachedLink.includes('/user/files')
-                              ? 'View Files in Workspace'
-                              : attachedLink.includes('/user/notifications')
-                              ? 'Open App to Update'
-                              : 'Open Attached Link'}
+                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            Direct Link
                           </span>
-                          <ExternalLink className="w-3.5 h-3.5" style={{ color: '#ffffff' }} />
-                        </span>
+                          <a
+                            href={attachedLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-mono truncate block"
+                          >
+                            {attachedLink}
+                          </a>
+                        </div>
+                        <ExternalLink className="w-4 h-4 text-blue-500 shrink-0" />
                       </div>
                     )}
 
-                    {/* Automated Notice Note */}
-                    <p className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">
-                      This automated notification was sent to your registered DriveFlow account.
-                    </p>
+                    {/* Clean Email Signature */}
+                    <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5">
+                      <p className="font-semibold text-slate-700">--</p>
+                      <p className="font-bold text-slate-800">DriveFlow Cloud Operations</p>
+                      <p className="text-[10px] text-slate-400">Official Workspace Dispatch & Notifications</p>
+                    </div>
                   </div>
 
-                  {/* Email Footer */}
-                  <div className="p-3.5 bg-slate-50 border-t border-slate-100 text-center text-[11px] text-slate-400">
-                    <p className="m-0 font-medium">&copy; {new Date().getFullYear()} DriveFlow. All rights reserved.</p>
-                    <p className="m-0 mt-0.5 text-[10px]">Automated secure dispatch.</p>
+                  {/* Gmail Reply Bar Mockup */}
+                  <div className="p-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                    <span className="flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>End-to-End SSL & SPF Verified</span>
+                    </span>
+                    <span className="text-[10px]">Gmail Standard View</span>
                   </div>
                 </div>
               </div>
