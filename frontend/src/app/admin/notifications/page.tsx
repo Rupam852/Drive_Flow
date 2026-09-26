@@ -61,90 +61,91 @@ interface DeliveryReportData {
 const TEMPLATES = [
   {
     name: '📄 New File Shared',
-    subject: 'Maine aapke sath ek nayi file share ki hai',
+    subject: 'A new file has been shared with you',
     message: `Hi,
 
-Maine aapke sath ek nayi file share ki hai. Aap apne account me jakar ise dekh aur download kar sakte hain:
+A new file has been shared with you. You can view and download it by logging into your account:
 
 • File Name: [File Name]
 
-Aap jab chahe login karke ise access kar sakte hain. Koi problem ho to batana.
+You can access it anytime by logging in. Feel free to reach out if you face any issues.
 
 Thanks,
 [Admin Name]`,
   },
   {
     name: '🚀 App Update Ready',
-    subject: 'App ka naya update aa gaya hai ([Version Name])',
+    subject: 'A new app update is available ([Version Name])',
     message: `Hi,
 
-App ka naya update (Version [Version Name]) release ho gaya hai. Isme file transfer speed aur performance kafi improve ki gayi hai.
+A new update (Version [Version Name]) has been released. This version includes improvements to file transfer speed and overall performance.
 
-Aap app open karke Menu > 'App Update' par tap karein, ya portal se update check karein.
+Open the app and go to Menu > 'App Update' to install, or check for the update from the portal.
 
-Install karne me koi dikkat aaye to batana.
+Let us know if you face any issues during installation.
 
 Thanks,
 [Admin Name]`,
   },
   {
     name: '📢 New Features Added',
-    subject: 'App me kuch naye updates add kiye hain',
+    subject: 'New features and improvements added to the app',
     message: `Hi,
 
-Maine app me kuch naye useful features aur improvements kiye hain taaki aapka kaam aur fast ho sake:
+We have added some useful new features and improvements to make your experience faster and smoother:
 
-• Fast file upload & download
-• Smooth preview aur behtar stability
+• Faster file upload & download
+• Smoother preview and improved stability
 
-Aap app open karke naye changes check kar sakte hain.
+Open the app to explore the latest changes.
 
 Thanks,
 [Admin Name]`,
   },
   {
     name: '⚠️ Short Maintenance',
-    subject: 'Zaroori Notice: Thodi der me server update hoga',
+    subject: 'Notice: Brief scheduled server maintenance ahead',
     message: `Hi,
 
-Server ko aur fast banane ke liye thoda maintenance work chalega.
+We will be performing a short maintenance to improve server performance.
 
-• Time: Lagbhag 20-30 minute
-• Aapka sabhi data aur files bilkul safe hain.
+• Duration: Approximately 20–30 minutes
+• All your data and files are completely safe.
 
-Bas ek chhota sa notice dena tha taaki aapko koi pareshani na ho.
+This is just a heads-up so you are not inconvenienced. Thank you for your patience.
 
 Thanks,
 [Admin Name]`,
   },
   {
     name: '🔒 Security Reminder',
-    subject: 'Account safety ke liye ek chhota sa reminder',
+    subject: 'A quick security reminder for your account',
     message: `Hi,
 
-Aapke account ki safety ke liye bas ek chhota sa reminder:
+Just a quick reminder to help keep your account secure:
 
-• Apna password ya login details kisi ke sath share na karein.
-• Kisi shared device me use karne ke baad logout zaroor kar lein.
+• Never share your password or login details with anyone.
+• Always log out after using the app on a shared or public device.
 
-Koi problem ya suspicious cheez dikhe to turant batayein.
+If you notice anything suspicious, please contact us immediately.
 
 Thanks,
 [Admin Name]`,
   },
   {
     name: '📁 Storage & Files',
-    subject: 'Files aur cloud storage ke bare me update',
+    subject: 'Update: Storage and file performance improved',
     message: `Hi,
 
-Maine storage aur file transfer speed ko aur optimize kar diya hai. Ab aapke uploads aur downloads pehle se fast honge.
+We have further optimized storage and file transfer speed. Your uploads and downloads should now be noticeably faster than before.
 
-Aap aaram se apni files manage aur share kar sakte hain.
+You can continue managing and sharing your files as usual.
 
 Thanks,
 [Admin Name]`,
   },
 ];
+
 
 const getAvatarGradient = (name: string = '') => {
   const gradients = [
