@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Key, CheckCircle2, AlertTriangle, RefreshCw,
   ExternalLink, Eye, EyeOff, Save, Play, X, ShieldCheck,
-  Cpu, Info, Check, AlertCircle, ArrowRight
+  Cpu, Info, Check, AlertCircle, ArrowRight, Zap, Shield, Plus
 } from 'lucide-react';
 import api from '@/lib/api';
 
@@ -29,13 +29,19 @@ const AVAILABLE_MODELS: ModelOption[] = [
     id: 'gemini-2.5-pro',
     name: 'Gemini 2.5 Pro',
     badge: 'Deep Reasoning',
-    description: 'Highest reasoning quality for nuanced, formal executive announcements.',
+    description: 'Highest reasoning quality for nuanced, formal executive announcements and complex text.',
   },
   {
     id: 'gemini-2.0-flash',
     name: 'Gemini 2.0 Flash',
     badge: 'Next-Gen Flash',
-    description: 'Next-generation high-speed multimodal model with great efficiency.',
+    description: 'Next-generation high-speed multimodal model with great efficiency and throughput.',
+  },
+  {
+    id: 'gemini-2.0-flash-lite',
+    name: 'Gemini 2.0 Flash Lite',
+    badge: 'Ultra Fast',
+    description: 'Lightweight, rapid-fire responses with low resource usage and high rate limits.',
   },
   {
     id: 'gemini-1.5-flash',
@@ -48,6 +54,12 @@ const AVAILABLE_MODELS: ModelOption[] = [
     name: 'Gemini 1.5 Pro',
     badge: 'High Precision',
     description: 'Complex long-context reasoning with robust linguistic precision.',
+  },
+  {
+    id: 'gemini-1.5-flash-8b',
+    name: 'Gemini 1.5 Flash 8B',
+    badge: 'High Volume',
+    description: 'High frequency, low latency model optimized for quick short prompts.',
   },
 ];
 
@@ -66,6 +78,9 @@ export default function AdminAiConfigPage() {
   const [maskedKey, setMaskedKey] = useState('');
   const [hasExistingKey, setHasExistingKey] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  const [customModelInput, setCustomModelInput] = useState('');
+  const [showCustomModelBox, setShowCustomModelBox] = useState(false);
+  const [enableAutoFallback, setEnableAutoFallback] = useState(true);
   const [temperature, setTemperature] = useState(0.7);
   const [showKey, setShowKey] = useState(false);
 
@@ -103,10 +118,18 @@ export default function AdminAiConfigPage() {
         setHasExistingKey(!!data.hasKey);
         setMaskedKey(data.maskedKey || '');
         if (data.selectedModel) setSelectedModel(data.selectedModel);
+        if (data.enableAutoFallback !== undefined) setEnableAutoFallback(Boolean(data.enableAutoFallback));
         if (typeof data.temperature === 'number') setTemperature(data.temperature);
         setLastTestedAt(data.lastTestedAt || null);
         setLastTestStatus(data.lastTestStatus || null);
         setLastTestError(data.lastTestError || null);
+
+        // Check if selected model is custom (not in predefined list)
+        const isStandard = AVAILABLE_MODELS.some(m => m.id === data.selectedModel);
+        if (!isStandard && data.selectedModel) {
+          setShowCustomModelBox(true);
+          setCustomModelInput(data.selectedModel);
+        }
       }
     } catch (err: any) {
       console.error('Failed to load AI config:', err);
@@ -130,8 +153,13 @@ export default function AdminAiConfigPage() {
     setToastAlert(null);
 
     try {
+      const finalModel = showCustomModelBox && customModelInput.trim()
+        ? customModelInput.trim()
+        : selectedModel;
+
       const payload: any = {
-        selectedModel,
+        selectedModel: finalModel,
+        enableAutoFallback,
         temperature,
       };
 
@@ -148,6 +176,7 @@ export default function AdminAiConfigPage() {
       });
       setHasExistingKey(!!res.data?.hasKey);
       setMaskedKey(res.data?.maskedKey || '');
+      setSelectedModel(finalModel);
       setApiKeyInput(''); // Clear plain text input once saved
     } catch (err: any) {
       console.error('Save failed:', err);
@@ -166,9 +195,13 @@ export default function AdminAiConfigPage() {
     setIsTesting(true);
     setToastAlert(null);
 
+    const testTargetModel = showCustomModelBox && customModelInput.trim()
+      ? customModelInput.trim()
+      : selectedModel;
+
     try {
       const payload: any = {
-        model: selectedModel,
+        model: testTargetModel,
       };
 
       // If user typed a new key in the box, test with that key
@@ -190,10 +223,10 @@ export default function AdminAiConfigPage() {
         isOpen: true,
         success: true,
         title: 'Connection Successful! 🎉',
-        message: data.message || `Model '${selectedModel}' connected and responded correctly.`,
+        message: data.message || `Model '${testTargetModel}' connected and responded correctly.`,
         details: data.reply ? `Model Output: "${data.reply}"` : undefined,
         latencyMs: data.latencyMs,
-        model: selectedModel,
+        model: testTargetModel,
       });
     } catch (err: any) {
       console.error('Test connection error:', err);
@@ -213,7 +246,7 @@ export default function AdminAiConfigPage() {
         title: 'API Connection Failed',
         message: errorMsg,
         details: errorDetails,
-        model: selectedModel,
+        model: testTargetModel,
       });
     } finally {
       setIsTesting(false);
@@ -238,7 +271,7 @@ export default function AdminAiConfigPage() {
             AI API Configuration
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-400 mt-1">
-            Set up your Google Gemini API key and select preferred models for intelligent notification drafting and anti-spam deliverability checking.
+            Set up your Google Gemini API key, choose your default model, and enable automatic fallback for uninterrupted notification drafting.
           </p>
         </div>
 
@@ -314,48 +347,38 @@ export default function AdminAiConfigPage() {
         {/* Active Model Box */}
         <div className="p-4 rounded-2xl bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 shadow-xs space-y-1.5">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
-            Active Model
+            Default Active Model
           </span>
           <div className="flex items-center gap-2 pt-1">
             <Cpu className="w-4 h-4 text-purple-600 dark:text-purple-400" />
             <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
-              {selectedModel}
+              {showCustomModelBox && customModelInput.trim() ? customModelInput.trim() : selectedModel}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            Google Generative Language API
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            <span>Primary default model</span>
           </p>
         </div>
 
-        {/* Last Verification Test */}
+        {/* Fallback Protection Box */}
         <div className="p-4 rounded-2xl bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 shadow-xs space-y-1.5">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
-            Last Test Status
+            Auto-Fallback Protection
           </span>
           <div className="flex items-center gap-2 pt-1">
-            {lastTestStatus === 'success' ? (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                <Check className="w-3 h-3 stroke-[3]" /> Passed
-              </span>
-            ) : lastTestStatus === 'failed' ? (
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-xs font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300">
-                <X className="w-3 h-3 stroke-[3]" /> Failed
+            {enableAutoFallback ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                <ShieldCheck className="w-3.5 h-3.5" /> Active
               </span>
             ) : (
-              <span className="text-xs font-semibold text-slate-400">
-                Not tested yet
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400">
+                Disabled
               </span>
             )}
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-            {lastTestedAt
-              ? new Date(lastTestedAt).toLocaleString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              : 'Click "Test Connection" to verify'}
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">
+            {enableAutoFallback ? 'Auto-shifts if primary model is busy' : 'Strict single-model mode'}
           </p>
         </div>
       </div>
@@ -406,37 +429,47 @@ export default function AdminAiConfigPage() {
           </p>
         </div>
 
-        {/* Section 2: Model Selection */}
+        {/* Section 2: Model Selection & Default Choice */}
         <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-white/10">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <label className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Cpu className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>Select Active Gemini Model</span>
+              <span>Select Default Gemini Model</span>
             </label>
             <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              Verified working models
+              Admin ka set kiya hua model default use hoga
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {AVAILABLE_MODELS.map(m => {
-              const isSelected = selectedModel === m.id;
+              const isSelected = !showCustomModelBox && selectedModel === m.id;
               return (
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => setSelectedModel(m.id)}
+                  onClick={() => {
+                    setSelectedModel(m.id);
+                    setShowCustomModelBox(false);
+                  }}
                   className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer relative flex flex-col justify-between ${
                     isSelected
-                      ? 'bg-purple-50/80 dark:bg-purple-500/15 border-purple-500 ring-2 ring-purple-500/20 shadow-xs'
+                      ? 'bg-purple-50/90 dark:bg-purple-500/15 border-purple-500 ring-2 ring-purple-500/25 shadow-xs'
                       : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/20'
                   }`}
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
-                        {m.name}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                          isSelected ? 'border-purple-600 bg-purple-600 text-white' : 'border-slate-400 bg-white dark:bg-white/5'
+                        }`}>
+                          {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                        </div>
+                        <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                          {m.name}
+                        </span>
+                      </div>
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                         m.recommended
                           ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
@@ -445,7 +478,7 @@ export default function AdminAiConfigPage() {
                         {m.badge}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
                       {m.description}
                     </p>
                   </div>
@@ -454,7 +487,7 @@ export default function AdminAiConfigPage() {
                     <span>{m.id}</span>
                     {isSelected && (
                       <span className="flex items-center gap-1 font-bold text-purple-600 dark:text-purple-400">
-                        <Check className="w-3.5 h-3.5 stroke-[3]" /> Active
+                        <Check className="w-3.5 h-3.5 stroke-[3]" /> Default Choice
                       </span>
                     )}
                   </div>
@@ -462,10 +495,91 @@ export default function AdminAiConfigPage() {
               );
             })}
           </div>
+
+          {/* Custom Model Option Box */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={() => setShowCustomModelBox(!showCustomModelBox)}
+              className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{showCustomModelBox ? 'Close Custom Model input' : 'Specify Custom / Future Gemini Model ID'}</span>
+            </button>
+
+            {showCustomModelBox && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mt-2.5 p-3.5 rounded-xl border border-purple-300 dark:border-purple-500/30 bg-purple-50/50 dark:bg-purple-950/20 space-y-2"
+              >
+                <label className="block text-xs font-bold text-slate-900 dark:text-white">
+                  Custom Model Name or Identifier:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. gemini-2.0-pro-exp-02-05 or gemini-3.0"
+                    value={customModelInput}
+                    onChange={e => setCustomModelInput(e.target.value)}
+                    className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-black/30 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (customModelInput.trim()) {
+                        setSelectedModel(customModelInput.trim());
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer shadow-xs"
+                  >
+                    Set as Default
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Google Generative Language API endpoint par support hone wala koi bhi model name enter kar sakte hain.
+                </p>
+              </motion.div>
+            )}
+          </div>
         </div>
 
-        {/* Section 3: Fine Tuning Temperature */}
-        <div className="space-y-2 pt-4 border-t border-slate-200 dark:border-white/10">
+        {/* Section 3: Automatic Fallback Feature Checkbox */}
+        <div className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-3">
+          <div className="flex items-start gap-3">
+            <button
+              type="button"
+              onClick={() => setEnableAutoFallback(!enableAutoFallback)}
+              className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
+                enableAutoFallback
+                  ? 'bg-purple-600 border-purple-600 text-white'
+                  : 'border-slate-400 bg-white dark:bg-white/5'
+              }`}
+            >
+              {enableAutoFallback && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+            </button>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white cursor-pointer" onClick={() => setEnableAutoFallback(!enableAutoFallback)}>
+                  Enable Automatic Smart Model Fallback (Zero Downtime)
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30">
+                  Recommended
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed">
+                Agar aapka default selected model temporarily busy, rate-limited (429), ya unavailable ho, to Gemini AI <strong>automatic doosre working model</strong> par switch ho kar notification generate kar dega taaki aapka kaam kabhi na ruke.
+              </p>
+              <div className="pt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span>Fallback Sequence: {selectedModel} ➔ gemini-2.0-flash ➔ gemini-1.5-flash ➔ gemini-1.5-pro</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Section 4: Fine Tuning Temperature */}
+        <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-white/10">
           <div className="flex items-center justify-between text-xs">
             <label className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
               <span>Creativity & Precision (Temperature):</span>
@@ -603,11 +717,19 @@ export default function AdminAiConfigPage() {
                 </div>
 
                 {testModal.success ? (
-                  <div className="flex items-center justify-between text-slate-600 dark:text-slate-300 font-medium px-1">
-                    <span>Response Latency:</span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                      {testModal.latencyMs} ms
-                    </span>
+                  <div className="space-y-1.5 text-slate-600 dark:text-slate-300 font-medium px-1">
+                    <div className="flex items-center justify-between">
+                      <span>Response Latency:</span>
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                        {testModal.latencyMs} ms
+                      </span>
+                    </div>
+                    {enableAutoFallback && (
+                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-300">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Automatic Fallback is enabled to protect against model downtime.</span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-1 text-slate-500 dark:text-slate-400 px-1">

@@ -226,6 +226,8 @@ export default function AdminNotificationsPage() {
     subject: string;
     message: string;
     model?: string;
+    usedFallback?: boolean;
+    originalModel?: string;
   } | null>(null);
 
   // AI Error Popup Modal State
@@ -280,6 +282,8 @@ export default function AdminNotificationsPage() {
           subject: res.data.subject,
           message: res.data.message,
           model: res.data.model,
+          usedFallback: res.data.usedFallback,
+          originalModel: res.data.originalModel,
         });
       } else {
         throw new Error(res.data?.message || 'Gemini could not generate content.');
@@ -2694,14 +2698,21 @@ export default function AdminNotificationsPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="p-4 rounded-xl border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-950/20 space-y-3"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <span>Gemini Enhanced Output</span>
                       </div>
-                      <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full">
-                        {aiResult.model || 'Gemini'}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {aiResult.usedFallback && (
+                          <span className="text-[10px] font-semibold text-amber-800 dark:text-amber-300 bg-amber-100 dark:bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-300 dark:border-amber-500/30">
+                            Auto-Fallback from {aiResult.originalModel}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full">
+                          {aiResult.model || 'Gemini'}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="space-y-2 text-xs">

@@ -7,8 +7,10 @@ const DEFAULT_MODELS = [
   'gemini-2.5-flash',
   'gemini-2.5-pro',
   'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
   'gemini-1.5-flash',
   'gemini-1.5-pro',
+  'gemini-1.5-flash-8b',
 ];
 
 // Helper to get or create the single AI config document
@@ -19,10 +21,28 @@ const getOrCreateAiConfig = async () => {
       geminiApiKey: process.env.GEMINI_API_KEY || '',
       selectedModel: 'gemini-2.5-flash',
       availableModels: DEFAULT_MODELS,
+      enableAutoFallback: true,
       temperature: 0.7,
     });
+    return config;
   }
-  return config;
+
+  // Ensure newly supported models are present
+  const doc = config;
+  const existing = new Set(doc.availableModels || []);
+  let modified = false;
+  DEFAULT_MODELS.forEach(m => {
+    if (!existing.has(m)) {
+      doc.availableModels.push(m);
+      modified = true;
+    }
+  });
+  if (doc.enableAutoFallback === undefined) {
+    doc.enableAutoFallback = true;
+    modified = true;
+  }
+  if (modified) await doc.save();
+  return doc;
 };
 
 // Mask API key for safe display (e.g. AIzaSy...3aX9)
@@ -45,6 +65,7 @@ export const getAiConfig = async (_req: Request, res: Response) => {
       availableModels: config.availableModels && config.availableModels.length > 0
         ? config.availableModels
         : DEFAULT_MODELS,
+      enableAutoFallback: config.enableAutoFallback !== false,
       temperature: config.temperature ?? 0.7,
       lastTestedAt: config.lastTestedAt,
       lastTestStatus: config.lastTestStatus,
@@ -61,7 +82,7 @@ export const getAiConfig = async (_req: Request, res: Response) => {
 // @access  Private/Admin
 export const updateAiConfig = async (req: Request, res: Response) => {
   try {
-    const { apiKey, selectedModel, temperature } = req.body;
+    const { apiKey, selectedModel, enableAutoFallback, temperature } = req.body;
     const config = await getOrCreateAiConfig();
 
     if (apiKey !== undefined && typeof apiKey === 'string') {
@@ -78,6 +99,10 @@ export const updateAiConfig = async (req: Request, res: Response) => {
       config.selectedModel = selectedModel.trim();
     }
 
+    if (enableAutoFallback !== undefined) {
+      config.enableAutoFallback = Boolean(enableAutoFallback);
+    }
+
     if (temperature !== undefined && typeof temperature === 'number') {
       config.temperature = Math.min(2, Math.max(0, temperature));
     }
@@ -87,7 +112,7 @@ export const updateAiConfig = async (req: Request, res: Response) => {
     await logActivity(
       String((req as any).user?._id || ''),
       'UPDATE_AI_CONFIG',
-      `Admin updated Gemini AI configuration (Model: ${config.selectedModel})`
+      `Admin updated Gemini AI configuration (Model: ${config.selectedModel}, Auto-Fallback: ${config.enableAutoFallback})`
     );
 
     res.json({
@@ -96,6 +121,7 @@ export const updateAiConfig = async (req: Request, res: Response) => {
       maskedKey: maskApiKey(config.geminiApiKey),
       selectedModel: config.selectedModel,
       availableModels: config.availableModels,
+      enableAutoFallback: config.enableAutoFallback,
       temperature: config.temperature,
     });
   } catch (error: any) {
@@ -207,8 +233,7 @@ export const assistNotification = async (req: Request, res: Response) => {
       return;
     }
 
-    const effectiveModel = config.selectedModel || 'gemini-2.5-flash';
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${effectiveModel}:generateContent?key=${config.geminiApiKey}`;
+    const primaryModel = config.selectedModel || 'gemini-2.5-flash';
 
     let systemInstruction = '';
     let userContent = '';
@@ -251,66 +276,109 @@ CRITICAL DELIVERABILITY RULES:
       return;
     }
 
-    try {
-      const response = await axios.post(
-        endpoint,
-        {
-          contents: [
-            {
-              parts: [
-                {
-                  text: `${systemInstruction}\n\nStrict Rule: Return ONLY raw JSON without markdown formatting, code fences, or surrounding text.\n\n${userContent}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: config.temperature ?? 0.7,
-            maxOutputTokens: 1024,
-          },
-        },
-        {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 25000,
-        }
-      );
+    // Determine list of models to try (primary first, then fallback pool if enabled)
+    const modelsToTry: string[] = [primaryModel];
 
-      const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-      
-      // Parse JSON response cleanly
-      let parsedResult: { subject?: string; message?: string } = {};
-      const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    if (config.enableAutoFallback !== false) {
+      const fallbackCandidates = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-2.0-flash-lite',
+        'gemini-1.5-pro',
+        'gemini-2.5-pro',
+        'gemini-1.5-flash-8b',
+      ];
+      fallbackCandidates.forEach(m => {
+        if (!modelsToTry.includes(m)) {
+          modelsToTry.push(m);
+        }
+      });
+    }
+
+    let successfulResult: { subject?: string; message?: string } | null = null;
+    let successfulModel = primaryModel;
+    let usedFallback = false;
+    let lastError: any = null;
+
+    for (let i = 0; i < modelsToTry.length; i++) {
+      const model = modelsToTry[i];
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${config.geminiApiKey}`;
 
       try {
-        parsedResult = JSON.parse(cleanJson);
-      } catch (parseError) {
-        // Fallback: extract subject and body if model returned plain text
-        parsedResult = {
-          subject: currentSubject || 'DriveFlow System Notice',
-          message: rawText,
-        };
-      }
+        const response = await axios.post(
+          endpoint,
+          {
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `${systemInstruction}\n\nStrict Rule: Return ONLY raw JSON without markdown formatting, code fences, or surrounding text.\n\n${userContent}`,
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              temperature: config.temperature ?? 0.7,
+              maxOutputTokens: 1024,
+            },
+          },
+          {
+            headers: { 'Content-Type': 'application/json' },
+            timeout: 25000,
+          }
+        );
 
-      if (!parsedResult.message) {
-        throw new Error('Gemini response could not be formatted properly.');
-      }
+        const rawText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+        const cleanJson = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
 
-      res.json({
-        success: true,
-        subject: parsedResult.subject || currentSubject || 'DriveFlow Notice',
-        message: parsedResult.message,
-        model: effectiveModel,
-      });
-    } catch (apiErr: any) {
-      const errorData = apiErr.response?.data?.error;
-      const errorMessage = errorData?.message || apiErr.message || 'Gemini API call failed';
-      
+        let parsedResult: { subject?: string; message?: string } = {};
+        try {
+          parsedResult = JSON.parse(cleanJson);
+        } catch (parseError) {
+          parsedResult = {
+            subject: currentSubject || 'DriveFlow System Notice',
+            message: rawText,
+          };
+        }
+
+        if (parsedResult.message) {
+          successfulResult = parsedResult;
+          successfulModel = model;
+          usedFallback = (i > 0);
+          break; // Succeeded! Exit loop
+        }
+      } catch (apiErr: any) {
+        lastError = apiErr;
+        const errMsg = apiErr.response?.data?.error?.message || apiErr.message || '';
+        console.warn(`[Gemini Assist] Model '${model}' failed: ${errMsg}`);
+
+        // If the API key is completely invalid or forbidden, do not waste time retrying other models
+        if (errMsg.includes('API_KEY_INVALID') || apiErr.response?.status === 401 || apiErr.response?.status === 403) {
+          break;
+        }
+      }
+    }
+
+    if (!successfulResult) {
+      const errorData = lastError?.response?.data?.error;
+      const errorMessage = errorData?.message || lastError?.message || 'Gemini AI call failed across all tried models';
       res.status(400).json({
         success: false,
         message: errorMessage,
-        details: errorData || apiErr.toString(),
+        details: errorData || lastError?.toString(),
       });
+      return;
     }
+
+    res.json({
+      success: true,
+      subject: successfulResult.subject || currentSubject || 'DriveFlow Notice',
+      message: successfulResult.message,
+      model: successfulModel,
+      usedFallback,
+      originalModel: primaryModel,
+    });
   } catch (error: any) {
     res.status(500).json({
       success: false,
