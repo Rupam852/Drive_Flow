@@ -678,10 +678,6 @@ export default function AdminNotificationsPage() {
       setResultStatus({ type: 'error', text: 'Please select a delivery channel: In-App Bell Alert (for Phone & App) or Email Notification (for Gmail App).' });
       return false;
     }
-    if (sendInApp && sendEmail) {
-      setResultStatus({ type: 'error', text: 'Please select either In-App Bell Alert or Email Notification one at a time.' });
-      return false;
-    }
     if (recipientMode === 'single' && !selectedUserId) {
       setResultStatus({ type: 'error', text: 'Please choose a specific user recipient.' });
       return false;
@@ -1478,50 +1474,15 @@ export default function AdminNotificationsPage() {
               </span>
             </div>
 
-            {/* When BOTH are selected: show warning message instead of send button */}
-            {sendInApp && sendEmail ? (
-              <div className="w-full p-3.5 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 text-amber-900 dark:text-amber-200 text-xs space-y-2">
-                <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Please use Email and App notifications separately:</span>
-                </div>
-                <p className="text-[11px] text-amber-800/90 dark:text-amber-200/90 leading-relaxed">
-                  Email notification personal <strong>Gmail App</strong> ke through safe batches me send hoti hai, jabki Phone Alert seedha users ke <strong>Phone & App</strong> par deliver hoti hai. Please ek channel select karein:
-                </p>
-                <div className="flex items-center gap-2 pt-1 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSendInApp(false);
-                      setSendEmail(true);
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5 active:scale-95"
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>Use Email via Gmail App</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSendInApp(true);
-                      setSendEmail(false);
-                    }}
-                    className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5 active:scale-95"
-                  >
-                    <Smartphone className="w-3.5 h-3.5" />
-                    <span>Use Phone & App Alert</span>
-                  </button>
-                </div>
-              </div>
-            ) : !sendInApp && !sendEmail ? (
+            {!sendInApp && !sendEmail ? (
               /* When NEITHER is selected: show guidance message */
               <div className="w-full p-3 rounded-xl border border-dashed border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-white/[0.02] text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
                 <Info className="w-4 h-4 text-purple-500 shrink-0" />
                 <span>Please select a delivery channel above: <strong>In-App Bell Alert</strong> (for Phone & App) or <strong>Email Notification</strong> (for Gmail App).</span>
               </div>
             ) : (
-              /* When EITHER Email OR In-App is selected */
-              <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+              /* When AT LEAST ONE channel is selected (or BOTH) */
+              <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap">
                 <button
                   type="button"
                   onClick={() => {
@@ -1537,8 +1498,8 @@ export default function AdminNotificationsPage() {
                   Clear
                 </button>
 
-                {/* Send via Gmail App Button - Visible ONLY when Email is selected */}
-                {sendEmail && !sendInApp && (
+                {/* Send via Gmail App Button - Visible when Email is selected */}
+                {sendEmail && (
                   <button
                     type="button"
                     onClick={handleOpenGmailDispatcher}
@@ -1551,8 +1512,8 @@ export default function AdminNotificationsPage() {
                   </button>
                 )}
 
-                {/* Send to Phone & App Button - Visible ONLY when In-App Bell is selected */}
-                {sendInApp && !sendEmail && (
+                {/* Send to Phone & App Button - Visible when In-App Bell is selected */}
+                {sendInApp && (
                   <button
                     type="button"
                     onClick={handleSendNotification}
