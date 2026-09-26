@@ -575,11 +575,6 @@ export default function AdminNotificationsPage() {
 
     setConfirmedBatches([]);
     setShowGmailModal(true);
-
-    // If batches exist, automatically open Part 1 in Gmail right away for seamless experience
-    if (gmailBatches.length > 0 && gmailBatches[0].emails.length > 0) {
-      handleLaunchGmailBatch(gmailBatches[0].emails);
-    }
   };
 
   const handleToggleBatchConfirmed = (batchIndex: number) => {
