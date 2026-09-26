@@ -457,23 +457,19 @@ export default function AdminAiConfigPage() {
                 }}
                 className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs appearance-none cursor-pointer transition-all hover:border-slate-400 dark:hover:border-white/25"
               >
-                <optgroup label="Verified Gemini 3 Models">
-                  {AVAILABLE_MODELS.map(m => (
-                    <option key={m.id} value={m.id} className="dark:bg-[#121626] py-1.5 font-sans">
-                      {m.name} ({m.id}) {m.recommended ? '— ★ Recommended' : `— [${m.badge}]`}
-                    </option>
-                  ))}
-                </optgroup>
-                <optgroup label="Custom">
-                  {!AVAILABLE_MODELS.some(m => m.id === selectedModel) && selectedModel && selectedModel !== '__custom__' && (
-                    <option value={selectedModel} className="dark:bg-[#121626] py-1.5 font-sans">
-                      Current Custom: {selectedModel}
-                    </option>
-                  )}
-                  <option value="__custom__" className="dark:bg-[#121626] py-1.5 font-sans">
-                    ➕ Specify Custom Gemini Model ID...
+                {AVAILABLE_MODELS.map(m => (
+                  <option key={m.id} value={m.id} className="dark:bg-[#121626] py-2 font-medium">
+                    {m.name}
                   </option>
-                </optgroup>
+                ))}
+                {!AVAILABLE_MODELS.some(m => m.id === selectedModel) && selectedModel && selectedModel !== '__custom__' && (
+                  <option value={selectedModel} className="dark:bg-[#121626] py-2 font-medium">
+                    Custom: {selectedModel}
+                  </option>
+                )}
+                <option value="__custom__" className="dark:bg-[#121626] py-2 font-medium">
+                  Custom Model...
+                </option>
               </select>
 
               <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-400">
