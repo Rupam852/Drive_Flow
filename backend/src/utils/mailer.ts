@@ -56,7 +56,10 @@ export function buildDriveFlowEmailHtml({
   noticeText?: string;
   senderName?: string;
 }): string {
-  const headerTitle = senderName && senderName.trim() ? senderName.trim() : title;
+  const subtitle = senderName && senderName.trim() && senderName.trim() !== 'DriveFlow'
+    ? `Message from ${senderName.trim()}`
+    : 'Official System Notification';
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,47 +67,57 @@ export function buildDriveFlowEmailHtml({
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f8fafc; padding: 24px 12px;">
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #f1f5f9; padding: 32px 12px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);" cellspacing="0" cellpadding="0">
-          ${senderName && senderName.trim() ? `
+        <table role="presentation" width="100%" style="max-width: 540px; background-color: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);" cellspacing="0" cellpadding="0">
+          <!-- Gradient Header -->
           <tr>
-            <td style="padding: 16px 28px; background-color: #f8fafc; border-bottom: 1px solid #f1f5f9;">
-              <p style="margin: 0; font-size: 13px; font-weight: 600; color: #475569;">${senderName.trim()}</p>
+            <td style="padding: 26px 32px 22px; text-align: center; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);">
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">DriveFlow</h1>
+              <p style="margin: 5px 0 0; color: #e0e7ff; font-size: 13px; font-weight: 500;">${subtitle}</p>
             </td>
           </tr>
-          ` : ''}
+          
+          <!-- Body Content -->
           <tr>
-            <td style="padding: 28px 28px 24px; color: #1e293b;">
-              <h2 style="margin: 0 0 14px; font-size: 18px; font-weight: 600; color: #0f172a;">${title}</h2>
+            <td style="padding: 30px 32px 24px; color: #1e293b;">
+              <h2 style="margin: 0 0 14px; font-size: 18px; font-weight: 700; color: #0f172a; line-height: 26px;">${title}</h2>
               <p style="margin: 0 0 16px; font-size: 14px; line-height: 22px; color: #475569;">
                 Hello ${userName || 'User'},
               </p>
               
-              <div style="font-size: 14px; line-height: 22px; color: #334155; margin: 16px 0;">
+              <div style="font-size: 14px; line-height: 24px; color: #334155; margin: 18px 0;">
                 ${messageHtml}
               </div>
 
               ${buttonText && buttonUrl ? `
-                <div style="text-align: center; margin: 24px 0 12px;">
-                  <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="background-color: #4f46e5; color: #ffffff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; display: inline-block;">
-                    ${buttonText}
+                <div style="text-align: center; margin: 28px 0 16px;">
+                  <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: #ffffff; text-decoration: none; padding: 13px 30px; border-radius: 10px; font-size: 14px; font-weight: 600; display: inline-block; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);">
+                    ${buttonText} &rarr;
                   </a>
                 </div>
               ` : ''}
 
               ${noticeText ? `
-                <p style="margin: 20px 0 0; font-size: 12px; line-height: 18px; color: #94a3b8;">
+                <div style="margin: 22px 0 0; padding: 12px 16px; border-radius: 8px; background-color: #f8fafc; border: 1px solid #e2e8f0; font-size: 12px; line-height: 18px; color: #64748b;">
                   ${noticeText}
-                </p>
+                </div>
               ` : ''}
+
+              <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 13px; color: #64748b;">
+                <p style="margin: 0 0 2px; font-weight: 600; color: #334155;">Regards,</p>
+                <p style="margin: 0; font-weight: 700; color: #0f172a;">${senderName && senderName.trim() ? senderName.trim() : 'DriveFlow Operations'}</p>
+              </div>
             </td>
           </tr>
+
+          <!-- Footer -->
           <tr>
-            <td style="padding: 16px 28px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; line-height: 16px; color: #94a3b8;">
-              <p style="margin: 0;">This email was sent to your registered account.</p>
+            <td style="padding: 18px 32px; background-color: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; font-size: 11px; line-height: 18px; color: #94a3b8;">
+              <p style="margin: 0 0 4px; font-weight: 500;">&copy; ${new Date().getFullYear()} DriveFlow Operations. All rights reserved.</p>
+              <p style="margin: 0;">This official transactional notification was sent to your registered account.</p>
             </td>
           </tr>
         </table>

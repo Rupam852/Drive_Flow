@@ -1834,54 +1834,85 @@ export default function AdminNotificationsPage() {
                     </div>
                   </div>
 
-                  {/* Email Body */}
-                  <div className="p-4 space-y-3.5">
-                    {/* Message Box */}
-                    <div className="text-slate-800 text-xs leading-relaxed whitespace-pre-wrap font-sans bg-white">
-                      {message.trim() ? (
-                        message.split(/(\[File Name\]|\[Version Name\])/g).map((part, i) =>
-                          part === '[File Name]' ? (
-                            <span key={i} className="inline-block bg-amber-100 border border-amber-300 text-amber-900 font-bold px-1.5 py-0.5 rounded text-[11px]">
-                              [File Name]
-                            </span>
-                          ) : part === '[Version Name]' ? (
-                            <span key={i} className="inline-block bg-purple-100 border border-purple-300 text-purple-900 font-bold px-1.5 py-0.5 rounded text-[11px]">
-                              [Version Name]
-                            </span>
-                          ) : (
-                            part
-                          )
-                        )
-                      ) : (
-                        <span className="text-slate-400 italic">Your composed message content will appear formatted here...</span>
-                      )}
-                    </div>
-
-                    {/* Attached Direct Link Box */}
-                    {attachedLink && (
-                      <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                            Direct Link
+                  {/* Email Body: Authentic DriveFlow HTML Email Card */}
+                  <div className="p-3.5 bg-slate-100/70">
+                    <div className="rounded-xl border border-slate-200 overflow-hidden shadow-xs bg-white">
+                      {/* Gradient Header */}
+                      <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-700 text-white p-4 text-center shadow-xs">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="text-base font-extrabold tracking-tight">DriveFlow</span>
+                          <span className="text-[9px] bg-white/20 text-white font-bold px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                            Verified
                           </span>
-                          <a
-                            href={attachedLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:text-blue-800 hover:underline font-mono truncate block"
-                          >
-                            {attachedLink}
-                          </a>
                         </div>
-                        <ExternalLink className="w-4 h-4 text-blue-500 shrink-0" />
+                        <p className="text-[10px] text-purple-100 font-medium mt-0.5">
+                          {loggedInAdminName ? `Message from ${loggedInAdminName}` : 'Official System Notification'}
+                        </p>
                       </div>
-                    )}
 
-                    {/* Clean Email Signature */}
-                    <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5">
-                      <p className="font-semibold text-slate-700">--</p>
-                      <p className="font-bold text-slate-800">{loggedInAdminName || 'Rupam'}</p>
-                      <p className="text-[10px] text-slate-400">Admin</p>
+                      {/* Content Area */}
+                      <div className="p-4 space-y-3">
+                        <h5 className="text-[14px] font-bold text-slate-900 leading-snug">
+                          {subject.trim() || 'No Subject Specified'}
+                        </h5>
+                        <p className="text-[11px] text-slate-500">
+                          Hello {recipientMode === 'single' && currentSingleUser ? currentSingleUser.name : 'User'},
+                        </p>
+
+                        {/* Formatted Message Content */}
+                        <div className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap font-sans py-1">
+                          {message.trim() ? (
+                            message.split(/(\[File Name\]|\[Version Name\])/g).map((part, i) =>
+                              part === '[File Name]' ? (
+                                <span key={i} className="inline-block bg-amber-100 border border-amber-300 text-amber-900 font-bold px-1.5 py-0.5 rounded text-[11px]">
+                                  [File Name]
+                                </span>
+                              ) : part === '[Version Name]' ? (
+                                <span key={i} className="inline-block bg-purple-100 border border-purple-300 text-purple-900 font-bold px-1.5 py-0.5 rounded text-[11px]">
+                                  [Version Name]
+                                </span>
+                              ) : (
+                                part
+                              )
+                            )
+                          ) : (
+                            <span className="text-slate-400 italic">Your composed message content will appear formatted here...</span>
+                          )}
+                        </div>
+
+                        {/* Styled Action Button (if link attached) */}
+                        {attachedLink && (
+                          <div className="py-2 text-center">
+                            <a
+                              href={attachedLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-purple-500/25 transition-all no-underline"
+                            >
+                              <span>View Details &rarr;</span>
+                            </a>
+                            <div className="mt-1.5 text-[10px] text-slate-400 font-mono truncate max-w-xs mx-auto">
+                              {attachedLink}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Notice Box */}
+                        <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-[10px] text-slate-500 leading-relaxed">
+                          This automated notification was sent to your registered DriveFlow account.
+                        </div>
+
+                        {/* Sign-off */}
+                        <div className="pt-2 border-t border-slate-100 text-[11px] text-slate-500 space-y-0.5">
+                          <p className="font-semibold text-slate-600">Regards,</p>
+                          <p className="font-bold text-slate-800">{loggedInAdminName || 'Rupam'} (Operations)</p>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="p-2.5 bg-slate-50 border-t border-slate-100 text-center text-[10px] text-slate-400">
+                        <p>© {new Date().getFullYear()} DriveFlow Operations. All rights reserved.</p>
+                      </div>
                     </div>
                   </div>
 
