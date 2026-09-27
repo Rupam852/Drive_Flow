@@ -17,11 +17,30 @@ export default function PushNotificationManager() {
 
     let isMounted = true;
 
+    const getTargetUrlForRole = (requestedUrl?: string, notifId?: string) => {
+      let role = '';
+      try {
+        role = localStorage.getItem('role') || '';
+        if (!role) {
+          const userStr = localStorage.getItem('user');
+          if (userStr) role = JSON.parse(userStr).role || '';
+        }
+      } catch {}
+
+      // If the logged-in account on this device is an admin, always open admin notifications
+      if (role === 'admin') {
+        return '/admin/notifications';
+      }
+
+      // Regular user destination
+      return requestedUrl || (notifId ? `/user/notifications?id=${notifId}` : '/user/notifications');
+    };
+
     // Listen for custom open-push-notification dispatched from MainActivity
     const handleOpenPushNotification = (e: Event) => {
       const customEvent = e as CustomEvent<{ url?: string; notificationId?: string }>;
       const detail = customEvent.detail;
-      const targetUrl = detail?.url || (detail?.notificationId ? `/user/notifications?id=${detail.notificationId}` : '/user/notifications');
+      const targetUrl = getTargetUrlForRole(detail?.url, detail?.notificationId);
 
       // 1. Clear notifications from Android system status tray
       try {
@@ -117,7 +136,7 @@ export default function PushNotificationManager() {
               await AppUpdateNotification.showAnnouncementNotification({
                 title: notification.title || 'DriveFlow Announcement',
                 body: notification.body || '',
-                url: notification.data?.url || '/user/notifications',
+                url: getTargetUrlForRole(notification.data?.url, notification.data?.notificationId),
                 notificationId: notification.data?.notificationId || '',
               });
             } catch (err) {
@@ -132,7 +151,7 @@ export default function PushNotificationManager() {
             console.log('[Push] Notification tapped/actionPerformed:', action);
             const data = action.notification.data;
             const notifId = data?.notificationId;
-            const targetUrl = data?.url || (notifId ? `/user/notifications?id=${notifId}` : '/user/notifications');
+            const targetUrl = getTargetUrlForRole(data?.url, notifId);
 
             // 1. Clear notification from Android system tray
             try {

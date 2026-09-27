@@ -71,6 +71,7 @@ export interface PushNotificationPayload {
   data?: Record<string, string>;
   tokens?: string[];
   targetUserIds?: string[];
+  excludeUserIds?: string[];
 }
 
 /**
@@ -86,15 +87,23 @@ export async function sendPushNotification(payload: PushNotificationPayload) {
   try {
     let targetTokens: string[] = [];
 
+    const excludeFilter = payload.excludeUserIds && payload.excludeUserIds.length > 0
+      ? { userId: { $nin: payload.excludeUserIds } }
+      : {};
+
     if (payload.tokens && payload.tokens.length > 0) {
       targetTokens = payload.tokens;
     } else if (payload.targetUserIds && payload.targetUserIds.length > 0) {
       // Find tokens for specific users
-      const records = await DeviceToken.find({ userId: { $in: payload.targetUserIds } });
+      const query: any = { userId: { $in: payload.targetUserIds } };
+      if (payload.excludeUserIds && payload.excludeUserIds.length > 0) {
+        query.userId = { $in: payload.targetUserIds, $nin: payload.excludeUserIds };
+      }
+      const records = await DeviceToken.find(query);
       targetTokens = records.map((r) => r.token);
     } else {
-      // Broadcast to all registered devices
-      const records = await DeviceToken.find();
+      // Broadcast to all registered devices (excluding specified users, like sender admin)
+      const records = await DeviceToken.find(excludeFilter);
       targetTokens = records.map((r) => r.token);
     }
 

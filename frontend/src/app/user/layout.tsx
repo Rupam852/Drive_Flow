@@ -54,6 +54,26 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     try {
       setIsNativeApp(!!(window as any).Capacitor?.isNativePlatform?.());
+
+      // If user is currently an Admin, redirect them out of /user routes
+      let role = '';
+      try {
+        role = localStorage.getItem('role') || '';
+        if (!role) {
+          const userStr = localStorage.getItem('user');
+          if (userStr) role = JSON.parse(userStr).role || '';
+        }
+      } catch {}
+
+      if (role === 'admin') {
+        if (pathname?.includes('/notifications')) {
+          router.replace('/admin/notifications');
+        } else {
+          router.replace('/admin/dashboard');
+        }
+        return;
+      }
+
       const token = localStorage.getItem('token_user') || localStorage.getItem('token');
       if (token) {
         setAuthorized(true);
@@ -63,7 +83,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     } catch (e) {
       router.replace('/login');
     }
-  }, [router]);
+  }, [router, pathname]);
 
   // Listen for native status bar notification tap event to open Updater
   useEffect(() => {

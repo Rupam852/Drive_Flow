@@ -294,6 +294,7 @@ export const createAdminNotification = async (req: Request, res: Response) => {
           title: title.trim(),
           body: inAppMessage,
           targetUserIds: type === 'selected' || type === 'single' ? targetUsers : undefined,
+          excludeUserIds: adminId ? [adminId.toString()] : undefined,
           data: {
             notificationId: newNotification._id.toString(),
             url: `/user/notifications?id=${newNotification._id.toString()}`,
