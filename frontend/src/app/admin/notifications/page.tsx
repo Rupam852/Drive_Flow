@@ -194,15 +194,21 @@ export default function AdminNotificationsPage() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close user dropdown when clicking or tapping outside
+  const [linkDropdownOpen, setLinkDropdownOpen] = useState(false);
+  const linkDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking or tapping outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
       }
+      if (linkDropdownRef.current && !linkDropdownRef.current.contains(event.target as Node)) {
+        setLinkDropdownOpen(false);
+      }
     };
 
-    if (userDropdownOpen) {
+    if (userDropdownOpen || linkDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
     }
@@ -210,7 +216,7 @@ export default function AdminNotificationsPage() {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [userDropdownOpen]);
+  }, [userDropdownOpen, linkDropdownOpen]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -1528,44 +1534,66 @@ export default function AdminNotificationsPage() {
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
-                    const portalUrl = `${origin}/user/notifications`;
-                    const portalSnippet = `\n\n📲 DriveFlow Portal (Update & Notifications):\n${portalUrl}`;
+                <div className="relative" ref={linkDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setLinkDropdownOpen(!linkDropdownOpen)}
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs ${
+                      linkInserted
+                        ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
+                        : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
+                    }`}
+                    title="Insert official portal link into message draft"
+                  >
+                    {linkInserted ? (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>✓ Portal Link Added</span>
+                      </>
+                    ) : (
+                      <>
+                        <Smartphone className="w-3.5 h-3.5" />
+                        <span>+ Insert Portal Link</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  {linkDropdownOpen && (
+                    <div className="absolute top-full left-0 mt-1 z-40 bg-white dark:bg-[#161a2b] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-1.5 min-w-[280px] flex flex-col gap-1">
+                      {[
+                        { name: 'Dashboard', url: 'https://driveflowrupam.vercel.app/user/dashboard' },
+                        { name: 'App Download', url: 'https://neo-files-transfer.pages.dev/download/723586892fd0' },
+                        { name: 'My Files', url: 'https://driveflowrupam.vercel.app/user/files' }
+                      ].map((item, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            const portalUrl = item.url;
+                            const portalSnippet = `\n\n📲 DriveFlow Portal (${item.name}):\n${portalUrl}`;
 
-                    if (!message.includes(portalUrl)) {
-                      setMessage(prev => {
-                        if (!prev.trim()) {
-                          return `Hello,\n\nAap DriveFlow portal open karke naye updates aur features check kar sakte hain:\n${portalUrl}`;
-                        }
-                        return prev + portalSnippet;
-                      });
-                    }
-                    setAttachedLink(portalUrl);
-                    setLinkInserted(true);
-                    setTimeout(() => setLinkInserted(false), 2500);
-                  }}
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs ${
-                    linkInserted
-                      ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
-                      : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
-                  }`}
-                  title="Insert official portal link into message draft"
-                >
-                  {linkInserted ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>✓ Portal Link Added</span>
-                    </>
-                  ) : (
-                    <>
-                      <Smartphone className="w-3.5 h-3.5" />
-                      <span>+ Insert Portal Link</span>
-                    </>
+                            if (!message.includes(portalUrl)) {
+                              setMessage(prev => {
+                                if (!prev.trim()) {
+                                  return `Hello,\n\nAap DriveFlow portal open karke naye updates aur features check kar sakte hain:\n${portalUrl}`;
+                                }
+                                return prev + portalSnippet;
+                              });
+                            }
+                            setAttachedLink(portalUrl);
+                            setLinkInserted(true);
+                            setLinkDropdownOpen(false);
+                            setTimeout(() => setLinkInserted(false), 2500);
+                          }}
+                          className="flex items-center gap-2 text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg cursor-pointer transition-colors"
+                        >
+                          <Link2 className="w-3.5 h-3.5 text-emerald-500" />
+                          <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">{item.name}</span>
+                        </button>
+                      ))}
+                    </div>
                   )}
-                </button>
+                </div>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
                   Formatted automatically
                 </span>
