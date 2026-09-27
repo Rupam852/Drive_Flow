@@ -80,9 +80,9 @@ Thanks,
 
 A new update (Version [Version Name]) has been released. This version includes improvements to file transfer speed and overall performance.
 
-Open the app and go to Menu > 'App Update' to install, or check for the update from the portal.
+Open your DriveFlow dashboard to check the latest updates and release highlights.
 
-Let us know if you face any issues during installation.
+Let us know if you face any issues.
 
 Thanks,
 [Admin Name]`,
@@ -194,21 +194,15 @@ export default function AdminNotificationsPage() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const [linkDropdownOpen, setLinkDropdownOpen] = useState(false);
-  const linkDropdownRef = useRef<HTMLDivElement>(null);
-
   // Close dropdowns when clicking or tapping outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
       }
-      if (linkDropdownRef.current && !linkDropdownRef.current.contains(event.target as Node)) {
-        setLinkDropdownOpen(false);
-      }
     };
 
-    if (userDropdownOpen || linkDropdownOpen) {
+    if (userDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
     }
@@ -216,7 +210,7 @@ export default function AdminNotificationsPage() {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [userDropdownOpen, linkDropdownOpen]);
+  }, [userDropdownOpen]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -775,10 +769,9 @@ export default function AdminNotificationsPage() {
     setSubject(tmpl.subject);
     setMessage(tmpl.message.replace(/\[Admin Name\]/g, adminName));
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
-    if (tmpl.name.includes('App Update')) {
-      setAttachedLink(`${origin}/user/notifications`);
-    } else if (tmpl.name.includes('File') || tmpl.name.includes('file')) {
-      setAttachedLink(`${origin}/user/files`);
+    const dashboardUrl = `${origin}/user/dashboard`;
+    if (tmpl.name.includes('App Update') || tmpl.name.includes('File') || tmpl.name.includes('file')) {
+      setAttachedLink(dashboardUrl);
     } else {
       setAttachedLink('');
     }
@@ -1540,66 +1533,44 @@ export default function AdminNotificationsPage() {
                   </button>
                 )}
 
-                <div className="relative" ref={linkDropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setLinkDropdownOpen(!linkDropdownOpen)}
-                    className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs ${
-                      linkInserted
-                        ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
-                        : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
-                    }`}
-                    title="Insert official portal link into message draft"
-                  >
-                    {linkInserted ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>✓ Portal Link Added</span>
-                      </>
-                    ) : (
-                      <>
-                        <Smartphone className="w-3.5 h-3.5" />
-                        <span>+ Insert Portal Link</span>
-                      </>
-                    )}
-                  </button>
-                  
-                  {linkDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-1 z-40 bg-white dark:bg-[#161a2b] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl p-1.5 min-w-[280px] flex flex-col gap-1">
-                      {[
-                        { name: 'Dashboard', url: 'https://driveflowrupam.vercel.app/user/dashboard' },
-                        { name: 'App Download', url: 'https://neo-files-transfer.pages.dev/download/723586892fd0' },
-                        { name: 'My Files', url: 'https://driveflowrupam.vercel.app/user/files' }
-                      ].map((item, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => {
-                            const portalUrl = item.url;
-                            const portalSnippet = `\n\n📲 DriveFlow Portal (${item.name}):\n${portalUrl}`;
+                <button
+                  type="button"
+                  onClick={() => {
+                    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
+                    const portalUrl = `${origin}/user/dashboard`;
+                    const portalSnippet = `\n\n📲 DriveFlow Portal (Dashboard):\n${portalUrl}`;
 
-                            if (!message.includes(portalUrl)) {
-                              setMessage(prev => {
-                                if (!prev.trim()) {
-                                  return `Hello,\n\nAap DriveFlow portal open karke naye updates aur features check kar sakte hain:\n${portalUrl}`;
-                                }
-                                return prev + portalSnippet;
-                              });
-                            }
-                            setAttachedLink(portalUrl);
-                            setLinkInserted(true);
-                            setLinkDropdownOpen(false);
-                            setTimeout(() => setLinkInserted(false), 2500);
-                          }}
-                          className="flex items-center gap-2 text-left px-3 py-2 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg cursor-pointer transition-colors"
-                        >
-                          <Link2 className="w-3.5 h-3.5 text-emerald-500" />
-                          <span className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">{item.name}</span>
-                        </button>
-                      ))}
-                    </div>
+                    if (!message.includes(portalUrl)) {
+                      setMessage(prev => {
+                        if (!prev.trim()) {
+                          return `Hello,\n\nYou can access your DriveFlow dashboard to check files and recent updates:\n${portalUrl}`;
+                        }
+                        return prev + portalSnippet;
+                      });
+                    }
+                    setAttachedLink(portalUrl);
+                    setLinkInserted(true);
+                    setTimeout(() => setLinkInserted(false), 2500);
+                  }}
+                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs ${
+                    linkInserted
+                      ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
+                      : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
+                  }`}
+                  title="Insert official dashboard portal link into message draft"
+                >
+                  {linkInserted ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>✓ Dashboard Link Added</span>
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="w-3.5 h-3.5" />
+                      <span>+ Insert Dashboard Link</span>
+                    </>
                   )}
-                </div>
+                </button>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
                   Formatted automatically
                 </span>
