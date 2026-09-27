@@ -1474,16 +1474,22 @@ export default function AdminNotificationsPage() {
             </div>
           </div>
 
-          {/* Attached Link Input (Optional) */}
+          {/* Attached Link Input (Delivered in Email Only) */}
           <div>
-            <label className="block text-xs font-bold text-slate-800 dark:text-gray-200 mb-1.5">
-              Attached Action Link (Optional):
-            </label>
+            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+              <label className="text-xs font-bold text-slate-800 dark:text-gray-200 flex items-center gap-1.5">
+                <Link2 className="w-3.5 h-3.5 text-purple-500" />
+                <span>Email Action Link (Only included in Email delivery):</span>
+              </label>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
+                🔔 DriveFlow Phone notifications stay link-free
+              </span>
+            </div>
             <div className="relative">
               <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="url"
-                placeholder="https://... (e.g. APK download or announcement link)"
+                placeholder="https://... (Attached as 'Open Dashboard' button in Email only)"
                 value={attachedLink}
                 onChange={e => setAttachedLink(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all"
@@ -1538,16 +1544,6 @@ export default function AdminNotificationsPage() {
                   onClick={() => {
                     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
                     const portalUrl = `${origin}/user/dashboard`;
-                    const portalSnippet = `\n\n📲 DriveFlow Portal (Dashboard):\n${portalUrl}`;
-
-                    if (!message.includes(portalUrl)) {
-                      setMessage(prev => {
-                        if (!prev.trim()) {
-                          return `Hello,\n\nYou can access your DriveFlow dashboard to check files and recent updates:\n${portalUrl}`;
-                        }
-                        return prev + portalSnippet;
-                      });
-                    }
                     setAttachedLink(portalUrl);
                     setLinkInserted(true);
                     setTimeout(() => setLinkInserted(false), 2500);
@@ -1557,17 +1553,17 @@ export default function AdminNotificationsPage() {
                       ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
                       : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
                   }`}
-                  title="Insert official dashboard portal link into message draft"
+                  title="Attach official dashboard portal link (Included in Email only)"
                 >
                   {linkInserted ? (
                     <>
                       <Check className="w-3.5 h-3.5" />
-                      <span>✓ Dashboard Link Added</span>
+                      <span>✓ Dashboard Attached (Email)</span>
                     </>
                   ) : (
                     <>
                       <Smartphone className="w-3.5 h-3.5" />
-                      <span>+ Insert Dashboard Link</span>
+                      <span>+ Attach Dashboard (Email)</span>
                     </>
                   )}
                 </button>

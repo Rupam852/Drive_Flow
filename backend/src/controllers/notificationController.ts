@@ -196,20 +196,26 @@ export const createAdminNotification = async (req: Request, res: Response) => {
       return;
     }
 
-    // Only create an in-app notification record if sendInApp is true
+    // Clean message text for in-app notifications to ensure no attached links or URLs are shown on phones
+    const inAppMessage = message.trim()
+      .replace(/\n*📲\s*DriveFlow Portal[^\n]*\n*https?:\/\/[^\s]+/gi, '')
+      .replace(/\n*https?:\/\/[^\s]+/gi, '')
+      .trim() || message.trim();
+
+    // Only create an in-app notification record if sendInApp is true (link-free for DriveFlow app)
     let newNotification: any = null;
     if (sendInApp) {
       newNotification = await Notification.create({
         title: title.trim(),
-        message: message.trim(),
+        message: inAppMessage,
         type,
         targetUsers: type === 'broadcast' ? [] : targetUsers,
         sender: adminId,
-        link: link ? link.trim() : undefined,
+        link: undefined, // Attached links are strictly reserved for email notifications
       });
     }
 
-    // Optional: send simultaneous email broadcast if requested
+    // Optional: send simultaneous email broadcast if requested (attached link goes here only)
     if (sendEmail) {
       (async () => {
         try {
@@ -230,20 +236,21 @@ export const createAdminNotification = async (req: Request, res: Response) => {
           }
 
           const cleanSubject = cleanEmailSubject(title.trim());
-          const cleanBody = message.trim().replace(/\n/g, '<br/>');
+          const cleanBody = inAppMessage.replace(/\n/g, '<br/>');
           const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
 
           let buttonUrl: string | undefined = undefined;
           let buttonText: string | undefined = undefined;
 
+          // Attached link is sent ONLY in email as CTA button
           if (link && typeof link === 'string' && link.trim().startsWith('http')) {
             const isDirectBinary = link.toLowerCase().includes('.apk') || link.toLowerCase().includes('pages.dev');
             if (isDirectBinary) {
-              buttonUrl = `${frontendUrl}/user/notifications`;
-              buttonText = 'Open App to Update';
+              buttonUrl = `${frontendUrl}/user/dashboard`;
+              buttonText = 'Open Dashboard';
             } else {
               buttonUrl = link.trim();
-              buttonText = 'View Details';
+              buttonText = 'Open Dashboard';
             }
           }
 
@@ -285,7 +292,7 @@ export const createAdminNotification = async (req: Request, res: Response) => {
       try {
         pushResult = await sendPushNotification({
           title: title.trim(),
-          body: message.trim(),
+          body: inAppMessage,
           targetUserIds: type === 'selected' || type === 'single' ? targetUsers : undefined,
           data: {
             notificationId: newNotification._id.toString(),
