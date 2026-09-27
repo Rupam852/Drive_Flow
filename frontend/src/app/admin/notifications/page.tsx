@@ -2402,7 +2402,7 @@ export default function AdminNotificationsPage() {
                       type="text"
                       autoFocus
                       required
-                      placeholder="e.g. vx.0.x or x.0.x"
+                      placeholder=""
                       value={versionInput}
                       onChange={e => setVersionInput(e.target.value)}
                       className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-xs font-medium"
