@@ -220,6 +220,7 @@ export default function AdminNotificationsPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingOverrides, setPendingOverrides] = useState<{ inApp: boolean; email: boolean } | null>(null);
   const [resultStatus, setResultStatus] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -851,8 +852,8 @@ export default function AdminNotificationsPage() {
   const handleSendNotification = async (overrideInApp?: boolean, overrideEmail?: boolean) => {
     if (!validateForm()) return;
 
-    const finalSendInApp = overrideInApp !== undefined ? overrideInApp : sendInApp;
-    const finalSendEmail = overrideEmail !== undefined ? overrideEmail : sendEmail;
+    const finalSendInApp = typeof overrideInApp === 'boolean' ? overrideInApp : (pendingOverrides ? pendingOverrides.inApp : sendInApp);
+    const finalSendEmail = typeof overrideEmail === 'boolean' ? overrideEmail : (pendingOverrides ? pendingOverrides.email : sendEmail);
 
     if (!finalSendInApp && !finalSendEmail) {
       setResultStatus({ type: 'error', text: "Please select at least one delivery channel." });
@@ -860,11 +861,13 @@ export default function AdminNotificationsPage() {
     }
 
     if (recipientMode === 'all' && !showConfirmModal) {
+      setPendingOverrides({ inApp: finalSendInApp, email: finalSendEmail });
       setShowConfirmModal(true);
       return;
     }
 
     setShowConfirmModal(false);
+    setPendingOverrides(null);
     setIsSubmitting(true);
     setResultStatus(null);
 
@@ -2027,7 +2030,13 @@ export default function AdminNotificationsPage() {
                   Confirm Broadcast to All Users?
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-gray-400 mt-1 leading-relaxed">
-                  You are about to publish a notification to <strong>{users.length} verified users</strong> via {sendInApp && sendEmail ? 'In-App Bell & Email' : sendInApp ? 'In-App Bell' : 'Email'}.
+                  You are about to publish a notification to <strong>{users.length} verified users</strong> via {
+                    (pendingOverrides ? pendingOverrides.inApp : sendInApp) && (pendingOverrides ? pendingOverrides.email : sendEmail)
+                      ? 'In-App Bell & Email'
+                      : (pendingOverrides ? pendingOverrides.inApp : sendInApp)
+                      ? 'In-App Bell'
+                      : 'Email'
+                  }.
                 </p>
               </div>
 
@@ -2043,14 +2052,17 @@ export default function AdminNotificationsPage() {
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowConfirmModal(false)}
+                  onClick={() => {
+                    setShowConfirmModal(false);
+                    setPendingOverrides(null);
+                  }}
                   className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={handleSendNotification}
+                  onClick={() => handleSendNotification(pendingOverrides?.inApp, pendingOverrides?.email)}
                   className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-lg shadow-purple-500/25 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
