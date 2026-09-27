@@ -139,7 +139,7 @@ Thanks,
 
 We have further optimized storage and file transfer speed. Your uploads and downloads should now be noticeably faster than before.
 
-You can continue managing and sharing your files as usual.
+You can visit your dashboard to manage your files and check your available storage anytime.
 
 Thanks,
 [Admin Name]`,
@@ -770,7 +770,13 @@ export default function AdminNotificationsPage() {
     setMessage(tmpl.message.replace(/\[Admin Name\]/g, adminName));
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
     const dashboardUrl = `${origin}/user/dashboard`;
-    if (tmpl.name.includes('App Update') || tmpl.name.includes('File') || tmpl.name.includes('file')) {
+    if (
+      tmpl.name.includes('Storage') ||
+      tmpl.name.includes('Files') ||
+      tmpl.name.includes('File') ||
+      tmpl.name.includes('App Update') ||
+      tmpl.name.includes('Features')
+    ) {
       setAttachedLink(dashboardUrl);
     } else {
       setAttachedLink('');
