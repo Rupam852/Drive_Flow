@@ -1599,7 +1599,7 @@ export default function AdminNotificationsPage() {
               <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-300 dark:border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
                 <div className="flex items-center gap-1.5 font-medium">
                   <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>Notice: Please replace <strong>[Version Name]</strong> with your release version (e.g. v1.0.7).</span>
+                  <span>Notice: Please replace <strong>[Version Name]</strong> with your release version (e.g. vx.0.x).</span>
                 </div>
                 <button
                   type="button"
@@ -2402,7 +2402,7 @@ export default function AdminNotificationsPage() {
                       type="text"
                       autoFocus
                       required
-                      placeholder="e.g. v1.0.7 or 1.0.7"
+                      placeholder="e.g. vx.0.x or x.0.x"
                       value={versionInput}
                       onChange={e => setVersionInput(e.target.value)}
                       className="w-full pl-10 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-xs font-medium"

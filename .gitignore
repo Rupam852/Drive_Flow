@@ -7,8 +7,7 @@ dist/
 build/
 .next/
 out/
-app-debug.apk
-app-universal-release.apk
+*.apk
 
 # ── Secrets & Credentials ──
 .env.local
