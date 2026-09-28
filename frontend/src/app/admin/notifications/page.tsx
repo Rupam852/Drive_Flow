@@ -535,7 +535,6 @@ export default function AdminNotificationsPage() {
   const [savedSenderEmails, setSavedSenderEmails] = useState<string[]>([]);
   // Dual Email Provider State (Brevo vs Own Gmail SMTP)
   const [emailProvider, setEmailProvider] = useState<'brevo' | 'gmail'>('brevo');
-  const [showEmailProviderModal, setShowEmailProviderModal] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -874,7 +873,6 @@ export default function AdminNotificationsPage() {
     }
 
     setShowConfirmModal(false);
-    setShowEmailProviderModal(false);
     setPendingOverrides(null);
     setIsSubmitting(true);
     setResultStatus(null);
@@ -1756,14 +1754,7 @@ export default function AdminNotificationsPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (sendEmail && !sendInApp) {
-                      // If only Email is selected, open the modal choice between Brevo & Own SMTP
-                      if (!validateForm()) return;
-                      setShowEmailProviderModal(true);
-                    } else {
-                      // If Phone only OR Both, dispatch directly using selected options
-                      handleSendNotification(sendInApp, sendEmail, emailProvider);
-                    }
+                    handleSendNotification(sendInApp, sendEmail, emailProvider);
                   }}
                   disabled={isSubmitting || recipientCount === 0 || !subject.trim() || !message.trim()}
                   className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white font-bold text-xs shadow-md shadow-purple-500/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
@@ -2509,126 +2500,7 @@ export default function AdminNotificationsPage() {
         )}
       </AnimatePresence>
 
-      {/* Choose Email Dispatch Method Modal (When Email Only is selected) */}
-      <AnimatePresence>
-        {showEmailProviderModal && (
-          <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) setShowEmailProviderModal(false);
-            }}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col"
-            >
-              {/* Header */}
-              <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3 bg-purple-50/50 dark:bg-purple-950/15">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/20">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white leading-tight">
-                      Choose Email Dispatch Method
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Select mail server to deliver to {recipientCount} recipient(s)
-                    </p>
-                  </div>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowEmailProviderModal(false)}
-                  className="p-1.5 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-200 dark:border-white/10 transition-all cursor-pointer shadow-xs active:scale-95"
-                >
-                  <X className="w-4 h-4 stroke-[2.5]" />
-                </button>
-              </div>
-
-              {/* Body: Two Provider Cards */}
-              <div className="p-5 space-y-3">
-                {/* Brevo Option */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailProvider('brevo');
-                    handleSendNotification(false, true, 'brevo');
-                  }}
-                  disabled={isSubmitting}
-                  className="w-full p-4 rounded-2xl border-2 border-purple-500/40 hover:border-purple-600 bg-purple-50/40 dark:bg-purple-950/20 hover:bg-purple-50/80 text-left transition-all flex items-start gap-3.5 group cursor-pointer shadow-sm hover:shadow-md"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                    <ShieldCheck className="w-5 h-5" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                        1. Via Brevo Relay
-                      </h4>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/40">
-                        Recommended
-                      </span>
-                    </div>
-                    <p className="text-xs text-purple-700 dark:text-purple-300 font-mono mt-0.5 truncate font-semibold">
-                      notifications@driveflow.neofilestransfer.site
-                    </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      Custom verified domain with active DKIM, SPF & DMARC. 100% Primary Inbox delivery.
-                    </p>
-                  </div>
-                </button>
-
-                {/* Own Gmail SMTP Option */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailProvider('gmail');
-                    handleSendNotification(false, true, 'gmail');
-                  }}
-                  disabled={isSubmitting}
-                  className="w-full p-4 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-slate-400 dark:hover:border-white/25 bg-white dark:bg-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/5 text-left transition-all flex items-start gap-3.5 group cursor-pointer shadow-xs hover:shadow-sm"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 flex items-center justify-center shrink-0 border border-slate-200 dark:border-white/10 group-hover:scale-105 transition-transform">
-                    <Mail className="w-5 h-5 text-red-500" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">
-                        2. Via Own Gmail SMTP
-                      </h4>
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-gray-300 border border-slate-200 dark:border-white/10">
-                        Google Server
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-700 dark:text-gray-300 font-mono mt-0.5 truncate font-semibold">
-                      bott27124@gmail.com
-                    </p>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      Direct Google personal SMTP transport.
-                    </p>
-                  </div>
-                </button>
-              </div>
-
-              {/* Footer */}
-              <div className="p-4 border-t border-slate-100 dark:border-white/10 bg-slate-50/60 dark:bg-white/[0.02] flex items-center justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowEmailProviderModal(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* Batched Gmail App Dispatcher Modal */}
       <AnimatePresence>
