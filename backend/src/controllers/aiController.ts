@@ -158,7 +158,7 @@ export const updateAiConfig = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Test Gemini API connection — tests primary + all fallback models (Admin only)
+// @desc    Test connection — tests primary Gemini model + NVIDIA fallback (if enabled)
 // @route   POST /api/ai/test
 // @access  Private/Admin
 export const testAiConnection = async (req: Request, res: Response) => {
@@ -166,7 +166,6 @@ export const testAiConnection = async (req: Request, res: Response) => {
     const { apiKey: testKey, model: testModel } = req.body;
     const config = await getOrCreateAiConfig();
 
-    // Prioritize passed in key (e.g. testing before saving), otherwise use saved key
     const effectiveKey = (testKey && typeof testKey === 'string' && !testKey.includes('••••'))
       ? testKey.trim()
       : config.geminiApiKey;
@@ -176,110 +175,94 @@ export const testAiConnection = async (req: Request, res: Response) => {
       : (config.selectedModel || 'gemini-3.8-flash');
 
     if (!effectiveKey) {
-      res.status(400).json({
-        success: false,
-        message: 'No API Key provided. Please enter a valid Gemini API key first.',
-      });
+      res.status(400).json({ success: false, message: 'No Gemini API Key saved. Please save a key first.' });
       return;
     }
 
-    // Build the full list of models to test: primary first, then all fallbacks (deduplicated)
-    const fallbackPool = [
-      'gemini-3.8-flash',
-      'gemini-3.7-flash',
-      'gemini-3.6-flash',
-      'gemini-3.5-flash',
-      'gemini-3.5-flash-lite',
-      'gemini-3.1-flash-lite',
-      'gemini-3-flash-preview',
-      'gemini-2.5-flash',
-      'gemini-2.5-flash-lite',
-      'gemini-flash-latest',
-    ];
-    const allModelsToTest: string[] = [primaryModel];
-    fallbackPool.forEach(m => { if (!allModelsToTest.includes(m)) allModelsToTest.push(m); });
-
-    // Test a single model and return its result
-    const testSingleModel = async (model: string): Promise<{
+    interface TestResult {
       model: string;
+      provider: 'gemini' | 'nvidia';
       isPrimary: boolean;
       status: 'success' | 'failed';
-      latencyMs?: number;
-      reply?: string;
+      latencyMs: number;
       error?: string;
-      httpStatus?: number;
-    }> => {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`;
-      const start = Date.now();
-      try {
-        const response = await axios.post(
-          endpoint,
-          {
-            contents: [{ parts: [{ text: "Say: OK" }] }],
-            generationConfig: { temperature: 0.1, maxOutputTokens: 10 },
-          },
-          { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
-        );
-        const reply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'OK';
-        return { model, isPrimary: model === primaryModel, status: 'success', latencyMs: Date.now() - start, reply };
-      } catch (err: any) {
-        const errData = err.response?.data?.error;
-        const errMsg = errData?.message || err.message || 'Unknown error';
-        return {
-          model,
-          isPrimary: model === primaryModel,
-          status: 'failed',
-          latencyMs: Date.now() - start,
-          error: errMsg.length > 120 ? errMsg.substring(0, 120) + '...' : errMsg,
-          httpStatus: err.response?.status,
-        };
-      }
-    };
+    }
+    const results: TestResult[] = [];
 
-    // Run tests sequentially with small delay to avoid rate limiting (429)
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-    const allResults: Awaited<ReturnType<typeof testSingleModel>>[] = [];
-
-    for (let i = 0; i < allModelsToTest.length; i++) {
-      if (i > 0) await delay(400); // 400ms gap between requests to stay under rate limit
-      const result = await testSingleModel(allModelsToTest[i]);
-      allResults.push(result);
+    // ── 1. Test primary Gemini model ─────────────────────────────────────────
+    const geminiStart = Date.now();
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${primaryModel}:generateContent?key=${effectiveKey}`;
+      const gRes = await axios.post(endpoint,
+        { contents: [{ parts: [{ text: 'Say: OK' }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 10 } },
+        { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+      );
+      const reply = gRes.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'OK';
+      results.push({ model: primaryModel, provider: 'gemini', isPrimary: true, status: 'success', latencyMs: Date.now() - geminiStart });
+      console.log(`[Test] Gemini primary '${primaryModel}' OK (${Date.now() - geminiStart}ms): ${reply}`);
+    } catch (err: any) {
+      const errMsg = err.response?.data?.error?.message || err.message || 'Unknown error';
+      results.push({ model: primaryModel, provider: 'gemini', isPrimary: true, status: 'failed', latencyMs: Date.now() - geminiStart, error: errMsg.substring(0, 150) });
+      console.warn(`[Test] Gemini primary '${primaryModel}' FAILED: ${errMsg}`);
     }
 
+    // ── 2. Test NVIDIA fallback model (if configured) ────────────────────────
+    if (config.enableNvidiaFallback && config.nvidiaApiKey) {
+      const nvModel = config.nvidiaModel || 'nvidia/nemotron-3-super-120b-a12b';
+      const nvStart = Date.now();
+      try {
+        const nvRes = await axios.post('https://integrate.api.nvidia.com/v1/chat/completions',
+          { model: nvModel, messages: [{ role: 'user', content: 'Say: OK' }], temperature: 0.1, max_tokens: 10 },
+          { headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.nvidiaApiKey}` }, timeout: 20000 }
+        );
+        const reply = nvRes.data?.choices?.[0]?.message?.content?.trim() || 'OK';
+        results.push({ model: nvModel, provider: 'nvidia', isPrimary: false, status: 'success', latencyMs: Date.now() - nvStart });
+        console.log(`[Test] NVIDIA '${nvModel}' OK (${Date.now() - nvStart}ms): ${reply}`);
+      } catch (err: any) {
+        const errMsg = err.response?.data?.detail || err.response?.data?.error?.message || err.message || 'Unknown error';
+        results.push({ model: nvModel, provider: 'nvidia', isPrimary: false, status: 'failed', latencyMs: Date.now() - nvStart, error: String(errMsg).substring(0, 150) });
+        console.warn(`[Test] NVIDIA '${nvModel}' FAILED: ${errMsg}`);
+      }
+    }
 
-    const primaryResult = allResults.find(r => r.isPrimary)!;
-    const workingModels = allResults.filter(r => r.status === 'success');
-    const failedModels = allResults.filter(r => r.status === 'failed');
-    const overallSuccess = primaryResult.status === 'success' || workingModels.length > 0;
+    const geminiResult = results.find(r => r.provider === 'gemini')!;
+    const nvidiaResult = results.find(r => r.provider === 'nvidia');
+    const geminiOk = geminiResult.status === 'success';
+    const nvidiaOk = nvidiaResult?.status === 'success';
 
-    // Save test status based on primary model result
+    // Save test result
     config.lastTestedAt = new Date();
-    config.lastTestStatus = primaryResult.status === 'success' ? 'success' : 'failed';
-    config.lastTestError = primaryResult.status === 'failed' ? primaryResult.error : undefined;
+    config.lastTestStatus = geminiOk ? 'success' : 'failed';
+    config.lastTestError = geminiOk ? undefined : geminiResult.error;
     await config.save();
 
+    const overallOk = geminiOk || nvidiaOk;
+    let message = '';
+    if (geminiOk) message = `✅ Gemini '${primaryModel}' is working (${geminiResult.latencyMs}ms).`;
+    else if (nvidiaOk) message = `⚠️ Gemini failed — but NVIDIA fallback is ready! Production will auto-switch.`;
+    else message = `❌ Both Gemini and NVIDIA failed. Check your API keys.`;
+
     res.json({
-      success: overallSuccess,
+      success: overallOk,
       primaryModel,
-      primaryStatus: primaryResult.status,
-      primaryLatencyMs: primaryResult.latencyMs,
-      primaryReply: primaryResult.reply,
-      primaryError: primaryResult.error,
-      modelResults: allResults,
-      workingCount: workingModels.length,
-      failedCount: failedModels.length,
-      totalTested: allResults.length,
-      message: primaryResult.status === 'success'
-        ? `Primary model '${primaryModel}' responded in ${primaryResult.latencyMs}ms. ${workingModels.length}/${allResults.length} models healthy.`
-        : `Primary model '${primaryModel}' failed. ${workingModels.length}/${allResults.length} fallback models are available.`,
+      primaryStatus: geminiResult.status,
+      primaryLatencyMs: geminiResult.latencyMs,
+      primaryError: geminiResult.error,
+      nvidiaStatus: nvidiaResult?.status || null,
+      nvidiaLatencyMs: nvidiaResult?.latencyMs || null,
+      nvidiaModel: nvidiaResult?.model || null,
+      nvidiaError: nvidiaResult?.error || null,
+      modelResults: results,
+      workingCount: results.filter(r => r.status === 'success').length,
+      failedCount: results.filter(r => r.status === 'failed').length,
+      totalTested: results.length,
+      message,
     });
   } catch (error: any) {
-    res.status(500).json({
-      success: false,
-      message: error.message || 'Internal error while testing Gemini API',
-    });
+    res.status(500).json({ success: false, message: error.message || 'Internal error while testing connection' });
   }
 };
+
 
 // Helper to clean markdown asterisks, bullets, and spacing for human-readable emails
 const cleanEmailTextAndRemoveAsterisks = (text: string): string => {
