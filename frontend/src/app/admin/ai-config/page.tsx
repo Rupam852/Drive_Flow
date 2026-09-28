@@ -4,299 +4,179 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Sparkles, Key, CheckCircle2, AlertTriangle, RefreshCw,
-  ExternalLink, Eye, EyeOff, Save, Play, X, ShieldCheck,
-  Cpu, Info, Check, AlertCircle, ArrowRight, Zap, Shield, Plus, ChevronDown
+  Eye, EyeOff, Save, Play, X, ShieldCheck, Zap, ArrowRight,
+  Settings2, Cpu, FlameKindling,
 } from 'lucide-react';
 import api from '@/lib/api';
 
-interface ModelOption {
-  id: string;
-  name: string;
-  badge: string;
-  description: string;
-  recommended?: boolean;
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const AVAILABLE_MODELS: ModelOption[] = [
-  // ── Gemini 3.x Series ──────────────────────────────────────
-  {
-    id: 'gemini-3.8-flash',
-    name: 'Gemini 3.8 Flash',
-    badge: 'Latest & Best',
-    description: 'Newest Gemini Flash model — highest intelligence, ultra-fast. Best for email drafting & notifications.',
-    recommended: true,
-  },
-  {
-    id: 'gemini-3.7-flash',
-    name: 'Gemini 3.7 Flash',
-    badge: 'Agentic',
-    description: 'Excellent for multi-step reasoning and complex notification workflows.',
-  },
-  {
-    id: 'gemini-3.6-flash',
-    name: 'Gemini 3.6 Flash',
-    badge: 'Balanced',
-    description: 'Balanced speed and capability for general notification drafting.',
-  },
-  {
-    id: 'gemini-3.5-flash',
-    name: 'Gemini 3.5 Flash',
-    badge: 'High Throughput',
-    description: 'Fast and reliable for high-volume notification generation tasks.',
-  },
-  {
-    id: 'gemini-3.5-flash-lite',
-    name: 'Gemini 3.5 Flash Lite',
-    badge: 'Ultra Fast',
-    description: 'Lightweight 3.5 model — lowest latency in the 3.x series.',
-  },
-  {
-    id: 'gemini-3.1-flash-lite',
-    name: 'Gemini 3.1 Flash Lite',
-    badge: 'Lightweight',
-    description: 'Compact and fast — great general-purpose fallback model.',
-  },
-  {
-    id: 'gemini-3-flash-preview',
-    name: 'Gemini 3 Flash Preview',
-    badge: 'Preview',
-    description: 'Base Gemini 3 Flash preview — stable foundation model.',
-  },
-  // ── Gemini 2.5 Series ──────────────────────────────────────
-  {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
-    badge: 'Stable',
-    description: 'Highly stable and widely available — reliable fallback option.',
-  },
-  {
-    id: 'gemini-2.5-flash-lite',
-    name: 'Gemini 2.5 Flash Lite',
-    badge: 'Cost Effective',
-    description: 'Lightweight 2.5 model — very fast and cost-efficient.',
-  },
-  {
-    id: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
-    badge: 'Pro Quality',
-    description: 'Highest quality output in the 2.5 series — use for polish & refinement tasks.',
-  },
-  // ── Stable Aliases ─────────────────────────────────────────
-  {
-    id: 'gemini-flash-latest',
-    name: 'Gemini Flash (Latest Alias)',
-    badge: 'Auto-Updated',
-    description: 'Always points to the latest stable Flash model — auto-updates as Google releases new versions.',
-  },
-  {
-    id: 'gemini-flash-lite-latest',
-    name: 'Gemini Flash Lite (Latest Alias)',
-    badge: 'Auto-Updated',
-    description: 'Always points to the latest Flash Lite model — lightest and fastest available.',
-  },
-  {
-    id: 'gemini-pro-latest',
-    name: 'Gemini Pro (Latest Alias)',
-    badge: 'Auto-Updated',
-    description: 'Always points to the latest Pro-tier model for maximum quality output.',
-  },
-];
+interface ModelOption { id: string; name: string; badge: string; badgeColor: string; }
 
 interface ModelTestResult {
   model: string;
   isPrimary: boolean;
   status: 'success' | 'failed';
   latencyMs?: number;
-  reply?: string;
   error?: string;
-  httpStatus?: number;
 }
 
-interface TestResultModalState {
+interface TestModal {
   isOpen: boolean;
   success: boolean;
   title: string;
   message: string;
-  primaryModel?: string;
   workingCount?: number;
   failedCount?: number;
   totalTested?: number;
-  modelResults?: ModelTestResult[];
   latencyMs?: number;
+  modelResults?: ModelTestResult[];
 }
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const GEMINI_MODELS: ModelOption[] = [
+  { id: 'gemini-3.8-flash',        name: 'Gemini 3.8 Flash',        badge: 'Latest',       badgeColor: 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300' },
+  { id: 'gemini-3.7-flash',        name: 'Gemini 3.7 Flash',        badge: 'Agentic',      badgeColor: 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300' },
+  { id: 'gemini-3.6-flash',        name: 'Gemini 3.6 Flash',        badge: 'Balanced',     badgeColor: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' },
+  { id: 'gemini-3.5-flash',        name: 'Gemini 3.5 Flash',        badge: 'Fast',         badgeColor: 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300' },
+  { id: 'gemini-3.5-flash-lite',   name: 'Gemini 3.5 Flash Lite',   badge: 'Ultra Fast',   badgeColor: 'bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-300' },
+  { id: 'gemini-3.1-flash-lite',   name: 'Gemini 3.1 Flash Lite',   badge: 'Lite',         badgeColor: 'bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-300' },
+  { id: 'gemini-3-flash-preview',  name: 'Gemini 3 Flash Preview',  badge: 'Preview',      badgeColor: 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300' },
+  { id: 'gemini-2.5-flash',        name: 'Gemini 2.5 Flash',        badge: 'Stable',       badgeColor: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300' },
+  { id: 'gemini-2.5-flash-lite',   name: 'Gemini 2.5 Flash Lite',   badge: 'Lite',         badgeColor: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300' },
+  { id: 'gemini-2.5-pro',          name: 'Gemini 2.5 Pro',          badge: 'Pro',          badgeColor: 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300' },
+  { id: 'gemini-flash-latest',     name: 'Flash (Latest Alias)',    badge: 'Auto',         badgeColor: 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400' },
+  { id: 'gemini-flash-lite-latest',name: 'Flash Lite (Latest Alias)',badge: 'Auto',         badgeColor: 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400' },
+  { id: 'gemini-pro-latest',       name: 'Pro (Latest Alias)',      badge: 'Auto',         badgeColor: 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400' },
+];
+
+const NVIDIA_MODELS: ModelOption[] = [
+  { id: 'nvidia/nemotron-3-super-120b-a12b',   name: 'Nemotron 3 Super 120B',    badge: '⚡ Fastest 3.2s', badgeColor: 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300' },
+  { id: 'openai/gpt-oss-20b',                  name: 'GPT OSS 20B',               badge: '5.9s',           badgeColor: 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300' },
+  { id: 'nvidia/nemotron-3.5-lightning-30b-a3b',name: 'Nemotron 3.5 Lightning 30B',badge: '7.4s',           badgeColor: 'bg-slate-100 dark:bg-slate-500/20 text-slate-600 dark:text-slate-400' },
+];
+
+const FALLBACK_CHAIN = [
+  { label: '① Gemini Primary', color: 'text-purple-600 dark:text-purple-400', dot: 'bg-purple-500' },
+  { label: '② Gemini Auto-Fallback (10 models)', color: 'text-blue-600 dark:text-blue-400', dot: 'bg-blue-500' },
+  { label: '③ NVIDIA NIM (last resort)', color: 'text-green-600 dark:text-green-400', dot: 'bg-green-500' },
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export default function AdminAiConfigPage() {
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [maskedKey, setMaskedKey] = useState('');
-  const [hasExistingKey, setHasExistingKey] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('gemini-3.8-flash');
-  const [customModelInput, setCustomModelInput] = useState('');
-  const [showCustomModelBox, setShowCustomModelBox] = useState(false);
+  // Gemini
+  const [apiKeyInput, setApiKeyInput]           = useState('');
+  const [maskedKey, setMaskedKey]               = useState('');
+  const [hasExistingKey, setHasExistingKey]     = useState(false);
+  const [showKey, setShowKey]                   = useState(false);
+  const [selectedModel, setSelectedModel]       = useState('gemini-3.8-flash');
+  const [customModel, setCustomModel]           = useState('');
+  const [showCustom, setShowCustom]             = useState(false);
   const [enableAutoFallback, setEnableAutoFallback] = useState(true);
-  const [temperature, setTemperature] = useState(0.7);
-  const [showKey, setShowKey] = useState(false);
+  const [temperature, setTemperature]           = useState(0.7);
 
-  // NVIDIA Fallback
-  const [nvidiaApiKeyInput, setNvidiaApiKeyInput] = useState('');
-  const [maskedNvidiaKey, setMaskedNvidiaKey] = useState('');
-  const [hasExistingNvidiaKey, setHasExistingNvidiaKey] = useState(false);
-  const [enableNvidiaFallback, setEnableNvidiaFallback] = useState(false);
-  const [nvidiaModel, setNvidiaModel] = useState('nvidia/nemotron-3-super-120b-a12b');
-  const [showNvidiaKey, setShowNvidiaKey] = useState(false);
+  // NVIDIA
+  const [nvidiaKeyInput, setNvidiaKeyInput]         = useState('');
+  const [maskedNvidiaKey, setMaskedNvidiaKey]       = useState('');
+  const [hasNvidiaKey, setHasNvidiaKey]             = useState(false);
+  const [showNvidiaKey, setShowNvidiaKey]           = useState(false);
+  const [enableNvidia, setEnableNvidia]             = useState(false);
+  const [nvidiaModel, setNvidiaModel]               = useState('nvidia/nemotron-3-super-120b-a12b');
 
-  // Status & Telemetry
-  const [lastTestedAt, setLastTestedAt] = useState<string | null>(null);
-  const [lastTestStatus, setLastTestStatus] = useState<'success' | 'failed' | null>(null);
-  const [lastTestError, setLastTestError] = useState<string | null>(null);
+  // Status
+  const [lastTestedAt, setLastTestedAt]         = useState<string | null>(null);
+  const [lastTestStatus, setLastTestStatus]     = useState<'success' | 'failed' | null>(null);
+  const [lastTestError, setLastTestError]       = useState<string | null>(null);
 
-  // Loading states
-  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isTesting, setIsTesting] = useState(false);
+  // UI states
+  const [isLoading, setIsLoading]   = useState(true);
+  const [isSaving, setIsSaving]     = useState(false);
+  const [isTesting, setIsTesting]   = useState(false);
+  const [toast, setToast]           = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [testModal, setTestModal]   = useState<TestModal>({ isOpen: false, success: false, title: '', message: '' });
 
-  // Popup Modal State for Test Results
-  const [testModal, setTestModal] = useState<TestResultModalState>({
-    isOpen: false,
-    success: false,
-    title: '',
-    message: '',
-  });
-  const [modelResults, setModelResults] = useState<ModelTestResult[]>([]);
+  // ─── Fetch config ───────────────────────────────────────────────────────────
 
-  // Inline toast / banner alert
-  const [toastAlert, setToastAlert] = useState<{
-    type: 'success' | 'error';
-    text: string;
-  } | null>(null);
-
-  // Fetch current config
   const fetchConfig = async () => {
-    setIsLoadingConfig(true);
+    setIsLoading(true);
     try {
-      const res = await api.get('/ai/config');
-      const data = res.data;
-      if (data) {
-        setHasExistingKey(!!data.hasKey);
-        setMaskedKey(data.maskedKey || '');
-        if (data.selectedModel) setSelectedModel(data.selectedModel);
-        if (data.enableAutoFallback !== undefined) setEnableAutoFallback(Boolean(data.enableAutoFallback));
-        if (typeof data.temperature === 'number') setTemperature(data.temperature);
-        setLastTestedAt(data.lastTestedAt || null);
-        setLastTestStatus(data.lastTestStatus || null);
-        setLastTestError(data.lastTestError || null);
-        // NVIDIA
-        setHasExistingNvidiaKey(!!data.hasNvidiaKey);
-        setMaskedNvidiaKey(data.maskedNvidiaKey || '');
-        setEnableNvidiaFallback(Boolean(data.enableNvidiaFallback));
-        if (data.nvidiaModel) setNvidiaModel(data.nvidiaModel);
+      const { data } = await api.get('/ai/config');
+      setHasExistingKey(!!data.hasKey);
+      setMaskedKey(data.maskedKey || '');
+      if (data.selectedModel) setSelectedModel(data.selectedModel);
+      if (data.enableAutoFallback !== undefined) setEnableAutoFallback(Boolean(data.enableAutoFallback));
+      if (typeof data.temperature === 'number') setTemperature(data.temperature);
+      setLastTestedAt(data.lastTestedAt || null);
+      setLastTestStatus(data.lastTestStatus || null);
+      setLastTestError(data.lastTestError || null);
+      setHasNvidiaKey(!!data.hasNvidiaKey);
+      setMaskedNvidiaKey(data.maskedNvidiaKey || '');
+      setEnableNvidia(Boolean(data.enableNvidiaFallback));
+      if (data.nvidiaModel) setNvidiaModel(data.nvidiaModel);
 
-        // Check if selected model is custom (not in predefined list)
-        const isStandard = AVAILABLE_MODELS.some(m => m.id === data.selectedModel);
-        if (!isStandard && data.selectedModel) {
-          setShowCustomModelBox(true);
-          setCustomModelInput(data.selectedModel);
-        }
-      }
-    } catch (err: any) {
-      console.error('Failed to load AI config:', err);
-      setToastAlert({
-        type: 'error',
-        text: 'Could not fetch current AI settings from server.',
-      });
+      const isCustom = !GEMINI_MODELS.some(m => m.id === data.selectedModel);
+      if (isCustom && data.selectedModel) { setShowCustom(true); setCustomModel(data.selectedModel); }
+    } catch {
+      setToast({ type: 'error', text: 'Failed to load AI settings.' });
     } finally {
-      setIsLoadingConfig(false);
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchConfig();
-  }, []);
+  useEffect(() => { fetchConfig(); }, []);
 
-  // Save Config
+  // ─── Save ───────────────────────────────────────────────────────────────────
+
   const handleSave = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setIsSaving(true);
-    setToastAlert(null);
-
+    setToast(null);
     try {
-      const finalModel = showCustomModelBox && customModelInput.trim()
-        ? customModelInput.trim()
-        : selectedModel;
+      const finalModel = showCustom && customModel.trim() ? customModel.trim() : selectedModel;
+      const payload: any = { selectedModel: finalModel, enableAutoFallback, temperature, enableNvidiaFallback: enableNvidia, nvidiaModel };
+      const gKey = apiKeyInput.trim();
+      if (gKey) payload.apiKey = gKey;
+      const nKey = nvidiaKeyInput.trim();
+      if (nKey) payload.nvidiaApiKey = nKey;
 
-      const payload: any = {
-        selectedModel: finalModel,
-        enableAutoFallback,
-        temperature,
-        enableNvidiaFallback,
-        nvidiaModel,
-      };
-
-      // Only pass apiKey if admin typed something new
-      const trimmed = apiKeyInput.trim();
-      if (trimmed) payload.apiKey = trimmed;
-
-      // Only pass nvidiaApiKey if admin typed something new
-      const nvTrimmed = nvidiaApiKeyInput.trim();
-      if (nvTrimmed) payload.nvidiaApiKey = nvTrimmed;
-
-      const res = await api.put('/ai/config', payload);
-      setToastAlert({
-        type: 'success',
-        text: res.data?.message || 'AI settings saved successfully!',
-      });
-      setHasExistingKey(!!res.data?.hasKey);
-      setMaskedKey(res.data?.maskedKey || '');
+      const { data } = await api.put('/ai/config', payload);
+      setToast({ type: 'success', text: data.message || 'Saved successfully!' });
+      setHasExistingKey(!!data.hasKey);
+      setMaskedKey(data.maskedKey || '');
       setSelectedModel(finalModel);
       setApiKeyInput('');
-      // Update NVIDIA state from response
-      if (res.data?.hasNvidiaKey !== undefined) setHasExistingNvidiaKey(res.data.hasNvidiaKey);
-      if (res.data?.maskedNvidiaKey) setMaskedNvidiaKey(res.data.maskedNvidiaKey);
-      setNvidiaApiKeyInput('');
+      if (data.hasNvidiaKey !== undefined) setHasNvidiaKey(data.hasNvidiaKey);
+      if (data.maskedNvidiaKey) setMaskedNvidiaKey(data.maskedNvidiaKey);
+      setNvidiaKeyInput('');
     } catch (err: any) {
-      console.error('Save failed:', err);
-      const msg = err.response?.data?.message || err.message || 'Failed to save AI configuration.';
-      setToastAlert({
-        type: 'error',
-        text: msg,
-      });
+      setToast({ type: 'error', text: err.response?.data?.message || 'Failed to save.' });
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Test Run — tests primary model + all fallback models
-  const handleTestConnection = async () => {
+  // ─── Test ───────────────────────────────────────────────────────────────────
+
+  const handleTest = async () => {
     setIsTesting(true);
-    setToastAlert(null);
-
-    const testTargetModel = showCustomModelBox && customModelInput.trim()
-      ? customModelInput.trim()
-      : selectedModel;
-
+    setToast(null);
+    const model = showCustom && customModel.trim() ? customModel.trim() : selectedModel;
     try {
-      const payload: any = { model: testTargetModel };
-      const trimmed = apiKeyInput.trim();
-      if (trimmed) payload.apiKey = trimmed;
-
-      const res = await api.post('/ai/test', payload);
-      const data = res.data;
-
+      const payload: any = { model };
+      if (apiKeyInput.trim()) payload.apiKey = apiKeyInput.trim();
+      const { data } = await api.post('/ai/test', payload);
       const results: ModelTestResult[] = data.modelResults || [];
-      setModelResults(results);
-
-      const isPrimaryOk = data.primaryStatus === 'success';
-      setLastTestStatus(isPrimaryOk ? 'success' : 'failed');
+      const ok = data.primaryStatus === 'success';
+      setLastTestStatus(ok ? 'success' : 'failed');
       setLastTestedAt(new Date().toISOString());
-      setLastTestError(isPrimaryOk ? null : (data.primaryError || 'Primary model failed'));
-
+      setLastTestError(ok ? null : data.primaryError || 'Failed');
       setTestModal({
         isOpen: true,
-        success: isPrimaryOk || (data.workingCount > 0),
-        title: isPrimaryOk
-          ? `Connection Successful! 🎉`
-          : `Primary Failed — ${data.workingCount} Fallback(s) Available`,
+        success: ok || data.workingCount > 0,
+        title: ok ? '🎉 Connection Successful!' : `⚠️ Primary Failed — ${data.workingCount} Fallback(s) OK`,
         message: data.message || '',
-        primaryModel: data.primaryModel,
         workingCount: data.workingCount,
         failedCount: data.failedCount,
         totalTested: data.totalTested,
@@ -304,585 +184,381 @@ export default function AdminAiConfigPage() {
         modelResults: results,
       });
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || err.message || 'Gemini API test failed.';
+      const msg = err.response?.data?.message || err.message || 'Test failed.';
       setLastTestStatus('failed');
       setLastTestedAt(new Date().toISOString());
-      setLastTestError(errorMsg);
-      setModelResults([]);
-      setTestModal({
-        isOpen: true,
-        success: false,
-        title: 'API Connection Failed',
-        message: errorMsg,
-      });
+      setLastTestError(msg);
+      setTestModal({ isOpen: true, success: false, title: '❌ Connection Failed', message: msg });
     } finally {
       setIsTesting(false);
     }
   };
 
-  return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
+  // ─── UI helpers ─────────────────────────────────────────────────────────────
+
+  const Toggle = ({ value, onChange }: { value: boolean; onChange: () => void }) => (
+    <button type="button" onClick={onChange}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ${value ? 'bg-purple-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform duration-200 ${value ? 'translate-x-5' : 'translate-x-0'}`} />
+    </button>
+  );
+
+  const SectionCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+    <div className={`bg-white dark:bg-[#0f1623] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden ${className}`}>
+      {children}
+    </div>
+  );
+
+  const SectionHeader = ({ icon, title, subtitle, action }: { icon: React.ReactNode; title: string; subtitle: string; action?: React.ReactNode }) => (
+    <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        {icon}
         <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-              <Sparkles className="w-3.5 h-3.5" />
-              Google Gemini Powered
-            </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 hidden sm:inline">
-              Smart Email & Notification Assistant
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white">{title}</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{subtitle}</p>
+        </div>
+      </div>
+      {action}
+    </div>
+  );
+
+  const KeyField = ({
+    label, hint, value, onChange, show, onToggle, placeholder,
+    hasExisting, masked, accentColor = 'purple',
+  }: any) => (
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300">
+        {label}
+        {hasExisting && (
+          <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400`}>
+            ✓ Saved: {masked}
+          </span>
+        )}
+        {hint && <span className="text-[10px] text-slate-400 font-normal">{hint}</span>}
+      </label>
+      <div className="relative">
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder={placeholder}
+          className={`w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 pr-10 text-xs font-mono text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-${accentColor}-500/30 focus:border-${accentColor}-500/50`}
+        />
+        <button type="button" onClick={onToggle}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer">
+          {show ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+    </div>
+  );
+
+  const formatTime = (iso: string) => {
+    try { return new Date(iso).toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: 'short' }); }
+    catch { return iso; }
+  };
+
+  // ─── Render ─────────────────────────────────────────────────────────────────
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-5">
+
+      {/* ── Page Header ── */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+              <Sparkles className="w-3 h-3" /> AI Configuration
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-            AI API Configuration
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-gray-400 mt-1">
-            Set up your Google Gemini API key, choose your default model, and enable automatic fallback for uninterrupted notification drafting.
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white">AI Settings</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Configure Gemini API, model selection, and NVIDIA NIM fallback
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={fetchConfig}
-          disabled={isLoadingConfig}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-white/10 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoadingConfig ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+        <button type="button" onClick={fetchConfig} disabled={isLoading}
+          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-white/10 transition-colors shadow-sm cursor-pointer disabled:opacity-50">
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
         </button>
       </div>
 
-      {/* Toast Alert Banner */}
-      {toastAlert && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`p-3.5 rounded-2xl flex items-center justify-between gap-3 text-xs font-semibold shadow-xs ${
-            toastAlert.type === 'success'
-              ? 'bg-emerald-50 dark:bg-emerald-500/15 border border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
-              : 'bg-rose-50 dark:bg-rose-500/15 border border-rose-300 dark:border-rose-500/30 text-rose-800 dark:text-rose-300'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {toastAlert.type === 'success' ? (
-              <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-            ) : (
-              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
-            )}
-            <span>{toastAlert.text}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setToastAlert(null)}
-            className="p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </motion.div>
-      )}
+      {/* ── Toast ── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className={`p-3.5 rounded-xl flex items-center justify-between gap-3 text-xs font-semibold border ${
+              toast.type === 'success'
+                ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300'
+                : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/30 text-rose-800 dark:text-rose-300'
+            }`}>
+            <div className="flex items-center gap-2">
+              {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
+              <span>{toast.text}</span>
+            </div>
+            <button onClick={() => setToast(null)} className="p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer"><X className="w-3.5 h-3.5" /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Status Overview Card */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Status Box */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 shadow-xs space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
-            API Key Status
-          </span>
-          <div className="flex items-center gap-2 pt-1">
-            {hasExistingKey ? (
-              <>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                  Key Configured
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
-                  Key Missing
-                </span>
-              </>
-            )}
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate font-mono">
-            {hasExistingKey ? maskedKey : 'Enter your Gemini key below'}
-          </p>
-        </div>
-
-        {/* Active Model Box */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 shadow-xs space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
-            Default Active Model
-          </span>
-          <div className="flex items-center gap-2 pt-1">
-            <Cpu className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-            <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
-              {showCustomModelBox && customModelInput.trim() ? customModelInput.trim() : selectedModel}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span>Primary default model</span>
-          </p>
-        </div>
-
-        {/* Fallback Protection Box */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 shadow-xs space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-gray-400">
-            Auto-Fallback Protection
-          </span>
-          <div className="flex items-center gap-2 pt-1">
-            {enableAutoFallback ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                <ShieldCheck className="w-3.5 h-3.5" /> Active
+      {/* ── Status Row ── */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Gemini key status */}
+        <SectionCard>
+          <div className="p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Gemini Key</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className={`w-2 h-2 rounded-full ${hasExistingKey ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+              <span className={`text-sm font-bold ${hasExistingKey ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                {hasExistingKey ? 'Active' : 'Not Set'}
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-400">
-                Disabled
-              </span>
-            )}
+            </div>
           </div>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">
-            {enableAutoFallback ? 'Auto-shifts if primary model is busy' : 'Strict single-model mode'}
-          </p>
-        </div>
+        </SectionCard>
+
+        {/* Last test */}
+        <SectionCard>
+          <div className="p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Last Test</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              {lastTestStatus === 'success' && <><span className="w-2 h-2 rounded-full bg-emerald-500" /><span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">Passed</span></>}
+              {lastTestStatus === 'failed' && <><span className="w-2 h-2 rounded-full bg-rose-500" /><span className="text-sm font-bold text-rose-600 dark:text-rose-400">Failed</span></>}
+              {!lastTestStatus && <span className="text-sm font-bold text-slate-400">Never</span>}
+            </div>
+            {lastTestedAt && <p className="text-[10px] text-slate-400 mt-0.5">{formatTime(lastTestedAt)}</p>}
+          </div>
+        </SectionCard>
+
+        {/* NVIDIA status */}
+        <SectionCard>
+          <div className="p-4">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">NVIDIA Fallback</p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <span className={`w-2 h-2 rounded-full ${enableNvidia && hasNvidiaKey ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`} />
+              <span className={`text-sm font-bold ${enableNvidia && hasNvidiaKey ? 'text-green-600 dark:text-green-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                {enableNvidia && hasNvidiaKey ? 'Ready' : enableNvidia ? 'No Key' : 'Off'}
+              </span>
+            </div>
+          </div>
+        </SectionCard>
       </div>
 
-      {/* Main Form */}
-      <form onSubmit={handleSave} className="bg-white dark:bg-[#0f111a] border border-slate-200 dark:border-white/10 rounded-2xl p-5 sm:p-6 shadow-xs space-y-6">
-        {/* Section 1: API Key */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <label className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Key className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>Google Gemini API Key</span>
-            </label>
-            <a
-              href="https://aistudio.google.com/app/apikey"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline"
-            >
-              <span>Get Free Gemini Key on Google AI Studio</span>
-              <ExternalLink className="w-3 h-3" />
+      {/* ── Fallback Chain Visual ── */}
+      <SectionCard>
+        <div className="p-4">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">3-Level Fallback Chain</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            {FALLBACK_CHAIN.map((item, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                  <span className={`w-2 h-2 rounded-full ${item.dot} shrink-0`} />
+                  <span className={`text-[11px] font-semibold ${item.color}`}>{item.label}</span>
+                </div>
+                {i < FALLBACK_CHAIN.length - 1 && <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
+              </div>
+            ))}
+          </div>
+          {!enableNvidia && (
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" /> Enable NVIDIA fallback below to activate Level 3 protection
+            </p>
+          )}
+        </div>
+      </SectionCard>
+
+      <form onSubmit={handleSave} className="space-y-5">
+
+        {/* ── Section 1: Gemini API Key ── */}
+        <SectionCard>
+          <SectionHeader
+            icon={<div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center shrink-0"><Key className="w-4 h-4 text-white" /></div>}
+            title="Gemini API Key"
+            subtitle="Your Google AI Studio key — used for all email & notification drafting"
+          />
+          <div className="p-5 space-y-4">
+            <KeyField
+              label="API Key"
+              hint="(from aistudio.google.com)"
+              value={apiKeyInput}
+              onChange={setApiKeyInput}
+              show={showKey}
+              onToggle={() => setShowKey(v => !v)}
+              placeholder={hasExistingKey ? 'Enter new key to replace...' : 'AIzaSy...'}
+              hasExisting={hasExistingKey}
+              masked={maskedKey}
+              accentColor="purple"
+            />
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-purple-600 dark:text-purple-400 hover:underline font-medium">
+              <Sparkles className="w-3 h-3" /> Get a free Gemini API key →
             </a>
           </div>
+        </SectionCard>
 
-          <div className="relative">
-            <input
-              type={showKey ? 'text' : 'password'}
-              placeholder={hasExistingKey ? `Current Key: ${maskedKey} (Type new key to update)` : 'Paste your API key here (AIzaSy...)'}
-              value={apiKeyInput}
-              onChange={e => setApiKeyInput(e.target.value)}
-              className="w-full pl-3.5 pr-20 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-slate-50 dark:bg-[#121626] text-slate-900 dark:text-white placeholder-slate-400 text-xs sm:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all shadow-xs"
-            />
-            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setShowKey(!showKey)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                title={showKey ? 'Hide Key' : 'Show Key'}
-              >
-                {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-            <span>Your key is stored securely in the encrypted backend database and never exposed to public users.</span>
-          </p>
-        </div>
-
-        {/* Section 2: Model Selection & Default Choice */}
-        <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-white/10">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <label className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-              <span>Select Default Gemini Model</span>
-            </label>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              Admin ka set kiya hua model default use hoga
-            </span>
-          </div>
-
-          {/* Compact Dropdown Selector */}
-          <div className="space-y-3">
-            <div className="relative">
-              <select
-                value={showCustomModelBox ? '__custom__' : selectedModel}
-                onChange={e => {
-                  const val = e.target.value;
-                  if (val === '__custom__') {
-                    setShowCustomModelBox(true);
-                  } else {
-                    setShowCustomModelBox(false);
-                    setSelectedModel(val);
-                  }
-                }}
-                className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#121626] text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs appearance-none cursor-pointer transition-all hover:border-slate-400 dark:hover:border-white/25"
-              >
-                {AVAILABLE_MODELS.map(m => (
-                  <option key={m.id} value={m.id} className="dark:bg-[#121626] py-2 font-medium">
-                    {m.name}
-                  </option>
-                ))}
-                {!AVAILABLE_MODELS.some(m => m.id === selectedModel) && selectedModel && selectedModel !== '__custom__' && (
-                  <option value={selectedModel} className="dark:bg-[#121626] py-2 font-medium">
-                    Custom: {selectedModel}
-                  </option>
-                )}
-                <option value="__custom__" className="dark:bg-[#121626] py-2 font-medium">
-                  Custom Model...
-                </option>
-              </select>
-
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 dark:text-slate-400">
-                <ChevronDown className="w-4 h-4" />
-              </div>
-            </div>
-
-            {/* Compact Active Model Information Card */}
-            {(() => {
-              const activeModel = AVAILABLE_MODELS.find(m => m.id === selectedModel);
-              if (!showCustomModelBox && activeModel) {
-                return (
-                  <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-500/25 bg-gradient-to-r from-purple-50/70 via-indigo-50/40 to-transparent dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">
-                          {activeModel.name}
-                        </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                          activeModel.recommended
-                            ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
-                            : 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/30'
-                        }`}>
-                          {activeModel.badge}
-                        </span>
-                        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                          ({activeModel.id})
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300">
-                        {activeModel.description}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-400 shrink-0 bg-white/80 dark:bg-white/10 px-3 py-1.5 rounded-lg border border-purple-200 dark:border-white/10 self-start sm:self-auto">
-                      <Check className="w-3.5 h-3.5 stroke-[3] text-purple-600 dark:text-purple-400" />
-                      <span>Active Default</span>
-                    </div>
-                  </div>
-                );
-              } else if (!showCustomModelBox && selectedModel) {
-                return (
-                  <div className="p-3.5 rounded-xl border border-purple-200 dark:border-purple-500/25 bg-gradient-to-r from-purple-50/70 via-indigo-50/40 to-transparent dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-transparent flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-slate-900 dark:text-white">
-                          Custom Model
-                        </span>
-                        <span className="text-[11px] font-mono text-purple-600 dark:text-purple-400 font-bold">
-                          {selectedModel}
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-600 dark:text-slate-300">
-                        User-defined Google Gemini API model identifier.
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-400 shrink-0 bg-white/80 dark:bg-white/10 px-3 py-1.5 rounded-lg border border-purple-200 dark:border-white/10 self-start sm:self-auto">
-                      <Check className="w-3.5 h-3.5 stroke-[3] text-purple-600 dark:text-purple-400" />
-                      <span>Active Default</span>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-          </div>
-
-          {/* Custom Model Option Box */}
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={() => setShowCustomModelBox(!showCustomModelBox)}
-              className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1.5 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>{showCustomModelBox ? 'Close Custom Model input' : 'Specify Custom / Future Gemini Model ID'}</span>
-            </button>
-
-            {showCustomModelBox && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="mt-2.5 p-3.5 rounded-xl border border-purple-300 dark:border-purple-500/30 bg-purple-50/50 dark:bg-purple-950/20 space-y-2"
-              >
-                <label className="block text-xs font-bold text-slate-900 dark:text-white">
-                  Custom Model Name or Identifier:
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="e.g. gemini-2.0-pro-exp-02-05 or gemini-3.0"
-                    value={customModelInput}
-                    onChange={e => setCustomModelInput(e.target.value)}
-                    className="flex-1 px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-black/30 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (customModelInput.trim()) {
-                        setSelectedModel(customModelInput.trim());
-                      }
-                    }}
-                    className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs cursor-pointer shadow-xs"
-                  >
-                    Set as Default
-                  </button>
-                </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Google Generative Language API endpoint par support hone wala koi bhi model name enter kar sakte hain.
-                </p>
-              </motion.div>
-            )}
-          </div>
-        </div>
-
-        {/* Section 3: Automatic Fallback Feature Checkbox */}
-        <div className="p-4 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-3">
-          <div className="flex items-start gap-3">
-            <button
-              type="button"
-              onClick={() => setEnableAutoFallback(!enableAutoFallback)}
-              className={`mt-0.5 w-5 h-5 rounded-md border flex items-center justify-center shrink-0 cursor-pointer transition-colors ${
-                enableAutoFallback
-                  ? 'bg-purple-600 border-purple-600 text-white'
-                  : 'border-slate-400 bg-white dark:bg-white/5'
-              }`}
-            >
-              {enableAutoFallback && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-            </button>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white cursor-pointer" onClick={() => setEnableAutoFallback(!enableAutoFallback)}>
-                  Enable Automatic Smart Model Fallback (Zero Downtime)
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30">
-                  Recommended
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-gray-400 leading-relaxed">
-                Agar aapka default selected model temporarily busy, rate-limited (429), ya unavailable ho, to Gemini AI <strong>automatic doosre working model</strong> par switch ho kar notification generate kar dega taaki aapka kaam kabhi na ruke.
-              </p>
-              <div className="pt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span>Fallback Sequence: {selectedModel} ➔ gemini-3.7-flash ➔ gemini-3.5-flash ➔ gemini-2.5-flash ➔ gemini-flash-latest</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 4: Fine Tuning Temperature */}
-        <div className="space-y-2 pt-2 border-t border-slate-200 dark:border-white/10">
-          <div className="flex items-center justify-between text-xs">
-            <label className="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-              <span>Creativity & Precision (Temperature):</span>
-              <span className="font-mono text-purple-600 dark:text-purple-400 font-bold">
-                {temperature.toFixed(2)}
-              </span>
-            </label>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">
-              {temperature <= 0.4 ? 'Strict & Deterministic' : temperature <= 0.8 ? 'Balanced (Recommended)' : 'High Creative Variation'}
-            </span>
-          </div>
-
-          <input
-            type="range"
-            min="0.1"
-            max="1.2"
-            step="0.05"
-            value={temperature}
-            onChange={e => setTemperature(parseFloat(e.target.value))}
-            className="w-full accent-purple-600 cursor-pointer"
+        {/* ── Section 2: Model Selection ── */}
+        <SectionCard>
+          <SectionHeader
+            icon={<div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0"><Cpu className="w-4 h-4 text-white" /></div>}
+            title="Primary Gemini Model"
+            subtitle="The model used first for every AI request"
           />
-        </div>
-
-        {/* Actions Bar */}
-        <div className="pt-4 border-t border-slate-200 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={handleTestConnection}
-              disabled={isTesting || (!hasExistingKey && !apiKeyInput.trim())}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-purple-100 hover:bg-purple-200 dark:bg-purple-500/20 dark:hover:bg-purple-500/30 text-purple-800 dark:text-purple-300 font-bold text-xs transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
-            >
-              {isTesting ? (
-                <>
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Testing All Models... (~5s)</span>
-                </>
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Test All Models</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50"
-          >
-            {isSaving ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Saving...</span>
-              </>
-            ) : (
-              <>
-                <Save className="w-3.5 h-3.5" />
-                <span>Save Configuration</span>
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-
-      {/* ================================================================ */}
-      {/* NVIDIA NIM FALLBACK SECTION                                       */}
-      {/* ================================================================ */}
-      <div className="bg-white dark:bg-[#0f1623] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden">
-        {/* Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm shrink-0">
-              <ShieldCheck className="w-4.5 h-4.5 text-white" />
+          <div className="p-5 space-y-4">
+            {/* Model grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {GEMINI_MODELS.map(m => (
+                <button key={m.id} type="button"
+                  onClick={() => { setSelectedModel(m.id); setShowCustom(false); }}
+                  className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    selectedModel === m.id && !showCustom
+                      ? 'border-purple-400 dark:border-purple-500 bg-purple-50 dark:bg-purple-500/10'
+                      : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] hover:border-slate-300 dark:hover:border-white/20'
+                  }`}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {selectedModel === m.id && !showCustom
+                      ? <CheckCircle2 className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                      : <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 shrink-0" />
+                    }
+                    <span className="text-xs font-semibold text-slate-800 dark:text-white truncate font-mono">{m.id}</span>
+                  </div>
+                  <span className={`shrink-0 ml-2 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${m.badgeColor}`}>{m.badge}</span>
+                </button>
+              ))}
             </div>
+
+            {/* Custom model toggle */}
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">NVIDIA NIM Fallback</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Auto-used when all Gemini models fail — powered by NVIDIA AI
-              </p>
-            </div>
-          </div>
-          {/* Enable toggle */}
-          <button
-            type="button"
-            onClick={() => setEnableNvidiaFallback(v => !v)}
-            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-              enableNvidiaFallback ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'
-            }`}
-            role="switch"
-            aria-checked={enableNvidiaFallback}
-          >
-            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
-              enableNvidiaFallback ? 'translate-x-5' : 'translate-x-0'
-            }`} />
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className={`p-5 space-y-4 transition-opacity duration-200 ${enableNvidiaFallback ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
-          {/* Status chip */}
-          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
-            hasExistingNvidiaKey
-              ? 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400'
-              : 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400'
-          }`}>
-            {hasExistingNvidiaKey ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-            {hasExistingNvidiaKey ? `Key saved: ${maskedNvidiaKey}` : 'No NVIDIA API key saved'}
-          </div>
-
-          {/* NVIDIA API Key input */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-              NVIDIA API Key
-              <span className="ml-1.5 text-[10px] text-slate-400 font-normal">(starts with nvapi-...)</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showNvidiaKey ? 'text' : 'password'}
-                value={nvidiaApiKeyInput || (hasExistingNvidiaKey ? maskedNvidiaKey : '')}
-                onChange={e => setNvidiaApiKeyInput(e.target.value)}
-                onFocus={() => { if (hasExistingNvidiaKey && !nvidiaApiKeyInput) setNvidiaApiKeyInput(''); }}
-                placeholder={hasExistingNvidiaKey ? 'Enter new key to replace...' : 'nvapi-...'}
-                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 pr-10 text-xs font-mono text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500/50"
-              />
-              <button
-                type="button"
-                onClick={() => setShowNvidiaKey(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-              >
-                {showNvidiaKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              <button type="button" onClick={() => setShowCustom(v => !v)}
+                className="text-[11px] text-purple-600 dark:text-purple-400 hover:underline font-medium cursor-pointer">
+                {showCustom ? '← Use list above' : '+ Use a custom model ID'}
               </button>
+              {showCustom && (
+                <input value={customModel} onChange={e => setCustomModel(e.target.value)}
+                  placeholder="e.g. gemini-2.0-flash-exp"
+                  className="mt-2 w-full bg-slate-50 dark:bg-white/5 border border-purple-300 dark:border-purple-500/40 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500/30" />
+              )}
+            </div>
+
+            {/* Temperature */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Temperature</label>
+                <span className="text-xs font-bold text-purple-600 dark:text-purple-400 font-mono">{temperature.toFixed(1)}</span>
+              </div>
+              <input type="range" min={0} max={2} step={0.1} value={temperature} onChange={e => setTemperature(Number(e.target.value))}
+                className="w-full accent-purple-500 cursor-pointer" />
+              <div className="flex justify-between text-[10px] text-slate-400">
+                <span>0.0 Precise</span><span>1.0 Balanced</span><span>2.0 Creative</span>
+              </div>
             </div>
           </div>
+        </SectionCard>
 
-          {/* NVIDIA Model selector */}
-          <div className="space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
-              NVIDIA Fallback Model
-              <span className="ml-1.5 text-[10px] font-normal text-green-600 dark:text-green-400">3 models tested & working on your key</span>
-            </label>
-            <select
-              value={nvidiaModel}
-              onChange={e => setNvidiaModel(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/30 cursor-pointer"
-            >
-              <option value="nvidia/nemotron-3-super-120b-a12b">nvidia/nemotron-3-super-120b-a12b ⚡ Fastest (3.2s)</option>
-              <option value="openai/gpt-oss-20b">openai/gpt-oss-20b (5.9s)</option>
-              <option value="nvidia/nemotron-3.5-lightning-30b-a3b">nvidia/nemotron-3.5-lightning-30b-a3b (7.4s)</option>
-            </select>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 px-0.5">
-              💡 <strong>Recommended:</strong> <code className="font-mono">nvidia/nemotron-3-super-120b-a12b</code> — fastest, clean JSON output on your account.
+        {/* ── Section 3: Gemini Auto-Fallback ── */}
+        <SectionCard>
+          <SectionHeader
+            icon={<div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0"><Zap className="w-4 h-4 text-white" /></div>}
+            title="Gemini Auto-Fallback (Level 2)"
+            subtitle="Automatically tries 10 backup Gemini models if primary fails"
+            action={<Toggle value={enableAutoFallback} onChange={() => setEnableAutoFallback(v => !v)} />}
+          />
+          <div className={`px-5 pb-5 pt-3 transition-opacity ${enableAutoFallback ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+            <div className="flex flex-wrap gap-1.5">
+              {['gemini-3.7-flash','gemini-3.6-flash','gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-3-flash-preview','gemini-2.5-flash','gemini-2.5-flash-lite','gemini-flash-latest'].map(m => (
+                <span key={m} className="px-2 py-1 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-[10px] font-mono text-amber-700 dark:text-amber-400">
+                  {m}
+                </span>
+              ))}
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2.5">
+              Sequential testing with 400ms delay to avoid rate limits. Stops as soon as one model succeeds.
             </p>
           </div>
+        </SectionCard>
 
-          {/* How it works */}
-          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
-            <p className="font-bold text-slate-700 dark:text-slate-300 text-xs">How NVIDIA Fallback Works:</p>
-            <div className="flex items-center gap-1.5">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center text-[9px] font-bold">1</span>
-              <span>Try selected Gemini model</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center text-[9px] font-bold">2</span>
-              <span>If Gemini fails → try all Gemini fallback models</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="shrink-0 w-4 h-4 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 flex items-center justify-center text-[9px] font-bold">3</span>
-              <span className="text-green-700 dark:text-green-400 font-semibold">ALL Gemini fail → NVIDIA NIM takes over automatically ✨</span>
+        {/* ── Section 4: NVIDIA NIM Fallback ── */}
+        <SectionCard>
+          <SectionHeader
+            icon={<div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shrink-0"><ShieldCheck className="w-4 h-4 text-white" /></div>}
+            title="NVIDIA NIM Fallback (Level 3)"
+            subtitle="Last resort — activates only when ALL Gemini models fail"
+            action={<Toggle value={enableNvidia} onChange={() => setEnableNvidia(v => !v)} />}
+          />
+          <div className={`p-5 space-y-4 transition-opacity ${enableNvidia ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+            <KeyField
+              label="NVIDIA API Key"
+              hint="(from build.nvidia.com)"
+              value={nvidiaKeyInput}
+              onChange={setNvidiaKeyInput}
+              show={showNvidiaKey}
+              onToggle={() => setShowNvidiaKey(v => !v)}
+              placeholder={hasNvidiaKey ? 'Enter new key to replace...' : 'nvapi-...'}
+              hasExisting={hasNvidiaKey}
+              masked={maskedNvidiaKey}
+              accentColor="green"
+            />
+
+            {/* NVIDIA Model selector */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                NVIDIA Model
+                <span className="ml-2 text-[10px] font-normal text-green-600 dark:text-green-400">3 models verified working on your key</span>
+              </label>
+              <div className="space-y-2">
+                {NVIDIA_MODELS.map(m => (
+                  <button key={m.id} type="button" onClick={() => setNvidiaModel(m.id)}
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                      nvidiaModel === m.id
+                        ? 'border-green-400 dark:border-green-500 bg-green-50 dark:bg-green-500/10'
+                        : 'border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] hover:border-slate-300 dark:hover:border-white/20'
+                    }`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {nvidiaModel === m.id
+                        ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                        : <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-300 dark:border-slate-600 shrink-0" />
+                      }
+                      <span className="text-xs font-semibold text-slate-800 dark:text-white truncate font-mono">{m.id}</span>
+                    </div>
+                    <span className={`shrink-0 ml-2 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${m.badgeColor}`}>{m.badge}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        </SectionCard>
 
-        {/* Save button for NVIDIA section */}
-        <div className="px-5 pb-5">
-          <button
-            type="button"
-            onClick={() => handleSave()}
-            disabled={isSaving}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50"
-          >
+        {/* ── Save + Test Buttons ── */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+          {/* Test */}
+          <button type="button" onClick={handleTest} disabled={isTesting || !hasExistingKey}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-purple-300 dark:border-purple-500/50 text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 font-bold text-xs transition-all cursor-pointer disabled:opacity-40">
+            {isTesting ? (
+              <><RefreshCw className="w-3.5 h-3.5 animate-spin" /><span>Testing All Models... (~5s)</span></>
+            ) : (
+              <><Play className="w-3.5 h-3.5 fill-current" /><span>Test All Gemini Models</span></>
+            )}
+          </button>
+
+          {/* Save */}
+          <button type="submit" disabled={isSaving}
+            className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-md shadow-purple-500/20 active:scale-95 cursor-pointer disabled:opacity-50">
             {isSaving ? (
               <><RefreshCw className="w-3.5 h-3.5 animate-spin" /><span>Saving...</span></>
             ) : (
-              <><Save className="w-3.5 h-3.5" /><span>Save NVIDIA Settings</span></>
+              <><Save className="w-3.5 h-3.5" /><span>Save All Settings</span></>
             )}
           </button>
         </div>
-      </div>
 
-      {/* ============================================================== */}
-      {/* POPUP MODAL FOR TEST RESULTS — FULL MODEL HEALTH REPORT        */}
-      {/* ============================================================== */}
+        {/* Last test error */}
+        {lastTestStatus === 'failed' && lastTestError && (
+          <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-xs text-rose-700 dark:text-rose-400 flex items-start gap-2">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+            <span><strong>Last test error:</strong> {lastTestError}</span>
+          </div>
+        )}
+
+      </form>
+
+      {/* ── Test Results Modal ── */}
       <AnimatePresence>
         {testModal.isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -893,116 +569,64 @@ export default function AdminAiConfigPage() {
               className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               {/* Modal Header */}
-              <div className={`p-4 sm:p-5 border-b flex items-start justify-between gap-3 shrink-0 ${
+              <div className={`p-5 border-b flex items-start justify-between gap-3 shrink-0 ${
                 testModal.success
                   ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30'
                   : 'bg-rose-50/70 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30'
               }`}>
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
-                    testModal.success ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
-                  }`}>
-                    {testModal.success ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
-                  </div>
-                  <div>
-                    <h3 className={`text-base font-bold ${
-                      testModal.success ? 'text-emerald-900 dark:text-emerald-200' : 'text-rose-900 dark:text-rose-200'
-                    }`}>
-                      {testModal.title}
-                    </h3>
-                    {/* Working / Failed summary badges */}
-                    {testModal.totalTested != null && (
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                          ✅ {testModal.workingCount} working
-                        </span>
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300">
-                          ❌ {testModal.failedCount} failed
-                        </span>
-                        <span className="text-[10px] text-slate-400">/ {testModal.totalTested} tested</span>
-                      </div>
-                    )}
-                  </div>
+                <div>
+                  <h3 className={`text-base font-bold ${testModal.success ? 'text-emerald-900 dark:text-emerald-200' : 'text-rose-900 dark:text-rose-200'}`}>
+                    {testModal.title}
+                  </h3>
+                  {testModal.totalTested != null && (
+                    <div className="flex items-center gap-1.5 mt-1.5">
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                        ✅ {testModal.workingCount} working
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300">
+                        ❌ {testModal.failedCount} failed
+                      </span>
+                      <span className="text-[10px] text-slate-400">/ {testModal.totalTested} tested</span>
+                    </div>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setTestModal(prev => ({ ...prev, isOpen: false }))}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-                  title="Close"
-                >
+                <button onClick={() => setTestModal(p => ({ ...p, isOpen: false }))}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Modal Body — scrollable */}
+              {/* Modal Body */}
               <div className="overflow-y-auto flex-1 p-4 space-y-3">
-                {/* Summary message */}
-                <p className={`text-xs font-semibold px-1 ${
-                  testModal.success ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
-                }`}>
+                <p className={`text-xs font-semibold ${testModal.success ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
                   {testModal.message}
                 </p>
 
-                {/* Per-model results table */}
                 {testModal.modelResults && testModal.modelResults.length > 0 && (
                   <div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
-                    {/* Table header */}
-                    <div className="grid grid-cols-[1fr_70px_70px] gap-0 bg-slate-100 dark:bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                      <span>Model</span>
-                      <span className="text-center">Status</span>
-                      <span className="text-right">Latency</span>
+                    <div className="grid grid-cols-[1fr_70px_70px] bg-slate-100 dark:bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <span>Model</span><span className="text-center">Status</span><span className="text-right">Latency</span>
                     </div>
-
-                    {/* Table rows */}
-                    {testModal.modelResults.map((r, idx) => (
-                      <div
-                        key={r.model}
-                        className={`grid grid-cols-[1fr_70px_70px] gap-0 px-3 py-2.5 text-xs border-t border-slate-100 dark:border-white/5 ${
-                          r.isPrimary
-                            ? 'bg-purple-50/60 dark:bg-purple-950/20'
-                            : idx % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-white/[0.02]'
-                        }`}
-                      >
-                        {/* Model name + Primary badge */}
+                    {testModal.modelResults.map((r, i) => (
+                      <div key={r.model}
+                        className={`grid grid-cols-[1fr_70px_70px] px-3 py-2.5 border-t border-slate-100 dark:border-white/5 text-xs ${
+                          r.isPrimary ? 'bg-purple-50/60 dark:bg-purple-950/20' : i % 2 !== 0 ? 'bg-slate-50/50 dark:bg-white/[0.02]' : ''
+                        }`}>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
-                              {r.model}
-                            </span>
-                            {r.isPrimary && (
-                              <span className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
-                                Primary
-                              </span>
-                            )}
+                            <span className="font-mono text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">{r.model}</span>
+                            {r.isPrimary && <span className="shrink-0 px-1 py-0.5 rounded-full text-[9px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300">Primary</span>}
                           </div>
-                          {/* Error message if failed */}
-                          {r.status === 'failed' && r.error && (
-                            <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-0.5 leading-tight line-clamp-2">
-                              {r.error}
-                            </p>
-                          )}
+                          {r.status === 'failed' && r.error && <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-0.5 line-clamp-1">{r.error}</p>}
                         </div>
-
-                        {/* Status badge */}
-                        <div className="flex items-start justify-center pt-0.5">
-                          {r.status === 'success' ? (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
-                              <CheckCircle2 className="w-3 h-3" /> OK
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300">
-                              <AlertTriangle className="w-3 h-3" /> Fail
-                            </span>
-                          )}
+                        <div className="flex items-center justify-center">
+                          {r.status === 'success'
+                            ? <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center gap-0.5"><CheckCircle2 className="w-3 h-3" />OK</span>
+                            : <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 flex items-center gap-0.5"><AlertTriangle className="w-3 h-3" />Fail</span>
+                          }
                         </div>
-
-                        {/* Latency */}
-                        <div className="flex items-start justify-end pt-0.5">
-                          <span className={`font-mono text-[11px] font-bold ${
-                            r.status === 'success'
-                              ? 'text-emerald-600 dark:text-emerald-400'
-                              : 'text-slate-400 dark:text-slate-500'
-                          }`}>
+                        <div className="flex items-center justify-end">
+                          <span className={`font-mono text-[11px] font-bold ${r.status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
                             {r.latencyMs != null ? `${r.latencyMs}ms` : '—'}
                           </span>
                         </div>
@@ -1011,28 +635,22 @@ export default function AdminAiConfigPage() {
                   </div>
                 )}
 
-                {/* No results fallback */}
-                {(!testModal.modelResults || testModal.modelResults.length === 0) && !testModal.success && (
-                  <div className="p-3.5 rounded-xl border bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-900 dark:text-rose-200 text-xs">
-                    <p className="font-semibold">Troubleshooting Tips:</p>
-                    <ul className="list-disc pl-4 mt-1 space-y-0.5 text-[11px]">
-                      <li>Verify your Gemini API key on Google AI Studio.</li>
-                      <li>Check if your project quota or rate limit is reached.</li>
-                      <li>Ensure the key is complete without extra spaces.</li>
+                {!testModal.modelResults?.length && !testModal.success && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 text-xs text-rose-800 dark:text-rose-200">
+                    <p className="font-bold mb-1">Troubleshooting:</p>
+                    <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
+                      <li>Check your API key on aistudio.google.com</li>
+                      <li>Rate limit? Wait 1-2 minutes and try again</li>
+                      <li>Ensure key has no extra spaces</li>
                     </ul>
                   </div>
                 )}
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/10 flex justify-end shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setTestModal(prev => ({ ...prev, isOpen: false }))}
-                  className={`w-full sm:w-auto px-6 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-xs cursor-pointer ${
-                    testModal.success ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'
-                  }`}
-                >
+              <div className="p-4 border-t border-slate-100 dark:border-white/10 flex justify-end shrink-0 bg-slate-50 dark:bg-white/[0.02]">
+                <button onClick={() => setTestModal(p => ({ ...p, isOpen: false }))}
+                  className={`px-6 py-2 rounded-xl text-xs font-bold text-white cursor-pointer ${testModal.success ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'}`}>
                   OK
                 </button>
               </div>
@@ -1043,4 +661,3 @@ export default function AdminAiConfigPage() {
     </div>
   );
 }
-
