@@ -703,12 +703,12 @@ export default function AdminAiConfigPage() {
               {isTesting ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Testing Connection...</span>
+                  <span>Testing All Models... (~5s)</span>
                 </>
               ) : (
                 <>
                   <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Test Connection</span>
+                  <span>Test All Models</span>
                 </>
               )}
             </button>

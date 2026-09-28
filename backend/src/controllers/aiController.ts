@@ -226,8 +226,16 @@ export const testAiConnection = async (req: Request, res: Response) => {
       }
     };
 
-    // Run all model tests in parallel
-    const allResults = await Promise.all(allModelsToTest.map(testSingleModel));
+    // Run tests sequentially with small delay to avoid rate limiting (429)
+    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    const allResults: Awaited<ReturnType<typeof testSingleModel>>[] = [];
+
+    for (let i = 0; i < allModelsToTest.length; i++) {
+      if (i > 0) await delay(400); // 400ms gap between requests to stay under rate limit
+      const result = await testSingleModel(allModelsToTest[i]);
+      allResults.push(result);
+    }
+
 
     const primaryResult = allResults.find(r => r.isPrimary)!;
     const workingModels = allResults.filter(r => r.status === 'success');
