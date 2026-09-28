@@ -36,23 +36,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Missing parameters' }, { status: 400 });
     }
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // STARTTLS
-      requireTLS: true,
-      family: 4, // force IPv4
-      auth: {
-        user: process.env.MAILER_EMAIL,
-        pass: process.env.MAILER_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-    } as any);
+    const brevoHost = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+    const brevoPort = parseInt(process.env.SMTP_PORT || '587', 10);
+    const brevoUser = process.env.SMTP_USER || process.env.MAILER_EMAIL || '';
+    const brevoPass = process.env.SMTP_PASS || process.env.MAILER_PASS || '';
+    const fromEmail = process.env.SMTP_FROM_EMAIL || 'notifications@driveflow.neofilestransfer.site';
+    const fromName = process.env.SMTP_FROM_NAME || 'DriveFlow';
+
+    const gmailUser = process.env.GMAIL_SMTP_USER || 'bott27124@gmail.com';
+    const gmailPass = process.env.GMAIL_SMTP_PASS || process.env.MAILER_PASS || '';
 
 function cleanEmailSubject(subject: string): string {
   if (!subject) return 'DriveFlow Notification';
@@ -129,29 +121,85 @@ function cleanEmailSubject(subject: string): string {
       : htmlToPlainText(finalHtml);
 
     const senderDisplayName = senderName && typeof senderName === 'string' && senderName.trim()
-      ? `"${senderName.trim()}" <${process.env.MAILER_EMAIL}>`
-      : `"DriveFlow Team" <${process.env.MAILER_EMAIL}>`;
+      ? senderName.trim()
+      : fromName;
 
-    const mailOptions = {
-      from: senderDisplayName,
-      replyTo: process.env.MAILER_EMAIL,
-      to,
-      subject: finalSubject,
-      text: finalPlainText,
-      html: finalHtml,
-      headers: {
-        'X-Entity-Ref-ID': `msg-${Date.now()}`,
-        'X-Auto-Response-Suppress': 'All',
-      },
-    };
+    // 1. Try Brevo First (100% Primary Inbox via custom authenticated domain)
+    try {
+      const brevoTransporter = nodemailer.createTransport({
+        host: brevoHost,
+        port: brevoPort,
+        secure: false,
+        auth: {
+          user: brevoUser,
+          pass: brevoPass,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 15000,
+      } as any);
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Email sent to ${to} via Vercel (subject: ${finalSubject})`);
-    
-    return NextResponse.json({ message: 'Email sent successfully' }, { status: 200 });
+      await brevoTransporter.sendMail({
+        from: `"${senderDisplayName}" <${fromEmail}>`,
+        replyTo: fromEmail,
+        to,
+        subject: finalSubject,
+        text: finalPlainText,
+        html: finalHtml,
+        headers: {
+          'X-Entity-Ref-ID': `msg-${Date.now()}`,
+          'X-Auto-Response-Suppress': 'All',
+          'X-Mailer-Provider': 'Brevo-Relay',
+        },
+      });
+      console.log(`[Brevo Relay] Email sent to ${to} via Vercel (subject: ${finalSubject})`);
+      return NextResponse.json({ message: 'Email sent successfully via Brevo' }, { status: 200 });
+    } catch (brevoErr: any) {
+      console.warn(`[Failover] Vercel Brevo relay failed for ${to} (${brevoErr?.message}), failing over to Own Gmail SMTP...`);
+    }
 
+    // 2. Fallback to Own Gmail SMTP if Brevo fails
+    try {
+      const gmailTransporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: gmailUser,
+          pass: gmailPass,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 15000,
+      } as any);
+
+      await gmailTransporter.sendMail({
+        from: `"${senderDisplayName}" <${gmailUser}>`,
+        replyTo: gmailUser,
+        to,
+        subject: finalSubject,
+        text: finalPlainText,
+        html: finalHtml,
+        headers: {
+          'X-Entity-Ref-ID': `msg-${Date.now()}`,
+          'X-Auto-Response-Suppress': 'All',
+          'X-Mailer-Provider': 'Gmail-SMTP',
+        },
+      });
+      console.log(`[Gmail SMTP Fallback] Email sent to ${to} via Vercel (subject: ${finalSubject})`);
+      return NextResponse.json({ message: 'Email sent successfully via Gmail fallback' }, { status: 200 });
+    } catch (gmailErr: any) {
+      console.error(`[Failover Error] Both Brevo and Gmail failed on Vercel:`, gmailErr);
+      return NextResponse.json({ message: `Failed to send email: ${gmailErr?.message || 'All SMTP relays failed'}` }, { status: 500 });
+    }
   } catch (error: any) {
-    console.error(`Error sending email via Vercel:`, error);
+    console.error(`Error processing email request:`, error);
     return NextResponse.json({ message: `Failed to send email: ${error?.message || 'Unknown error'}` }, { status: 500 });
   }
 }

@@ -188,7 +188,7 @@ export const getAdminNotifications = async (req: Request, res: Response) => {
 // @access  Private/Admin
 export const createAdminNotification = async (req: Request, res: Response) => {
   try {
-    const { title, message, type = 'broadcast', targetUsers = [], link, sendEmail = false, sendInApp = true } = req.body;
+    const { title, message, type = 'broadcast', targetUsers = [], link, sendEmail = false, sendInApp = true, emailProvider = 'brevo' } = req.body;
     const adminId = (req as any).user?._id;
 
     if (!title || !title.trim() || !message || !message.trim()) {
@@ -273,7 +273,7 @@ export const createAdminNotification = async (req: Request, res: Response) => {
                     noticeText: 'This automated notification was sent to your registered account.',
                     senderName: adminDisplayName,
                   });
-                  await sendCustomEmail(r.email, cleanSubject, html, adminDisplayName);
+                  await sendCustomEmail(r.email, cleanSubject, html, adminDisplayName, emailProvider);
                 } catch (mailErr) {
                   console.warn(`Failed sending email to ${r.email}:`, mailErr);
                 }

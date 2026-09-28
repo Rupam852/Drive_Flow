@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   ArrowRight,
   Zap,
+  FileText,
 } from 'lucide-react';
 import CloudLogo from '@/components/CloudLogo';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
@@ -23,6 +24,7 @@ interface AppUpdaterModalProps {
   latestVersion: string;
   hasUpdate: boolean;
   downloadUrl: string;
+  description?: string;
   isChecking: boolean;
   statusMessage: string | null;
   autoCheckEnabled: boolean;
@@ -37,6 +39,7 @@ export default function AppUpdaterModal({
   latestVersion,
   hasUpdate,
   downloadUrl,
+  description,
   isChecking,
   statusMessage,
   autoCheckEnabled,
@@ -53,7 +56,7 @@ export default function AppUpdaterModal({
   }, 20, [isOpen, onClose]);
 
   const handleDownloadAndInstall = () => {
-    const url = downloadUrl || 'https://neo-files-transfer.pages.dev/download/723586892fd0';
+    const url = downloadUrl || 'https://neofilestransfer.site/download/723586892fd0';
     try {
       window.open(url, '_system');
     } catch {
@@ -193,7 +196,7 @@ export default function AppUpdaterModal({
                       Performance & Security Update
                     </h4>
                     <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5 leading-snug">
-                      Version {latestVersion} is ready with speed improvements, offline intelligence & fixes.
+                      Version {latestVersion} is ready to install.
                     </p>
                   </div>
                 </div>
@@ -213,6 +216,27 @@ export default function AppUpdaterModal({
                 </div>
               )}
             </div>
+
+            {/* Description Card from API */}
+            {hasUpdate && (
+              <div className="px-6 pb-2.5">
+                <div className="p-3.5 rounded-2xl bg-slate-50/90 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-left">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <div className="w-5 h-5 rounded-lg bg-emerald-500/10 dark:bg-emerald-500/20 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                      <FileText className="w-3 h-3" />
+                    </div>
+                    <span className="text-[10px] font-extrabold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                      Update Description & Notes
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line max-h-32 overflow-y-auto pr-1">
+                    {description && description.trim().length > 0
+                      ? description.trim()
+                      : `Version ${latestVersion} is ready with speed improvements, offline intelligence, and security optimizations.`}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="px-6 pb-4 space-y-2.5">

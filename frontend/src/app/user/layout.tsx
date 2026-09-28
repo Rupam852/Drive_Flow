@@ -37,6 +37,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     latestVersion,
     hasUpdate,
     downloadUrl,
+    description,
     isChecking,
     statusMessage,
     autoCheckEnabled,
@@ -184,6 +185,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           latestVersion={latestVersion}
           hasUpdate={hasUpdate}
           downloadUrl={downloadUrl}
+          description={description}
           isChecking={isChecking}
           statusMessage={statusMessage}
           autoCheckEnabled={autoCheckEnabled}

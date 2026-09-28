@@ -253,7 +253,7 @@ export const getAppVersion = async (req: Request, res: Response) => {
   try {
     let latestVersion = process.env.LATEST_APP_VERSION;
     let minRequiredVersion = process.env.MIN_REQUIRED_VERSION;
-    const downloadUrl = process.env.APP_DOWNLOAD_URL || 'https://neo-files-transfer.pages.dev/download/723586892fd0';
+    const downloadUrl = process.env.APP_DOWNLOAD_URL || 'https://neofilestransfer.site/download/723586892fd0';
 
     // Fully Automated: Read and parse version directly from frontend AppUpdateProvider.tsx
     try {

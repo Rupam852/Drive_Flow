@@ -7,6 +7,7 @@ exports.resetPassword = exports.forgotPassword = void 0;
 const crypto_1 = __importDefault(require("crypto"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const User_1 = require("../models/User");
+const mailer_1 = require("../utils/mailer");
 // Store tokens temporarily in memory (in production use Redis or DB)
 const resetTokens = new Map();
 const forgotPassword = async (req, res) => {
@@ -34,30 +35,21 @@ const forgotPassword = async (req, res) => {
         });
         const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
         const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
-        const emailSubject = 'Password Reset Request - DriveFlow';
-        const emailHtml = `
-      <div style="font-family:sans-serif;max-width:500px;margin:auto;padding:32px;background:#0f172a;color:#f8fafc;border-radius:16px;">
-        <h2 style="color:#8b5cf6;">DriveFlow Password Reset</h2>
-        <p>You requested a password reset. Click the link below within <strong>10 minutes</strong>:</p>
-        <a href="${resetUrl}" style="display:inline-block;margin:16px 0;padding:12px 24px;background:#8b5cf6;color:white;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a>
-        <p style="color:#94a3b8;font-size:12px;">This link will expire in 10 minutes. If you didn't request this, please ignore this email.</p>
-      </div>
-    `;
-        // Send email via Vercel relay to bypass Render SMTP blocks
-        try {
-            const axios = require('axios');
-            await axios.post(`${frontendUrl}/api/send-email`, { to: email, subject: emailSubject, html: emailHtml }, {
-                headers: {
-                    'x-api-key': process.env.API_SECRET_KEY || 'default-secret-key-123',
-                    'Content-Type': 'application/json'
-                },
-                timeout: 15000
-            });
-        }
-        catch (relayError) {
-            console.error(`Error delegating reset email to ${email}:`, relayError?.response?.data || relayError?.message);
-            throw new Error('Failed to send reset email. Please try again later.');
-        }
+        const emailSubject = 'DriveFlow: Password Reset Request';
+        const emailHtml = (0, mailer_1.buildDriveFlowEmailHtml)({
+            title: 'Password Reset Request',
+            userName: user.name || 'User',
+            messageHtml: `
+        <p style="margin: 0 0 14px; font-size: 14px; line-height: 22px; color: #334155;">
+          You recently requested to reset your password for your <strong>DriveFlow</strong> account. Click the button below within <strong>10 minutes</strong> to choose a new password:
+        </p>
+      `,
+            buttonText: 'Reset Password',
+            buttonUrl: resetUrl,
+            noticeText: 'This link is valid for 10 minutes. If you did not request a password reset, you can safely disregard this email.',
+        });
+        // Send email using Brevo first, then failover to Own Gmail SMTP, then Vercel relay
+        await (0, mailer_1.sendCustomEmail)(email, emailSubject, emailHtml);
         res.json({ message: 'If this email exists, a reset link has been sent.' });
     }
     catch (error) {

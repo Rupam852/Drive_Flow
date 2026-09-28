@@ -10,7 +10,7 @@ interface AndroidAppModalProps {
 
 export default function AndroidAppModal({ isOpen, onClose }: AndroidAppModalProps) {
   const handleDownload = () => {
-    window.open('https://neo-files-transfer.pages.dev/download/723586892fd0', '_blank');
+    window.open('https://neofilestransfer.site/download/723586892fd0', '_blank');
     onClose();
   };
 

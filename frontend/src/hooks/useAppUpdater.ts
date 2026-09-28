@@ -11,9 +11,9 @@ interface AppUpdateNotificationPlugin {
 
 export const AppUpdateNotification = registerPlugin<AppUpdateNotificationPlugin>('AppUpdateNotification');
 
-export const CURRENT_APP_VERSION = 'v1.0.7';
-export const API_VERSION_URL = 'https://neo-files-transfer-p3ot.onrender.com/api/version/apk_f13b660ad8d24108';
-export const DEFAULT_DOWNLOAD_URL = 'https://neo-files-transfer.pages.dev/download/723586892fd0';
+export const CURRENT_APP_VERSION = 'v1.0.8';
+export const API_VERSION_URL = 'https://api.neofilestransfer.site/api/version/apk_f13b660ad8d24108';
+export const DEFAULT_DOWNLOAD_URL = 'https://neofilestransfer.site/download/723586892fd0';
 
 export const isNewerVersion = (serverVer: string, currentVer: string): boolean => {
   if (!serverVer || !currentVer) return false;
@@ -33,6 +33,7 @@ export function useAppUpdater() {
   const [hasUpdate, setHasUpdate] = useState<boolean>(false);
   const [latestVersion, setLatestVersion] = useState<string>(CURRENT_APP_VERSION);
   const [downloadUrl, setDownloadUrl] = useState<string>(DEFAULT_DOWNLOAD_URL);
+  const [description, setDescription] = useState<string>('');
   const [isChecking, setIsChecking] = useState<boolean>(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [autoCheckEnabled, setAutoCheckEnabled] = useState<boolean>(() => {
@@ -61,9 +62,11 @@ export function useAppUpdater() {
       const data = await response.json();
       const serverVer = data.version || data.latest_version || CURRENT_APP_VERSION;
       const targetUrl = data.web_url || data.download_url || DEFAULT_DOWNLOAD_URL;
+      const serverDesc = typeof data.description === 'string' ? data.description.trim() : '';
 
       setLatestVersion(serverVer);
       setDownloadUrl(targetUrl);
+      setDescription(serverDesc);
 
       const newer = isNewerVersion(serverVer, CURRENT_APP_VERSION);
       setHasUpdate(newer);
@@ -75,7 +78,7 @@ export function useAppUpdater() {
             await AppUpdateNotification.showUpdateNotification({
               version: serverVer,
               title: `New Update Available: ${serverVer}`,
-              body: `DriveFlow ${serverVer} is available! Tap to download and install.`,
+              body: serverDesc ? `DriveFlow ${serverVer}: ${serverDesc}` : `DriveFlow ${serverVer} is available! Tap to download and install.`,
               downloadUrl: targetUrl,
             });
           } catch (e) {
@@ -121,6 +124,7 @@ export function useAppUpdater() {
     latestVersion,
     hasUpdate,
     downloadUrl,
+    description,
     isChecking,
     statusMessage,
     autoCheckEnabled,

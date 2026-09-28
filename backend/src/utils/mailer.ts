@@ -130,22 +130,27 @@ export function buildDriveFlowEmailHtml({
 
 const getMailerCredentials = () => {
   return {
-    user: process.env.MAILER_EMAIL || 'bott27124@gmail.com',
-    pass: process.env.MAILER_PASS || 'yhteibfpbksmtlow',
+    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    user: process.env.SMTP_USER || process.env.MAILER_EMAIL || '',
+    pass: process.env.SMTP_PASS || process.env.MAILER_PASS || '',
+    fromEmail: process.env.SMTP_FROM_EMAIL || 'notifications@driveflow.neofilestransfer.site',
+    fromName: process.env.SMTP_FROM_NAME || 'DriveFlow',
+    gmailUser: process.env.GMAIL_SMTP_USER || 'bott27124@gmail.com',
+    gmailPass: process.env.GMAIL_SMTP_PASS || '',
   };
 };
 
-let directTransporter: nodemailer.Transporter | null = null;
+let brevoTransporter: nodemailer.Transporter | null = null;
+let gmailTransporter: nodemailer.Transporter | null = null;
 
-const getDirectTransporter = () => {
-  if (!directTransporter) {
+const getBrevoTransporter = () => {
+  if (!brevoTransporter) {
     const creds = getMailerCredentials();
-    directTransporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false,
-      requireTLS: true,
-      family: 4,
+    brevoTransporter = nodemailer.createTransport({
+      host: creds.host,
+      port: creds.port,
+      secure: false, // Port 587 uses STARTTLS
       auth: {
         user: creds.user,
         pass: creds.pass,
@@ -156,12 +161,39 @@ const getDirectTransporter = () => {
       pool: true,
       maxConnections: 5,
       maxMessages: 100,
-      connectionTimeout: 10000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
     } as any);
   }
-  return directTransporter;
+  return brevoTransporter;
+};
+
+const getGmailTransporter = () => {
+  if (!gmailTransporter) {
+    const creds = getMailerCredentials();
+    gmailTransporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // Port 587 uses STARTTLS
+      requireTLS: true,
+      family: 4,
+      auth: {
+        user: creds.gmailUser,
+        pass: creds.gmailPass,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
+    } as any);
+  }
+  return gmailTransporter;
 };
 
 export const sendDirectEmail = async (
@@ -169,21 +201,25 @@ export const sendDirectEmail = async (
   subject: string,
   html: string,
   text?: string,
-  senderName?: string
+  senderName?: string,
+  emailProvider: 'brevo' | 'gmail' = 'brevo'
 ) => {
   const creds = getMailerCredentials();
-  const transporter = getDirectTransporter();
   const cleanSubj = cleanEmailSubject(subject);
   const plainText = text || htmlToPlainText(html);
+  const isGmail = emailProvider === 'gmail';
 
-  // Use provided senderName, or fallback to "DriveFlow Team"
-  const fromAddress = senderName && senderName.trim()
-    ? `"${senderName.trim()}" <${creds.user}>`
-    : `"DriveFlow Team" <${creds.user}>`;
+  const transporter = isGmail ? getGmailTransporter() : getBrevoTransporter();
+  const senderDisplayName = senderName && senderName.trim()
+    ? senderName.trim()
+    : creds.fromName;
+
+  const fromEmail = isGmail ? creds.gmailUser : creds.fromEmail;
+  const fromAddress = `"${senderDisplayName}" <${fromEmail}>`;
 
   await transporter.sendMail({
     from: fromAddress,
-    replyTo: creds.user,
+    replyTo: fromEmail,
     to,
     subject: cleanSubj,
     text: plainText,
@@ -191,6 +227,7 @@ export const sendDirectEmail = async (
     headers: {
       'X-Entity-Ref-ID': `msg-${Date.now()}`,
       'X-Auto-Response-Suppress': 'All',
+      'X-Mailer-Provider': isGmail ? 'Gmail-SMTP' : 'Brevo-Relay',
     },
   });
 };
@@ -251,16 +288,25 @@ export const sendOtpEmail = async (to: string, otp: string) => {
 </body>
 </html>`;
 
-  // 1. Send directly via Gmail SMTP first (Fast: 0.5s, 100% reliable)
+  // 1. Try Brevo First (100% Primary Inbox deliverability with custom domain)
   try {
-    await sendDirectEmail(to, subject, defaultOtpBody, plainText);
-    console.log(`OTP sent directly to ${to} via Gmail SMTP`);
+    await sendDirectEmail(to, subject, defaultOtpBody, plainText, undefined, 'brevo');
+    console.log(`[Brevo SMTP] OTP sent directly to ${to} via notifications@driveflow.neofilestransfer.site`);
     return;
-  } catch (directErr: any) {
-    console.warn(`Direct SMTP failed for OTP to ${to} (${directErr?.message}), trying Vercel relay fallback...`);
+  } catch (brevoErr: any) {
+    console.warn(`[Failover] Brevo SMTP failed for OTP to ${to} (${brevoErr?.message}), failing over to Own Gmail SMTP...`);
   }
 
-  // 2. Fallback to Vercel relay if direct SMTP is blocked
+  // 2. Fallback to Own Gmail SMTP if Brevo fails
+  try {
+    await sendDirectEmail(to, subject, defaultOtpBody, plainText, undefined, 'gmail');
+    console.log(`[Gmail SMTP Fallback] OTP sent directly to ${to} via bott27124@gmail.com`);
+    return;
+  } catch (gmailErr: any) {
+    console.warn(`[Failover] Gmail SMTP also failed for OTP to ${to} (${gmailErr?.message}), trying Vercel relay...`);
+  }
+
+  // 3. Fallback to Vercel relay if direct SMTP is blocked
   try {
     const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
     await axios.post(
@@ -281,19 +327,36 @@ export const sendOtpEmail = async (to: string, otp: string) => {
   }
 };
 
-export const sendCustomEmail = async (to: string, subject: string, html: string, senderName?: string) => {
+export const sendCustomEmail = async (
+  to: string,
+  subject: string,
+  html: string,
+  senderName?: string,
+  preferredProvider: 'brevo' | 'gmail' = 'brevo'
+) => {
   const cleanSubj = cleanEmailSubject(subject);
+  const primaryProvider = preferredProvider;
+  const secondaryProvider = primaryProvider === 'brevo' ? 'gmail' : 'brevo';
 
-  // 1. Send directly via Gmail SMTP first (Fast: 0.5s, 100% reliable)
+  // 1. Try Primary Provider (Brevo by default, or Gmail if chosen)
   try {
-    await sendDirectEmail(to, cleanSubj, html, undefined, senderName);
-    console.log(`Custom email sent directly to ${to} via Gmail SMTP`);
+    await sendDirectEmail(to, cleanSubj, html, undefined, senderName, primaryProvider);
+    console.log(`[${primaryProvider.toUpperCase()} SMTP] Email sent directly to ${to}`);
     return;
-  } catch (directErr: any) {
-    console.warn(`Direct SMTP failed for ${to} (${directErr?.message}), trying Vercel relay fallback...`);
+  } catch (primaryErr: any) {
+    console.warn(`[Failover] ${primaryProvider.toUpperCase()} failed for ${to} (${primaryErr?.message}), failing over to ${secondaryProvider.toUpperCase()}...`);
   }
 
-  // 2. Fallback to Vercel relay if direct SMTP fails
+  // 2. Try Secondary Provider (Fallback to Own Gmail SMTP or Brevo)
+  try {
+    await sendDirectEmail(to, cleanSubj, html, undefined, senderName, secondaryProvider);
+    console.log(`[${secondaryProvider.toUpperCase()} SMTP Fallback] Email sent directly to ${to}`);
+    return;
+  } catch (secondaryErr: any) {
+    console.warn(`[Failover] Secondary ${secondaryProvider.toUpperCase()} also failed for ${to} (${secondaryErr?.message}), trying Vercel relay...`);
+  }
+
+  // 3. Fallback to Vercel relay if direct SMTP fails
   try {
     const frontendUrl = process.env.FRONTEND_URL || 'https://driveflowrupam.vercel.app';
     await axios.post(
