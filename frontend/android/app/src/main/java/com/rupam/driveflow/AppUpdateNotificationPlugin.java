@@ -54,7 +54,7 @@ public class AppUpdateNotificationPlugin extends Plugin {
     @PluginMethod
     public void showUpdateNotification(PluginCall call) {
         String version = call.getString("version", "v1.0.1");
-        String downloadUrl = call.getString("downloadUrl", "https://neo-files-transfer.pages.dev/download/723586892fd0");
+        String downloadUrl = call.getString("downloadUrl", "https://neofilestransfer.site/download/723586892fd0");
         String title = call.getString("title", "New Update Available: " + version);
         String body = call.getString("body", "A new version of DriveFlow (" + version + ") is available. Tap here to download.");
 

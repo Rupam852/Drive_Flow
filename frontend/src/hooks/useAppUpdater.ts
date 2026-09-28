@@ -61,7 +61,7 @@ export function useAppUpdater() {
 
       const data = await response.json();
       const serverVer = data.version || data.latest_version || CURRENT_APP_VERSION;
-      const targetUrl = data.web_url || data.download_url || DEFAULT_DOWNLOAD_URL;
+      const targetUrl = data.web_url || DEFAULT_DOWNLOAD_URL;
       const serverDesc = typeof data.description === 'string' ? data.description.trim() : '';
 
       setLatestVersion(serverVer);
