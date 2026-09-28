@@ -43,6 +43,7 @@ const registerUser = async (req, res) => {
             isEmailVerified: false,
             emailVerificationOtp: otp,
             otpExpires,
+            lastOtpSentAt: new Date(),
         });
         if (user) {
             // Send OTP email asynchronously to prevent blocking the response
@@ -194,9 +195,22 @@ const resendOtp = async (req, res) => {
             res.status(400).json({ message: 'Email already verified' });
             return;
         }
+        // 🛡️ 30-Second Rate Limit Check
+        if (user.lastOtpSentAt) {
+            const elapsedSeconds = Math.floor((Date.now() - new Date(user.lastOtpSentAt).getTime()) / 1000);
+            if (elapsedSeconds < 30) {
+                const remaining = 30 - elapsedSeconds;
+                res.status(429).json({
+                    message: `Please wait ${remaining}s before requesting a new OTP.`,
+                    retryAfter: remaining,
+                });
+                return;
+            }
+        }
         const otp = crypto_1.default.randomInt(100000, 999999).toString();
         user.emailVerificationOtp = otp;
         user.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
+        user.lastOtpSentAt = new Date();
         await user.save();
         await (0, mailer_1.sendOtpEmail)(user.email, otp);
         res.status(200).json({ message: 'A new OTP has been sent to your email.' });
@@ -352,10 +366,23 @@ const sendPasswordOtp = async (req, res) => {
             res.status(404).json({ message: 'User not found' });
             return;
         }
+        // 🛡️ 30-Second Rate Limit Check
+        if (user.lastOtpSentAt) {
+            const elapsedSeconds = Math.floor((Date.now() - new Date(user.lastOtpSentAt).getTime()) / 1000);
+            if (elapsedSeconds < 30) {
+                const remaining = 30 - elapsedSeconds;
+                res.status(429).json({
+                    message: `Please wait ${remaining}s before requesting a new OTP.`,
+                    retryAfter: remaining,
+                });
+                return;
+            }
+        }
         const otp = crypto_1.default.randomInt(100000, 999999).toString();
         const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
         user.passwordResetOtp = otp;
         user.passwordResetOtpExpires = otpExpires;
+        user.lastOtpSentAt = new Date();
         await user.save();
         await (0, mailer_1.sendPasswordChangeOtpEmail)(user.email, otp, user.name);
         res.json({

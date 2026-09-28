@@ -50,6 +50,7 @@ const userSchema = new mongoose_1.Schema({
     otpExpires: { type: Date },
     passwordResetOtp: { type: String },
     passwordResetOtpExpires: { type: Date },
+    lastOtpSentAt: { type: Date },
     googleId: { type: String },
     profilePic: { type: String },
 }, { timestamps: true });

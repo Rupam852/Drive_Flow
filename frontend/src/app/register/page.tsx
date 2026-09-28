@@ -26,9 +26,20 @@ export default function RegisterPage() {
   const [showOtp, setShowOtp] = useState(false);
   const [otp, setOtp] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(30);
+  const [isResending, setIsResending] = useState(false);
   const [isNativeApp, setIsNativeApp] = useState(false);
   const [isAdblocked, setIsAdblocked] = useState(false);
   const router = useRouter();
+
+  // 🛡️ 30s OTP Resend Countdown Timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     const isNative = !!(window as any).Capacitor?.isNativePlatform?.();
@@ -232,6 +243,7 @@ export default function RegisterPage() {
       });
       if (res.data.requireOtp) {
         setShowOtp(true);
+        setResendCooldown(30);
       } else {
         setSuccess(true);
       }
@@ -258,11 +270,20 @@ export default function RegisterPage() {
   };
 
   const handleResendOtp = async () => {
+    if (resendCooldown > 0 || isResending) return;
+    setIsResending(true);
+    setError('');
     try {
       await api.post('/auth/resend-otp', { email: formData.email });
+      setResendCooldown(30);
       alert('A new OTP has been sent to your email.');
     } catch (err: any) {
+      if (err.response?.status === 429 && err.response?.data?.retryAfter) {
+        setResendCooldown(err.response.data.retryAfter);
+      }
       setError(err.response?.data?.message || 'Failed to resend OTP');
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -365,8 +386,17 @@ export default function RegisterPage() {
               </motion.button>
             </form>
             <div className="mt-4">
-              <button onClick={handleResendOtp} className="text-xs text-[var(--color-primary)] hover:text-white transition-colors">
-                Didn't receive code? Resend
+              <button 
+                type="button"
+                onClick={handleResendOtp} 
+                disabled={resendCooldown > 0 || isResending}
+                className={`text-xs font-medium transition-colors ${
+                  resendCooldown > 0 || isResending 
+                    ? 'text-gray-500 cursor-not-allowed' 
+                    : 'text-[var(--color-primary)] hover:text-white cursor-pointer'
+                }`}
+              >
+                {isResending ? 'Sending...' : resendCooldown > 0 ? `Resend OTP in ${resendCooldown}s` : "Didn't receive code? Resend OTP"}
               </button>
             </div>
           </motion.div>

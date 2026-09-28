@@ -10,6 +10,7 @@ export interface IUser extends Document {
     otpExpires?: Date;
     passwordResetOtp?: string;
     passwordResetOtpExpires?: Date;
+    lastOtpSentAt?: Date;
     googleId?: string;
     profilePic?: string;
     createdAt: Date;

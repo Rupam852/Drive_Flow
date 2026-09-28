@@ -11,6 +11,7 @@ export interface IUser extends Document {
   otpExpires?: Date;
   passwordResetOtp?: string;
   passwordResetOtpExpires?: Date;
+  lastOtpSentAt?: Date;
   googleId?: string;
   profilePic?: string;
   createdAt: Date;
@@ -33,6 +34,7 @@ const userSchema = new Schema<IUser>(
     otpExpires: { type: Date },
     passwordResetOtp: { type: String },
     passwordResetOtpExpires: { type: Date },
+    lastOtpSentAt: { type: Date },
     googleId: { type: String },
     profilePic: { type: String },
   },
