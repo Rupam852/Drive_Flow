@@ -4,13 +4,12 @@ import { AiConfig } from '../models/AiConfig';
 import { logActivity } from '../utils/logger';
 
 const DEFAULT_MODELS = [
-  'gemini-3.8-flash',
-  'gemini-3.7-flash',
-  'gemini-3.6-flash',
-  'gemini-3.5-flash',
-  'gemini-3.5-flash-lite',
-  'gemini-3.1-flash-lite',
-  'gemini-3-flash-preview',
+  'gemini-2.5-flash',
+  'gemini-2.5-flash-lite-preview-06-17',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
 ];
 
 // Helper to get or create the single AI config document
@@ -19,7 +18,7 @@ const getOrCreateAiConfig = async () => {
   if (!config) {
     config = await AiConfig.create({
       geminiApiKey: process.env.GEMINI_API_KEY || '',
-      selectedModel: 'gemini-3.8-flash',
+      selectedModel: 'gemini-2.5-flash',
       availableModels: DEFAULT_MODELS,
       enableAutoFallback: true,
       temperature: 0.7,
@@ -30,9 +29,9 @@ const getOrCreateAiConfig = async () => {
   const doc = config;
   let modified = false;
 
-  // Set default to gemini-3.8-flash if old deprecated model was selected
-  if (!doc.selectedModel || doc.selectedModel.startsWith('gemini-2.') || doc.selectedModel.startsWith('gemini-1.')) {
-    doc.selectedModel = 'gemini-3.8-flash';
+  // Reset to default if saved model is one of our old fake/non-existent 3.x models
+  if (!doc.selectedModel || doc.selectedModel.startsWith('gemini-3.')) {
+    doc.selectedModel = 'gemini-2.5-flash';
     modified = true;
   }
 
@@ -326,7 +325,7 @@ export const assistNotification = async (req: Request, res: Response) => {
       return;
     }
 
-    const primaryModel = config.selectedModel || 'gemini-3.8-flash';
+    const primaryModel = config.selectedModel || 'gemini-2.5-flash';
 
     let systemInstruction = '';
     let userContent = '';
@@ -375,13 +374,12 @@ CRITICAL FORMATTING & DELIVERABILITY RULES:
 
     if (config.enableAutoFallback !== false) {
       const fallbackCandidates = [
-        'gemini-3.8-flash',
-        'gemini-3.7-flash',
-        'gemini-3.6-flash',
-        'gemini-3.5-flash',
-        'gemini-3.5-flash-lite',
-        'gemini-3.1-flash-lite',
-        'gemini-3-flash-preview',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite-preview-06-17',
+        'gemini-2.0-flash',
+        'gemini-2.0-flash-lite',
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-8b',
       ];
       fallbackCandidates.forEach(m => {
         if (!modelsToTry.includes(m)) {
