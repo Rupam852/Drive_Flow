@@ -18,53 +18,111 @@ interface ModelOption {
 }
 
 const AVAILABLE_MODELS: ModelOption[] = [
+  // ── Gemini 3.x Series ──────────────────────────────────────
   {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
-    badge: 'Recommended',
-    description: 'Best overall model — smartest, fastest, free tier available. Ideal for email drafting & notifications.',
+    id: 'gemini-3.8-flash',
+    name: 'Gemini 3.8 Flash',
+    badge: 'Latest & Best',
+    description: 'Newest Gemini Flash model — highest intelligence, ultra-fast. Best for email drafting & notifications.',
     recommended: true,
   },
   {
-    id: 'gemini-2.5-flash-lite-preview-06-17',
-    name: 'Gemini 2.5 Flash Lite',
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    badge: 'Agentic',
+    description: 'Excellent for multi-step reasoning and complex notification workflows.',
+  },
+  {
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
+    badge: 'Balanced',
+    description: 'Balanced speed and capability for general notification drafting.',
+  },
+  {
+    id: 'gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    badge: 'High Throughput',
+    description: 'Fast and reliable for high-volume notification generation tasks.',
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash Lite',
     badge: 'Ultra Fast',
-    description: 'Lightweight version of 2.5 Flash — fastest response for high-volume notification tasks.',
+    description: 'Lightweight 3.5 model — lowest latency in the 3.x series.',
   },
   {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    badge: 'Stable',
-    description: 'Rock-solid stable model with strong performance for notification generation.',
-  },
-  {
-    id: 'gemini-2.0-flash-lite',
-    name: 'Gemini 2.0 Flash Lite',
+    id: 'gemini-3.1-flash-lite',
+    name: 'Gemini 3.1 Flash Lite',
     badge: 'Lightweight',
-    description: 'Highly cost-effective, ultra-low latency model for quick text generation.',
+    description: 'Compact and fast — great general-purpose fallback model.',
   },
   {
-    id: 'gemini-1.5-flash',
-    name: 'Gemini 1.5 Flash',
-    badge: 'Reliable Fallback',
-    description: 'Battle-tested, reliable model with great availability — excellent as a fallback.',
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash Preview',
+    badge: 'Preview',
+    description: 'Base Gemini 3 Flash preview — stable foundation model.',
+  },
+  // ── Gemini 2.5 Series ──────────────────────────────────────
+  {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    badge: 'Stable',
+    description: 'Highly stable and widely available — reliable fallback option.',
   },
   {
-    id: 'gemini-1.5-flash-8b',
-    name: 'Gemini 1.5 Flash 8B',
-    badge: 'Last Resort',
-    description: 'Smallest, lightest model — highest availability, best for fallback when all else fails.',
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash Lite',
+    badge: 'Cost Effective',
+    description: 'Lightweight 2.5 model — very fast and cost-efficient.',
+  },
+  {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
+    badge: 'Pro Quality',
+    description: 'Highest quality output in the 2.5 series — use for polish & refinement tasks.',
+  },
+  // ── Stable Aliases ─────────────────────────────────────────
+  {
+    id: 'gemini-flash-latest',
+    name: 'Gemini Flash (Latest Alias)',
+    badge: 'Auto-Updated',
+    description: 'Always points to the latest stable Flash model — auto-updates as Google releases new versions.',
+  },
+  {
+    id: 'gemini-flash-lite-latest',
+    name: 'Gemini Flash Lite (Latest Alias)',
+    badge: 'Auto-Updated',
+    description: 'Always points to the latest Flash Lite model — lightest and fastest available.',
+  },
+  {
+    id: 'gemini-pro-latest',
+    name: 'Gemini Pro (Latest Alias)',
+    badge: 'Auto-Updated',
+    description: 'Always points to the latest Pro-tier model for maximum quality output.',
   },
 ];
+
+interface ModelTestResult {
+  model: string;
+  isPrimary: boolean;
+  status: 'success' | 'failed';
+  latencyMs?: number;
+  reply?: string;
+  error?: string;
+  httpStatus?: number;
+}
 
 interface TestResultModalState {
   isOpen: boolean;
   success: boolean;
   title: string;
   message: string;
-  details?: string;
+  primaryModel?: string;
+  workingCount?: number;
+  failedCount?: number;
+  totalTested?: number;
+  modelResults?: ModelTestResult[];
   latencyMs?: number;
-  model?: string;
 }
 
 export default function AdminAiConfigPage() {
@@ -88,13 +146,14 @@ export default function AdminAiConfigPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
 
-  // Popup Modal State for Test Results (and Errors)
+  // Popup Modal State for Test Results
   const [testModal, setTestModal] = useState<TestResultModalState>({
     isOpen: false,
     success: false,
     title: '',
     message: '',
   });
+  const [modelResults, setModelResults] = useState<ModelTestResult[]>([]);
 
   // Inline toast / banner alert
   const [toastAlert, setToastAlert] = useState<{
@@ -184,7 +243,7 @@ export default function AdminAiConfigPage() {
     }
   };
 
-  // Test Run / Test Connection
+  // Test Run — tests primary model + all fallback models
   const handleTestConnection = async () => {
     setIsTesting(true);
     setToastAlert(null);
@@ -194,53 +253,46 @@ export default function AdminAiConfigPage() {
       : selectedModel;
 
     try {
-      const payload: any = {
-        model: testTargetModel,
-      };
-
-      // If user typed a new key in the box, test with that key
+      const payload: any = { model: testTargetModel };
       const trimmed = apiKeyInput.trim();
-      if (trimmed) {
-        payload.apiKey = trimmed;
-      }
+      if (trimmed) payload.apiKey = trimmed;
 
       const res = await api.post('/ai/test', payload);
       const data = res.data;
 
-      // Update local state
-      setLastTestStatus('success');
-      setLastTestedAt(new Date().toISOString());
-      setLastTestError(null);
+      const results: ModelTestResult[] = data.modelResults || [];
+      setModelResults(results);
 
-      // Open Success Popup Modal with ✖ and OK button
+      const isPrimaryOk = data.primaryStatus === 'success';
+      setLastTestStatus(isPrimaryOk ? 'success' : 'failed');
+      setLastTestedAt(new Date().toISOString());
+      setLastTestError(isPrimaryOk ? null : (data.primaryError || 'Primary model failed'));
+
       setTestModal({
         isOpen: true,
-        success: true,
-        title: 'Connection Successful! 🎉',
-        message: data.message || `Model '${testTargetModel}' connected and responded correctly.`,
-        details: data.reply ? `Model Output: "${data.reply}"` : undefined,
-        latencyMs: data.latencyMs,
-        model: testTargetModel,
+        success: isPrimaryOk || (data.workingCount > 0),
+        title: isPrimaryOk
+          ? `Connection Successful! 🎉`
+          : `Primary Failed — ${data.workingCount} Fallback(s) Available`,
+        message: data.message || '',
+        primaryModel: data.primaryModel,
+        workingCount: data.workingCount,
+        failedCount: data.failedCount,
+        totalTested: data.totalTested,
+        latencyMs: data.primaryLatencyMs,
+        modelResults: results,
       });
     } catch (err: any) {
-      console.error('Test connection error:', err);
-      const errorMsg = err.response?.data?.message || err.message || 'Gemini API test connection failed.';
-      const errorDetails = err.response?.data?.details
-        ? JSON.stringify(err.response.data.details, null, 2)
-        : undefined;
-
+      const errorMsg = err.response?.data?.message || err.message || 'Gemini API test failed.';
       setLastTestStatus('failed');
       setLastTestedAt(new Date().toISOString());
       setLastTestError(errorMsg);
-
-      // Open Error Popup Modal with ✖ and OK button
+      setModelResults([]);
       setTestModal({
         isOpen: true,
         success: false,
         title: 'API Connection Failed',
         message: errorMsg,
-        details: errorDetails,
-        model: testTargetModel,
       });
     } finally {
       setIsTesting(false);
@@ -608,7 +660,7 @@ export default function AdminAiConfigPage() {
               </p>
               <div className="pt-1.5 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 font-mono">
                 <Zap className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span>Fallback Sequence: {selectedModel} ➔ gemini-2.0-flash ➔ gemini-2.0-flash-lite ➔ gemini-1.5-flash ➔ gemini-1.5-flash-8b</span>
+                <span>Fallback Sequence: {selectedModel} ➔ gemini-3.7-flash ➔ gemini-3.5-flash ➔ gemini-2.5-flash ➔ gemini-flash-latest</span>
               </div>
             </div>
           </div>
@@ -683,7 +735,7 @@ export default function AdminAiConfigPage() {
       </form>
 
       {/* ============================================================== */}
-      {/* POPUP MODAL FOR TEST RESULTS (SUCCESS / ERROR) WITH ✖ AND OK */}
+      {/* POPUP MODAL FOR TEST RESULTS — FULL MODEL HEALTH REPORT        */}
       {/* ============================================================== */}
       <AnimatePresence>
         {testModal.isOpen && (
@@ -692,102 +744,147 @@ export default function AdminAiConfigPage() {
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col"
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
               {/* Modal Header */}
-              <div className={`p-4 sm:p-5 border-b flex items-start justify-between gap-3 ${
+              <div className={`p-4 sm:p-5 border-b flex items-start justify-between gap-3 shrink-0 ${
                 testModal.success
                   ? 'bg-emerald-50/70 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900/30'
                   : 'bg-rose-50/70 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/30'
               }`}>
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
-                    testModal.success
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-rose-600 text-white'
+                    testModal.success ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'
                   }`}>
-                    {testModal.success ? (
-                      <CheckCircle2 className="w-5 h-5" />
-                    ) : (
-                      <AlertTriangle className="w-5 h-5" />
-                    )}
+                    {testModal.success ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
                   </div>
                   <div>
                     <h3 className={`text-base font-bold ${
-                      testModal.success
-                        ? 'text-emerald-900 dark:text-emerald-200'
-                        : 'text-rose-900 dark:text-rose-200'
+                      testModal.success ? 'text-emerald-900 dark:text-emerald-200' : 'text-rose-900 dark:text-rose-200'
                     }`}>
                       {testModal.title}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Model: <span className="font-mono font-semibold">{testModal.model}</span>
-                    </p>
+                    {/* Working / Failed summary badges */}
+                    {testModal.totalTested != null && (
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                          ✅ {testModal.workingCount} working
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300">
+                          ❌ {testModal.failedCount} failed
+                        </span>
+                        <span className="text-[10px] text-slate-400">/ {testModal.totalTested} tested</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Close Icon (✖) */}
                 <button
                   type="button"
                   onClick={() => setTestModal(prev => ({ ...prev, isOpen: false }))}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                  title="Close popup"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                  title="Close"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Modal Body */}
-              <div className="p-5 space-y-3 text-xs">
-                <div className={`p-3.5 rounded-xl border leading-relaxed ${
-                  testModal.success
-                    ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20 text-emerald-900 dark:text-emerald-200'
-                    : 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-900 dark:text-rose-200'
+              {/* Modal Body — scrollable */}
+              <div className="overflow-y-auto flex-1 p-4 space-y-3">
+                {/* Summary message */}
+                <p className={`text-xs font-semibold px-1 ${
+                  testModal.success ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'
                 }`}>
-                  <p className="font-semibold text-xs">{testModal.message}</p>
-                  {testModal.details && (
-                    <pre className="mt-2 p-2 rounded-lg bg-black/5 dark:bg-black/40 font-mono text-[11px] overflow-x-auto whitespace-pre-wrap">
-                      {testModal.details}
-                    </pre>
-                  )}
-                </div>
+                  {testModal.message}
+                </p>
 
-                {testModal.success ? (
-                  <div className="space-y-1.5 text-slate-600 dark:text-slate-300 font-medium px-1">
-                    <div className="flex items-center justify-between">
-                      <span>Response Latency:</span>
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        {testModal.latencyMs} ms
-                      </span>
+                {/* Per-model results table */}
+                {testModal.modelResults && testModal.modelResults.length > 0 && (
+                  <div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                    {/* Table header */}
+                    <div className="grid grid-cols-[1fr_70px_70px] gap-0 bg-slate-100 dark:bg-white/5 px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      <span>Model</span>
+                      <span className="text-center">Status</span>
+                      <span className="text-right">Latency</span>
                     </div>
-                    {enableAutoFallback && (
-                      <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-300">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                        <span>Automatic Fallback is enabled to protect against model downtime.</span>
+
+                    {/* Table rows */}
+                    {testModal.modelResults.map((r, idx) => (
+                      <div
+                        key={r.model}
+                        className={`grid grid-cols-[1fr_70px_70px] gap-0 px-3 py-2.5 text-xs border-t border-slate-100 dark:border-white/5 ${
+                          r.isPrimary
+                            ? 'bg-purple-50/60 dark:bg-purple-950/20'
+                            : idx % 2 === 0 ? '' : 'bg-slate-50/50 dark:bg-white/[0.02]'
+                        }`}
+                      >
+                        {/* Model name + Primary badge */}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
+                              {r.model}
+                            </span>
+                            {r.isPrimary && (
+                              <span className="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+                                Primary
+                              </span>
+                            )}
+                          </div>
+                          {/* Error message if failed */}
+                          {r.status === 'failed' && r.error && (
+                            <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-0.5 leading-tight line-clamp-2">
+                              {r.error}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Status badge */}
+                        <div className="flex items-start justify-center pt-0.5">
+                          {r.status === 'success' ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                              <CheckCircle2 className="w-3 h-3" /> OK
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300">
+                              <AlertTriangle className="w-3 h-3" /> Fail
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Latency */}
+                        <div className="flex items-start justify-end pt-0.5">
+                          <span className={`font-mono text-[11px] font-bold ${
+                            r.status === 'success'
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-slate-400 dark:text-slate-500'
+                          }`}>
+                            {r.latencyMs != null ? `${r.latencyMs}ms` : '—'}
+                          </span>
+                        </div>
                       </div>
-                    )}
+                    ))}
                   </div>
-                ) : (
-                  <div className="space-y-1 text-slate-500 dark:text-slate-400 px-1">
-                    <p className="font-bold text-slate-700 dark:text-slate-300">Troubleshooting Steps:</p>
-                    <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
-                      <li>Verify your Google Gemini API key on Google AI Studio.</li>
+                )}
+
+                {/* No results fallback */}
+                {(!testModal.modelResults || testModal.modelResults.length === 0) && !testModal.success && (
+                  <div className="p-3.5 rounded-xl border bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20 text-rose-900 dark:text-rose-200 text-xs">
+                    <p className="font-semibold">Troubleshooting Tips:</p>
+                    <ul className="list-disc pl-4 mt-1 space-y-0.5 text-[11px]">
+                      <li>Verify your Gemini API key on Google AI Studio.</li>
                       <li>Check if your project quota or rate limit is reached.</li>
-                      <li>Ensure that you copied the key completely without spaces.</li>
+                      <li>Ensure the key is complete without extra spaces.</li>
                     </ul>
                   </div>
                 )}
               </div>
 
-              {/* Modal Footer with OK Button */}
-              <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/10 flex justify-end">
+              {/* Modal Footer */}
+              <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-slate-100 dark:border-white/10 flex justify-end shrink-0">
                 <button
                   type="button"
                   onClick={() => setTestModal(prev => ({ ...prev, isOpen: false }))}
                   className={`w-full sm:w-auto px-6 py-2 rounded-xl text-xs font-bold text-white transition-all shadow-xs cursor-pointer ${
-                    testModal.success
-                      ? 'bg-emerald-600 hover:bg-emerald-500'
-                      : 'bg-rose-600 hover:bg-rose-500'
+                    testModal.success ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'
                   }`}
                 >
                   OK
@@ -800,3 +897,4 @@ export default function AdminAiConfigPage() {
     </div>
   );
 }
+

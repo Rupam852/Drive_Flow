@@ -4,12 +4,22 @@ import { AiConfig } from '../models/AiConfig';
 import { logActivity } from '../utils/logger';
 
 const DEFAULT_MODELS = [
+  // Gemini 3.x Series (Latest - Special Access)
+  'gemini-3.8-flash',
+  'gemini-3.7-flash',
+  'gemini-3.6-flash',
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3-flash-preview',
+  // Gemini 2.5 Series (Stable)
   'gemini-2.5-flash',
-  'gemini-2.5-flash-lite-preview-06-17',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-8b',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-pro',
+  // Aliases
+  'gemini-flash-latest',
+  'gemini-flash-lite-latest',
+  'gemini-pro-latest',
 ];
 
 // Helper to get or create the single AI config document
@@ -18,7 +28,7 @@ const getOrCreateAiConfig = async () => {
   if (!config) {
     config = await AiConfig.create({
       geminiApiKey: process.env.GEMINI_API_KEY || '',
-      selectedModel: 'gemini-2.5-flash',
+      selectedModel: 'gemini-3.8-flash',
       availableModels: DEFAULT_MODELS,
       enableAutoFallback: true,
       temperature: 0.7,
@@ -29,9 +39,9 @@ const getOrCreateAiConfig = async () => {
   const doc = config;
   let modified = false;
 
-  // Reset to default if saved model is one of our old fake/non-existent 3.x models
-  if (!doc.selectedModel || doc.selectedModel.startsWith('gemini-3.')) {
-    doc.selectedModel = 'gemini-2.5-flash';
+  // Reset to gemini-3.8-flash as best default (we now have verified working models)
+  if (!doc.selectedModel) {
+    doc.selectedModel = 'gemini-3.8-flash';
     modified = true;
   }
 
@@ -138,7 +148,7 @@ export const updateAiConfig = async (req: Request, res: Response) => {
   }
 };
 
-// @desc    Test Gemini API connection (Admin only)
+// @desc    Test Gemini API connection — tests primary + all fallback models (Admin only)
 // @route   POST /api/ai/test
 // @access  Private/Admin
 export const testAiConnection = async (req: Request, res: Response) => {
@@ -151,9 +161,9 @@ export const testAiConnection = async (req: Request, res: Response) => {
       ? testKey.trim()
       : config.geminiApiKey;
 
-    const effectiveModel = (testModel && typeof testModel === 'string')
+    const primaryModel = (testModel && typeof testModel === 'string')
       ? testModel.trim()
-      : (config.selectedModel || 'gemini-2.5-flash');
+      : (config.selectedModel || 'gemini-3.8-flash');
 
     if (!effectiveKey) {
       res.status(400).json({
@@ -163,61 +173,88 @@ export const testAiConnection = async (req: Request, res: Response) => {
       return;
     }
 
-    const startTime = Date.now();
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${effectiveModel}:generateContent?key=${effectiveKey}`;
+    // Build the full list of models to test: primary first, then all fallbacks (deduplicated)
+    const fallbackPool = [
+      'gemini-3.8-flash',
+      'gemini-3.7-flash',
+      'gemini-3.6-flash',
+      'gemini-3.5-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.1-flash-lite',
+      'gemini-3-flash-preview',
+      'gemini-2.5-flash',
+      'gemini-2.5-flash-lite',
+      'gemini-flash-latest',
+    ];
+    const allModelsToTest: string[] = [primaryModel];
+    fallbackPool.forEach(m => { if (!allModelsToTest.includes(m)) allModelsToTest.push(m); });
 
-    try {
-      const response = await axios.post(
-        endpoint,
-        {
-          contents: [
-            {
-              parts: [{ text: "Respond only with: 'Connection verified successfully.'" }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 20,
+    // Test a single model and return its result
+    const testSingleModel = async (model: string): Promise<{
+      model: string;
+      isPrimary: boolean;
+      status: 'success' | 'failed';
+      latencyMs?: number;
+      reply?: string;
+      error?: string;
+      httpStatus?: number;
+    }> => {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`;
+      const start = Date.now();
+      try {
+        const response = await axios.post(
+          endpoint,
+          {
+            contents: [{ parts: [{ text: "Say: OK" }] }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 10 },
           },
-        },
-        {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 15000,
-        }
-      );
+          { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+        );
+        const reply = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'OK';
+        return { model, isPrimary: model === primaryModel, status: 'success', latencyMs: Date.now() - start, reply };
+      } catch (err: any) {
+        const errData = err.response?.data?.error;
+        const errMsg = errData?.message || err.message || 'Unknown error';
+        return {
+          model,
+          isPrimary: model === primaryModel,
+          status: 'failed',
+          latencyMs: Date.now() - start,
+          error: errMsg.length > 120 ? errMsg.substring(0, 120) + '...' : errMsg,
+          httpStatus: err.response?.status,
+        };
+      }
+    };
 
-      const replyText = response.data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || 'OK';
-      const latencyMs = Date.now() - startTime;
+    // Run all model tests in parallel
+    const allResults = await Promise.all(allModelsToTest.map(testSingleModel));
 
-      config.lastTestedAt = new Date();
-      config.lastTestStatus = 'success';
-      config.lastTestError = undefined;
-      await config.save();
+    const primaryResult = allResults.find(r => r.isPrimary)!;
+    const workingModels = allResults.filter(r => r.status === 'success');
+    const failedModels = allResults.filter(r => r.status === 'failed');
+    const overallSuccess = primaryResult.status === 'success' || workingModels.length > 0;
 
-      res.json({
-        success: true,
-        message: `Gemini API connection test passed! Model '${effectiveModel}' responded in ${latencyMs}ms.`,
-        reply: replyText,
-        latencyMs,
-        model: effectiveModel,
-      });
-    } catch (apiErr: any) {
-      const errorData = apiErr.response?.data?.error;
-      const errorMessage = errorData?.message || apiErr.message || 'Unknown error communicating with Gemini API';
-      const statusCode = apiErr.response?.status || 500;
+    // Save test status based on primary model result
+    config.lastTestedAt = new Date();
+    config.lastTestStatus = primaryResult.status === 'success' ? 'success' : 'failed';
+    config.lastTestError = primaryResult.status === 'failed' ? primaryResult.error : undefined;
+    await config.save();
 
-      config.lastTestedAt = new Date();
-      config.lastTestStatus = 'failed';
-      config.lastTestError = errorMessage;
-      await config.save();
-
-      res.status(400).json({
-        success: false,
-        message: `Gemini Test Failed: ${errorMessage}`,
-        details: errorData || apiErr.toString(),
-        statusCode,
-      });
-    }
+    res.json({
+      success: overallSuccess,
+      primaryModel,
+      primaryStatus: primaryResult.status,
+      primaryLatencyMs: primaryResult.latencyMs,
+      primaryReply: primaryResult.reply,
+      primaryError: primaryResult.error,
+      modelResults: allResults,
+      workingCount: workingModels.length,
+      failedCount: failedModels.length,
+      totalTested: allResults.length,
+      message: primaryResult.status === 'success'
+        ? `Primary model '${primaryModel}' responded in ${primaryResult.latencyMs}ms. ${workingModels.length}/${allResults.length} models healthy.`
+        : `Primary model '${primaryModel}' failed. ${workingModels.length}/${allResults.length} fallback models are available.`,
+    });
   } catch (error: any) {
     res.status(500).json({
       success: false,
@@ -325,7 +362,7 @@ export const assistNotification = async (req: Request, res: Response) => {
       return;
     }
 
-    const primaryModel = config.selectedModel || 'gemini-2.5-flash';
+    const primaryModel = config.selectedModel || 'gemini-3.8-flash';
 
     let systemInstruction = '';
     let userContent = '';
@@ -374,12 +411,16 @@ CRITICAL FORMATTING & DELIVERABILITY RULES:
 
     if (config.enableAutoFallback !== false) {
       const fallbackCandidates = [
+        'gemini-3.8-flash',
+        'gemini-3.7-flash',
+        'gemini-3.6-flash',
+        'gemini-3.5-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.1-flash-lite',
+        'gemini-3-flash-preview',
         'gemini-2.5-flash',
-        'gemini-2.5-flash-lite-preview-06-17',
-        'gemini-2.0-flash',
-        'gemini-2.0-flash-lite',
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-8b',
+        'gemini-2.5-flash-lite',
+        'gemini-flash-latest',
       ];
       fallbackCandidates.forEach(m => {
         if (!modelsToTry.includes(m)) {
