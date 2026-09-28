@@ -244,13 +244,14 @@ export const createAdminNotification = async (req: Request, res: Response) => {
 
           // Attached link is sent ONLY in email as CTA button
           if (link && typeof link === 'string' && link.trim().startsWith('http')) {
-            const isDirectBinary = link.toLowerCase().includes('.apk') || link.toLowerCase().includes('pages.dev');
-            if (isDirectBinary) {
-              buttonUrl = `${frontendUrl}/user/dashboard`;
+            buttonUrl = link.trim();
+            const lower = link.toLowerCase();
+            if (lower.includes('download') || lower.includes('.apk')) {
+              buttonText = 'Download Update';
+            } else if (lower.includes('dashboard')) {
               buttonText = 'Open Dashboard';
             } else {
-              buttonUrl = link.trim();
-              buttonText = 'Open Dashboard';
+              buttonText = 'View Details';
             }
           }
 

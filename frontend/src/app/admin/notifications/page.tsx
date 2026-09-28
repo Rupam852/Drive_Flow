@@ -7,7 +7,7 @@ import {
   Search, X, Sparkles, RefreshCw, Eye, Edit3, ArrowRight,
   ShieldCheck, Info, Check, AlertCircle, ChevronDown,
   Trash2, ExternalLink, Link2, CheckCheck, Smartphone, FileText,
-  Clock, EyeOff, Copy, XCircle, Lock, Unlock, Wand2
+  Clock, EyeOff, Copy, XCircle, Lock, Unlock, Wand2, Download
 } from 'lucide-react';
 import Link from 'next/link';
 import api from '@/lib/api';
@@ -194,15 +194,21 @@ export default function AdminNotificationsPage() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [linkDropdownOpen, setLinkDropdownOpen] = useState(false);
+  const linkDropdownRef = useRef<HTMLDivElement>(null);
+
   // Close dropdowns when clicking or tapping outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
       }
+      if (linkDropdownRef.current && !linkDropdownRef.current.contains(event.target as Node)) {
+        setLinkDropdownOpen(false);
+      }
     };
 
-    if (userDropdownOpen) {
+    if (userDropdownOpen || linkDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('touchstart', handleClickOutside);
     }
@@ -210,7 +216,7 @@ export default function AdminNotificationsPage() {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
     };
-  }, [userDropdownOpen]);
+  }, [userDropdownOpen, linkDropdownOpen]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -770,19 +776,9 @@ export default function AdminNotificationsPage() {
     setSelectedTemplateName(tmpl.name);
     setSubject(tmpl.subject);
     setMessage(tmpl.message.replace(/\[Admin Name\]/g, adminName));
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
-    const dashboardUrl = `${origin}/user/dashboard`;
-    if (
-      tmpl.name.includes('Storage') ||
-      tmpl.name.includes('Files') ||
-      tmpl.name.includes('File') ||
-      tmpl.name.includes('App Update') ||
-      tmpl.name.includes('Features')
-    ) {
-      setAttachedLink(dashboardUrl);
-    } else {
-      setAttachedLink('');
-    }
+    // As requested: Choosing any template will NEVER auto-attach a link.
+    // Admin manually clicks "Insert Link" to decide whether to attach None, Dashboard, or Download URL.
+    setAttachedLink('');
     setResultStatus(null);
   };
 
@@ -1575,21 +1571,69 @@ export default function AdminNotificationsPage() {
             <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
               <label className="text-xs font-bold text-slate-800 dark:text-gray-200 flex items-center gap-1.5">
                 <Link2 className="w-3.5 h-3.5 text-purple-500" />
-                <span>Email Action Link (Only included in Email delivery):</span>
+                <span>Email Action Link (Included in Email delivery only):</span>
               </label>
-              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-500/20">
-                🔔 DriveFlow Phone notifications stay link-free
-              </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mr-1">Quick Select:</span>
+                <button
+                  type="button"
+                  onClick={() => setAttachedLink('')}
+                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                    !attachedLink
+                      ? 'bg-slate-200 dark:bg-white/20 text-slate-900 dark:text-white border-slate-300 dark:border-white/30 font-bold'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 border-slate-200 dark:border-white/10 hover:bg-slate-200/60'
+                  }`}
+                >
+                  None
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
+                    setAttachedLink(`${origin}/user/dashboard`);
+                  }}
+                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                    attachedLink.includes('/user/dashboard')
+                      ? 'bg-purple-100 dark:bg-purple-500/25 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/40 font-bold'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 border-slate-200 dark:border-white/10 hover:bg-slate-200/60'
+                  }`}
+                >
+                  Dashboard
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachedLink('https://neofilestransfer.site/download/723586892fd0');
+                  }}
+                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                    attachedLink.includes('download') || attachedLink.includes('neofilestransfer.site')
+                      ? 'bg-indigo-100 dark:bg-indigo-500/25 text-indigo-800 dark:text-indigo-300 border-indigo-300 dark:border-indigo-500/40 font-bold'
+                      : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-gray-400 border-slate-200 dark:border-white/10 hover:bg-slate-200/60'
+                  }`}
+                >
+                  Download URL
+                </button>
+              </div>
             </div>
             <div className="relative">
               <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="url"
-                placeholder="https://... (Attached as 'Open Dashboard' button in Email only)"
+                placeholder="No action link attached (Choose None, Dashboard, Download URL, or paste URL)"
                 value={attachedLink}
                 onChange={e => setAttachedLink(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all"
+                className="w-full pl-10 pr-16 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs transition-all font-mono"
               />
+              {attachedLink && (
+                <button
+                  type="button"
+                  onClick={() => setAttachedLink('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-red-500 hover:text-red-700 dark:text-red-400 px-2 py-0.5 rounded bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 cursor-pointer"
+                  title="Remove attached link"
+                >
+                  Clear
+                </button>
+              )}
             </div>
           </div>
 
@@ -1599,7 +1643,7 @@ export default function AdminNotificationsPage() {
               <label className="text-xs font-bold text-slate-800 dark:text-gray-200">
                 Message Body Text:
               </label>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 {/* Gemini AI Assistant Button */}
                 <button
                   type="button"
@@ -1635,34 +1679,102 @@ export default function AdminNotificationsPage() {
                   </button>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
-                    const portalUrl = `${origin}/user/dashboard`;
-                    setAttachedLink(portalUrl);
-                    setLinkInserted(true);
-                    setTimeout(() => setLinkInserted(false), 2500);
-                  }}
-                  className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs ${
-                    linkInserted
-                      ? 'bg-emerald-600 text-white border-emerald-600 ring-2 ring-emerald-500/30'
-                      : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30 hover:bg-emerald-100'
-                  }`}
-                  title="Attach official dashboard portal link (Included in Email only)"
-                >
-                  {linkInserted ? (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      <span>✓ Dashboard Attached (Email)</span>
-                    </>
-                  ) : (
-                    <>
-                      <Smartphone className="w-3.5 h-3.5" />
-                      <span>+ Attach Dashboard (Email)</span>
-                    </>
+                {/* Interactive Link Selector Dropdown */}
+                <div className="relative" ref={linkDropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setLinkDropdownOpen(!linkDropdownOpen)}
+                    className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer active:scale-95 shadow-xs ${
+                      attachedLink
+                        ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 border-purple-300 dark:border-purple-500/40 ring-1 ring-purple-500/20'
+                        : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-300 dark:border-white/10 hover:bg-slate-200/70'
+                    }`}
+                    title="Choose an action link option (None, Dashboard, or Download URL)"
+                  >
+                    <Link2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                    <span>
+                      {attachedLink.includes('/user/dashboard')
+                        ? '✓ Dashboard Link'
+                        : attachedLink.includes('download') || attachedLink.includes('neofilestransfer.site')
+                        ? '✓ Download URL'
+                        : attachedLink
+                        ? '✓ Custom Link'
+                        : '+ Insert Link'}
+                    </span>
+                    <ChevronDown className={`w-3 h-3 transition-transform ${linkDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {linkDropdownOpen && (
+                    <div className="absolute right-0 top-full mt-1.5 z-40 w-56 rounded-xl bg-white dark:bg-[#161a2b] border border-slate-200 dark:border-white/15 shadow-xl p-1.5 text-xs animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-gray-500">
+                        Choose Action Link (Email)
+                      </div>
+                      
+                      {/* Option 1: None */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachedLink('');
+                          setLinkDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
+                          !attachedLink
+                            ? 'bg-slate-100 dark:bg-white/10 font-bold text-slate-900 dark:text-white'
+                            : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <X className="w-3.5 h-3.5 text-slate-400" />
+                          <span>None (No Link)</span>
+                        </div>
+                        {!attachedLink && <Check className="w-3.5 h-3.5 text-emerald-500 stroke-[3]" />}
+                      </button>
+
+                      {/* Option 2: Dashboard */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const origin = typeof window !== 'undefined' ? window.location.origin : 'https://driveflowrupam.vercel.app';
+                          setAttachedLink(`${origin}/user/dashboard`);
+                          setLinkDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
+                          attachedLink.includes('/user/dashboard')
+                            ? 'bg-purple-50 dark:bg-purple-500/15 font-bold text-purple-900 dark:text-purple-300'
+                            : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Smartphone className="w-3.5 h-3.5 text-purple-500" />
+                          <span>Dashboard Portal</span>
+                        </div>
+                        {attachedLink.includes('/user/dashboard') && <Check className="w-3.5 h-3.5 text-purple-600 stroke-[3]" />}
+                      </button>
+
+                      {/* Option 3: Download URL */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAttachedLink('https://neofilestransfer.site/download/723586892fd0');
+                          setLinkDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-left transition-colors cursor-pointer ${
+                          attachedLink.includes('download') || attachedLink.includes('neofilestransfer.site')
+                            ? 'bg-indigo-50 dark:bg-indigo-500/15 font-bold text-indigo-900 dark:text-indigo-300'
+                            : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Download className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>App Download URL</span>
+                        </div>
+                        {(attachedLink.includes('download') || attachedLink.includes('neofilestransfer.site')) && (
+                          <Check className="w-3.5 h-3.5 text-indigo-600 stroke-[3]" />
+                        )}
+                      </button>
+                    </div>
                   )}
-                </button>
+                </div>
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
                   Formatted automatically
                 </span>
@@ -1927,7 +2039,13 @@ export default function AdminNotificationsPage() {
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-purple-500/25 transition-all no-underline"
                             >
-                              <span>View Details &rarr;</span>
+                              <span>
+                                {attachedLink.includes('download') || attachedLink.includes('neofilestransfer.site')
+                                  ? 'Download Update →'
+                                  : attachedLink.includes('dashboard')
+                                  ? 'Open Dashboard →'
+                                  : 'View Details →'}
+                              </span>
                             </a>
                             <div className="mt-1.5 text-[10px] text-slate-400 font-mono truncate max-w-xs mx-auto">
                               {attachedLink}
