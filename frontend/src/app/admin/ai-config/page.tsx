@@ -136,6 +136,14 @@ export default function AdminAiConfigPage() {
   const [temperature, setTemperature] = useState(0.7);
   const [showKey, setShowKey] = useState(false);
 
+  // NVIDIA Fallback
+  const [nvidiaApiKeyInput, setNvidiaApiKeyInput] = useState('');
+  const [maskedNvidiaKey, setMaskedNvidiaKey] = useState('');
+  const [hasExistingNvidiaKey, setHasExistingNvidiaKey] = useState(false);
+  const [enableNvidiaFallback, setEnableNvidiaFallback] = useState(false);
+  const [nvidiaModel, setNvidiaModel] = useState('nvidia/nemotron-3-super-120b-a12b');
+  const [showNvidiaKey, setShowNvidiaKey] = useState(false);
+
   // Status & Telemetry
   const [lastTestedAt, setLastTestedAt] = useState<string | null>(null);
   const [lastTestStatus, setLastTestStatus] = useState<'success' | 'failed' | null>(null);
@@ -176,6 +184,11 @@ export default function AdminAiConfigPage() {
         setLastTestedAt(data.lastTestedAt || null);
         setLastTestStatus(data.lastTestStatus || null);
         setLastTestError(data.lastTestError || null);
+        // NVIDIA
+        setHasExistingNvidiaKey(!!data.hasNvidiaKey);
+        setMaskedNvidiaKey(data.maskedNvidiaKey || '');
+        setEnableNvidiaFallback(Boolean(data.enableNvidiaFallback));
+        if (data.nvidiaModel) setNvidiaModel(data.nvidiaModel);
 
         // Check if selected model is custom (not in predefined list)
         const isStandard = AVAILABLE_MODELS.some(m => m.id === data.selectedModel);
@@ -214,13 +227,17 @@ export default function AdminAiConfigPage() {
         selectedModel: finalModel,
         enableAutoFallback,
         temperature,
+        enableNvidiaFallback,
+        nvidiaModel,
       };
 
       // Only pass apiKey if admin typed something new
       const trimmed = apiKeyInput.trim();
-      if (trimmed) {
-        payload.apiKey = trimmed;
-      }
+      if (trimmed) payload.apiKey = trimmed;
+
+      // Only pass nvidiaApiKey if admin typed something new
+      const nvTrimmed = nvidiaApiKeyInput.trim();
+      if (nvTrimmed) payload.nvidiaApiKey = nvTrimmed;
 
       const res = await api.put('/ai/config', payload);
       setToastAlert({
@@ -230,7 +247,11 @@ export default function AdminAiConfigPage() {
       setHasExistingKey(!!res.data?.hasKey);
       setMaskedKey(res.data?.maskedKey || '');
       setSelectedModel(finalModel);
-      setApiKeyInput(''); // Clear plain text input once saved
+      setApiKeyInput('');
+      // Update NVIDIA state from response
+      if (res.data?.hasNvidiaKey !== undefined) setHasExistingNvidiaKey(res.data.hasNvidiaKey);
+      if (res.data?.maskedNvidiaKey) setMaskedNvidiaKey(res.data.maskedNvidiaKey);
+      setNvidiaApiKeyInput('');
     } catch (err: any) {
       console.error('Save failed:', err);
       const msg = err.response?.data?.message || err.message || 'Failed to save AI configuration.';
@@ -733,6 +754,131 @@ export default function AdminAiConfigPage() {
           </button>
         </div>
       </form>
+
+      {/* ================================================================ */}
+      {/* NVIDIA NIM FALLBACK SECTION                                       */}
+      {/* ================================================================ */}
+      <div className="bg-white dark:bg-[#0f1623] border border-slate-200 dark:border-white/10 rounded-2xl overflow-hidden">
+        {/* Header */}
+        <div className="p-5 border-b border-slate-100 dark:border-white/10 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm shrink-0">
+              <ShieldCheck className="w-4.5 h-4.5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">NVIDIA NIM Fallback</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Auto-used when all Gemini models fail — powered by NVIDIA AI
+              </p>
+            </div>
+          </div>
+          {/* Enable toggle */}
+          <button
+            type="button"
+            onClick={() => setEnableNvidiaFallback(v => !v)}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+              enableNvidiaFallback ? 'bg-green-500' : 'bg-slate-300 dark:bg-slate-600'
+            }`}
+            role="switch"
+            aria-checked={enableNvidiaFallback}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-sm transition-transform duration-200 ${
+              enableNvidiaFallback ? 'translate-x-5' : 'translate-x-0'
+            }`} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className={`p-5 space-y-4 transition-opacity duration-200 ${enableNvidiaFallback ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
+          {/* Status chip */}
+          <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+            hasExistingNvidiaKey
+              ? 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400'
+              : 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400'
+          }`}>
+            {hasExistingNvidiaKey ? <CheckCircle2 className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
+            {hasExistingNvidiaKey ? `Key saved: ${maskedNvidiaKey}` : 'No NVIDIA API key saved'}
+          </div>
+
+          {/* NVIDIA API Key input */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              NVIDIA API Key
+              <span className="ml-1.5 text-[10px] text-slate-400 font-normal">(starts with nvapi-...)</span>
+            </label>
+            <div className="relative">
+              <input
+                type={showNvidiaKey ? 'text' : 'password'}
+                value={nvidiaApiKeyInput || (hasExistingNvidiaKey ? maskedNvidiaKey : '')}
+                onChange={e => setNvidiaApiKeyInput(e.target.value)}
+                onFocus={() => { if (hasExistingNvidiaKey && !nvidiaApiKeyInput) setNvidiaApiKeyInput(''); }}
+                placeholder={hasExistingNvidiaKey ? 'Enter new key to replace...' : 'nvapi-...'}
+                className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 pr-10 text-xs font-mono text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500/50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNvidiaKey(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+              >
+                {showNvidiaKey ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* NVIDIA Model selector */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              NVIDIA Fallback Model
+              <span className="ml-1.5 text-[10px] font-normal text-green-600 dark:text-green-400">3 models tested & working on your key</span>
+            </label>
+            <select
+              value={nvidiaModel}
+              onChange={e => setNvidiaModel(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-green-500/30 cursor-pointer"
+            >
+              <option value="nvidia/nemotron-3-super-120b-a12b">nvidia/nemotron-3-super-120b-a12b ⚡ Fastest (3.2s)</option>
+              <option value="openai/gpt-oss-20b">openai/gpt-oss-20b (5.9s)</option>
+              <option value="nvidia/nemotron-3.5-lightning-30b-a3b">nvidia/nemotron-3.5-lightning-30b-a3b (7.4s)</option>
+            </select>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 px-0.5">
+              💡 <strong>Recommended:</strong> <code className="font-mono">nvidia/nemotron-3-super-120b-a12b</code> — fastest, clean JSON output on your account.
+            </p>
+          </div>
+
+          {/* How it works */}
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/10 text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
+            <p className="font-bold text-slate-700 dark:text-slate-300 text-xs">How NVIDIA Fallback Works:</p>
+            <div className="flex items-center gap-1.5">
+              <span className="shrink-0 w-4 h-4 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center text-[9px] font-bold">1</span>
+              <span>Try selected Gemini model</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="shrink-0 w-4 h-4 rounded-full bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center text-[9px] font-bold">2</span>
+              <span>If Gemini fails → try all Gemini fallback models</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="shrink-0 w-4 h-4 rounded-full bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 flex items-center justify-center text-[9px] font-bold">3</span>
+              <span className="text-green-700 dark:text-green-400 font-semibold">ALL Gemini fail → NVIDIA NIM takes over automatically ✨</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Save button for NVIDIA section */}
+        <div className="px-5 pb-5">
+          <button
+            type="button"
+            onClick={() => handleSave()}
+            disabled={isSaving}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-xs transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50"
+          >
+            {isSaving ? (
+              <><RefreshCw className="w-3.5 h-3.5 animate-spin" /><span>Saving...</span></>
+            ) : (
+              <><Save className="w-3.5 h-3.5" /><span>Save NVIDIA Settings</span></>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* ============================================================== */}
       {/* POPUP MODAL FOR TEST RESULTS — FULL MODEL HEALTH REPORT        */}

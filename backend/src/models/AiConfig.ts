@@ -1,11 +1,17 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IAiConfig extends Document {
+  // Gemini settings
   geminiApiKey: string;
   selectedModel: string;
   availableModels: string[];
   enableAutoFallback: boolean;
   temperature: number;
+  // NVIDIA fallback settings
+  nvidiaApiKey: string;
+  enableNvidiaFallback: boolean;
+  nvidiaModel: string;
+  // Test metadata
   lastTestedAt?: Date;
   lastTestStatus?: 'success' | 'failed';
   lastTestError?: string;
@@ -33,6 +39,8 @@ const aiConfigSchema = new Schema<IAiConfig>(
         'gemini-3.5-flash-lite',
         'gemini-3.1-flash-lite',
         'gemini-3-flash-preview',
+        'gemini-2.5-flash',
+        'gemini-2.5-flash-lite',
       ],
     },
     enableAutoFallback: {
@@ -45,6 +53,20 @@ const aiConfigSchema = new Schema<IAiConfig>(
       min: 0,
       max: 2,
     },
+    // NVIDIA NIM fallback
+    nvidiaApiKey: {
+      type: String,
+      default: '',
+    },
+    enableNvidiaFallback: {
+      type: Boolean,
+      default: false,
+    },
+    nvidiaModel: {
+      type: String,
+      default: 'nvidia/nemotron-3-super-120b-a12b',
+    },
+    // Test metadata
     lastTestedAt: {
       type: Date,
     },

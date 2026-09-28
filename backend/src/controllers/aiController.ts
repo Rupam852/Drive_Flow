@@ -80,12 +80,18 @@ export const getAiConfig = async (_req: Request, res: Response) => {
     res.json({
       hasKey: !!config.geminiApiKey,
       maskedKey: maskApiKey(config.geminiApiKey),
-      selectedModel: config.selectedModel || 'gemini-2.5-flash',
+      selectedModel: config.selectedModel || 'gemini-3.8-flash',
       availableModels: config.availableModels && config.availableModels.length > 0
         ? config.availableModels
         : DEFAULT_MODELS,
       enableAutoFallback: config.enableAutoFallback !== false,
       temperature: config.temperature ?? 0.7,
+      // NVIDIA fallback
+      hasNvidiaKey: !!config.nvidiaApiKey,
+      maskedNvidiaKey: maskApiKey(config.nvidiaApiKey || ''),
+      enableNvidiaFallback: config.enableNvidiaFallback === true,
+      nvidiaModel: config.nvidiaModel || 'nvidia/nemotron-3-super-120b-a12b',
+      // Test metadata
       lastTestedAt: config.lastTestedAt,
       lastTestStatus: config.lastTestStatus,
       lastTestError: config.lastTestError,
@@ -101,37 +107,37 @@ export const getAiConfig = async (_req: Request, res: Response) => {
 // @access  Private/Admin
 export const updateAiConfig = async (req: Request, res: Response) => {
   try {
-    const { apiKey, selectedModel, enableAutoFallback, temperature } = req.body;
+    const { apiKey, selectedModel, enableAutoFallback, temperature,
+            nvidiaApiKey, enableNvidiaFallback, nvidiaModel } = req.body;
     const config = await getOrCreateAiConfig();
 
     if (apiKey !== undefined && typeof apiKey === 'string') {
       const trimmed = apiKey.trim();
-      // If user typed a new key (not masked placeholder)
-      if (trimmed && !trimmed.includes('••••')) {
-        config.geminiApiKey = trimmed;
-      } else if (trimmed === '') {
-        config.geminiApiKey = '';
-      }
+      if (trimmed && !trimmed.includes('••••')) config.geminiApiKey = trimmed;
+      else if (trimmed === '') config.geminiApiKey = '';
     }
 
-    if (selectedModel && typeof selectedModel === 'string') {
-      config.selectedModel = selectedModel.trim();
-    }
-
-    if (enableAutoFallback !== undefined) {
-      config.enableAutoFallback = Boolean(enableAutoFallback);
-    }
-
+    if (selectedModel && typeof selectedModel === 'string') config.selectedModel = selectedModel.trim();
+    if (enableAutoFallback !== undefined) config.enableAutoFallback = Boolean(enableAutoFallback);
     if (temperature !== undefined && typeof temperature === 'number') {
       config.temperature = Math.min(2, Math.max(0, temperature));
     }
+
+    // NVIDIA fallback settings
+    if (nvidiaApiKey !== undefined && typeof nvidiaApiKey === 'string') {
+      const trimmed = nvidiaApiKey.trim();
+      if (trimmed && !trimmed.includes('••••')) config.nvidiaApiKey = trimmed;
+      else if (trimmed === '') config.nvidiaApiKey = '';
+    }
+    if (enableNvidiaFallback !== undefined) config.enableNvidiaFallback = Boolean(enableNvidiaFallback);
+    if (nvidiaModel && typeof nvidiaModel === 'string') config.nvidiaModel = nvidiaModel.trim();
 
     await config.save();
 
     await logActivity(
       String((req as any).user?._id || ''),
       'UPDATE_AI_CONFIG',
-      `Admin updated Gemini AI configuration (Model: ${config.selectedModel}, Auto-Fallback: ${config.enableAutoFallback})`
+      `Admin updated AI configuration (Model: ${config.selectedModel}, NVIDIA Fallback: ${config.enableNvidiaFallback})`
     );
 
     res.json({
@@ -142,6 +148,10 @@ export const updateAiConfig = async (req: Request, res: Response) => {
       availableModels: config.availableModels,
       enableAutoFallback: config.enableAutoFallback,
       temperature: config.temperature,
+      hasNvidiaKey: !!config.nvidiaApiKey,
+      maskedNvidiaKey: maskApiKey(config.nvidiaApiKey || ''),
+      enableNvidiaFallback: config.enableNvidiaFallback,
+      nvidiaModel: config.nvidiaModel,
     });
   } catch (error: any) {
     res.status(500).json({ message: error.message || 'Failed to update AI configuration' });
@@ -492,9 +502,56 @@ CRITICAL FORMATTING & DELIVERABILITY RULES:
       }
     }
 
+    // ── NVIDIA NIM Fallback ───────────────────────────────────────────────
+    // If ALL Gemini models failed, try NVIDIA NIM as last resort
+    if (!successfulResult && config.enableNvidiaFallback && config.nvidiaApiKey) {
+      const nvidiaModel = config.nvidiaModel || 'nvidia/nemotron-3-super-120b-a12b';
+      console.log(`[AI Assist] All Gemini models failed. Trying NVIDIA fallback: ${nvidiaModel}`);
+
+      try {
+        const nvidiaResponse = await axios.post(
+          'https://integrate.api.nvidia.com/v1/chat/completions',
+          {
+            model: nvidiaModel,
+            messages: [
+              {
+                role: 'system',
+                content: `${systemInstruction}\n\nStrict Rule: Return ONLY raw JSON without markdown or code fences.`,
+              },
+              {
+                role: 'user',
+                content: userContent,
+              },
+            ],
+            temperature: config.temperature ?? 0.7,
+            max_tokens: 1024,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${config.nvidiaApiKey}`,
+            },
+            timeout: 30000,
+          }
+        );
+
+        const rawText = nvidiaResponse.data?.choices?.[0]?.message?.content?.trim() || '';
+        const parsedResult = extractSubjectAndMessage(rawText, currentSubject || 'DriveFlow System Notice');
+
+        if (parsedResult.message) {
+          successfulResult = parsedResult;
+          successfulModel = `nvidia:${nvidiaModel}`;
+          usedFallback = true;
+          console.log(`[AI Assist] NVIDIA fallback succeeded with ${nvidiaModel}`);
+        }
+      } catch (nvidiaErr: any) {
+        console.warn(`[AI Assist] NVIDIA fallback also failed: ${nvidiaErr.message}`);
+      }
+    }
+
     if (!successfulResult) {
       const errorData = lastError?.response?.data?.error;
-      const errorMessage = errorData?.message || lastError?.message || 'Gemini AI call failed across all tried models';
+      const errorMessage = errorData?.message || lastError?.message || 'AI call failed across all Gemini models and NVIDIA fallback';
       res.status(400).json({
         success: false,
         message: errorMessage,
