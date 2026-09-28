@@ -355,10 +355,10 @@ export const assistNotification = async (req: Request, res: Response) => {
     const { mode, prompt, currentSubject, currentMessage } = req.body;
     const config = await getOrCreateAiConfig();
 
-    if (!config.geminiApiKey) {
+    if (!config.geminiApiKey && !(config.enableNvidiaFallback && config.nvidiaApiKey)) {
       res.status(400).json({
         success: false,
-        message: 'Gemini API key is not configured. Please go to AI Settings and add your API key.',
+        message: 'No AI API key is configured. Please go to AI Settings and configure Gemini or NVIDIA.',
       });
       return;
     }
@@ -408,9 +408,9 @@ CRITICAL FORMATTING & DELIVERABILITY RULES:
     }
 
     // Determine list of models to try (primary first, then fallback pool if enabled)
-    const modelsToTry: string[] = [primaryModel];
+    const modelsToTry: string[] = config.geminiApiKey ? [primaryModel] : [];
 
-    if (config.enableAutoFallback !== false) {
+    if (config.geminiApiKey && config.enableAutoFallback !== false) {
       const fallbackCandidates = [
         'gemini-3.8-flash',
         'gemini-3.7-flash',
