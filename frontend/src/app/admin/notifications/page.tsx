@@ -1165,7 +1165,7 @@ export default function AdminNotificationsPage() {
             2. Select Recipient Audience
           </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {/* Option 1: Broadcast to All */}
             <button
               type="button"
@@ -1173,7 +1173,7 @@ export default function AdminNotificationsPage() {
                 setRecipientMode('all');
                 setResultStatus(null);
               }}
-              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
+              className={`flex items-start gap-3 p-3.5 sm:p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'all'
                   ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-emerald-500/20'
                   : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-slate-400 hover:bg-slate-50/70 shadow-xs'
@@ -1186,10 +1186,10 @@ export default function AdminNotificationsPage() {
               }`}>
                 <Users className="w-5 h-5 stroke-[2.2]" />
               </div>
-              <div>
-                <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
+              <div className="min-w-0 flex-1 pr-7">
+                <div className="flex flex-wrap items-center gap-1.5 font-bold text-sm text-slate-900 dark:text-white">
                   <span>All Users</span>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
                     recipientMode === 'all'
                       ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
                       : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
@@ -1202,8 +1202,8 @@ export default function AdminNotificationsPage() {
                 </p>
               </div>
               {recipientMode === 'all' && (
-                <span className="absolute top-3 right-3 text-emerald-600 dark:text-emerald-400">
-                  <Check className="w-4 h-4 stroke-[3]" />
+                <span className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
                 </span>
               )}
             </button>
@@ -1215,7 +1215,7 @@ export default function AdminNotificationsPage() {
                 setRecipientMode('single');
                 setResultStatus(null);
               }}
-              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
+              className={`flex items-start gap-3 p-3.5 sm:p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'single'
                   ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-emerald-500/20'
                   : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-slate-400 hover:bg-slate-50/70 shadow-xs'
@@ -1228,10 +1228,10 @@ export default function AdminNotificationsPage() {
               }`}>
                 <User className="w-5 h-5 stroke-[2.2]" />
               </div>
-              <div>
-                <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
+              <div className="min-w-0 flex-1 pr-7">
+                <div className="flex flex-wrap items-center gap-1.5 font-bold text-sm text-slate-900 dark:text-white">
                   <span>Specific User</span>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
                     recipientMode === 'single'
                       ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
                       : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
@@ -1244,8 +1244,8 @@ export default function AdminNotificationsPage() {
                 </p>
               </div>
               {recipientMode === 'single' && (
-                <span className="absolute top-3 right-3 text-emerald-600 dark:text-emerald-400">
-                  <Check className="w-4 h-4 stroke-[3]" />
+                <span className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
                 </span>
               )}
             </button>
@@ -1257,7 +1257,7 @@ export default function AdminNotificationsPage() {
                 setRecipientMode('selected');
                 setResultStatus(null);
               }}
-              className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
+              className={`flex items-start gap-3 p-3.5 sm:p-4 rounded-xl border text-left transition-all relative cursor-pointer ${
                 recipientMode === 'selected'
                   ? 'bg-emerald-50/90 dark:bg-emerald-500/15 border-emerald-500 dark:border-emerald-500 text-slate-900 dark:text-white shadow-sm ring-2 ring-emerald-500/20'
                   : 'bg-white dark:bg-white/[0.02] border-slate-300 dark:border-white/10 text-slate-800 dark:text-gray-300 hover:border-slate-400 hover:bg-slate-50/70 shadow-xs'
@@ -1270,10 +1270,10 @@ export default function AdminNotificationsPage() {
               }`}>
                 <ShieldCheck className="w-5 h-5 stroke-[2.2]" />
               </div>
-              <div>
-                <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
+              <div className="min-w-0 flex-1 pr-7">
+                <div className="flex flex-wrap items-center gap-1.5 font-bold text-sm text-slate-900 dark:text-white">
                   <span>Selected Users</span>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
                     recipientMode === 'selected'
                       ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-500/30'
                       : 'bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-gray-300 border-slate-200 dark:border-white/10'
@@ -1286,8 +1286,8 @@ export default function AdminNotificationsPage() {
                 </p>
               </div>
               {recipientMode === 'selected' && (
-                <span className="absolute top-3 right-3 text-emerald-600 dark:text-emerald-400">
-                  <Check className="w-4 h-4 stroke-[3]" />
+                <span className="absolute top-3.5 right-3.5 w-5 h-5 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                  <Check className="w-3.5 h-3.5 stroke-[3]" />
                 </span>
               )}
             </button>
