@@ -156,6 +156,7 @@ export async function POST(request: Request) {
       } as any);
     };
 
+    const brevoDomain = fromEmail.includes('@') ? fromEmail.split('@')[1] : 'driveflow.neofilestransfer.site';
     const sendWithBrevo = async () => {
       const mailOptions = {
         from: {
@@ -168,9 +169,12 @@ export async function POST(request: Request) {
         text: finalPlainText,
         html: finalHtml,
         headers: {
-          'X-Entity-Ref-ID': `msg-${Date.now()}`,
+          'Message-ID': `<df-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@${brevoDomain}>`,
+          'X-Entity-Ref-ID': `df-${Date.now()}`,
           'X-Auto-Response-Suppress': 'All',
-          'X-Mailer-Provider': 'Brevo-Relay',
+          'X-Mailer': 'DriveFlow-Notification-Platform',
+          'List-Unsubscribe': `<mailto:support@${brevoDomain}?subject=unsubscribe>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
       };
 
@@ -203,6 +207,7 @@ export async function POST(request: Request) {
         socketTimeout: 12000,
       } as any);
 
+      const gmailDomain = gmailUser.includes('@') ? gmailUser.split('@')[1] : 'gmail.com';
       await gmailTransporter.sendMail({
         from: {
           name: senderDisplayName,
@@ -214,9 +219,12 @@ export async function POST(request: Request) {
         text: finalPlainText,
         html: finalHtml,
         headers: {
-          'X-Entity-Ref-ID': `msg-${Date.now()}`,
+          'Message-ID': `<df-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@${gmailDomain}>`,
+          'X-Entity-Ref-ID': `df-${Date.now()}`,
           'X-Auto-Response-Suppress': 'All',
-          'X-Mailer-Provider': 'Gmail-SMTP',
+          'X-Mailer': 'DriveFlow-Notification-Platform',
+          'List-Unsubscribe': `<mailto:support@${gmailDomain}?subject=unsubscribe>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
         },
       });
       console.log(`[Gmail SMTP Fallback] Email sent to ${to} via Vercel`);

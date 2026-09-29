@@ -228,6 +228,7 @@ export const sendDirectEmail = async (
 
   const fromEmail = isGmail ? creds.gmailUser : creds.fromEmail;
 
+  const domain = fromEmail.includes('@') ? fromEmail.split('@')[1] : 'driveflow.neofilestransfer.site';
   const mailOptions = {
     from: {
       name: senderDisplayName,
@@ -239,9 +240,12 @@ export const sendDirectEmail = async (
     text: plainText,
     html,
     headers: {
-      'X-Entity-Ref-ID': `msg-${Date.now()}`,
+      'Message-ID': `<df-${Date.now()}-${Math.random().toString(36).slice(2, 9)}@${domain}>`,
+      'X-Entity-Ref-ID': `df-${Date.now()}`,
       'X-Auto-Response-Suppress': 'All',
-      'X-Mailer-Provider': isGmail ? 'Gmail-SMTP' : 'Brevo-Relay',
+      'X-Mailer': 'DriveFlow-Notification-Platform',
+      'List-Unsubscribe': `<mailto:support@${domain}?subject=unsubscribe>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
   };
 

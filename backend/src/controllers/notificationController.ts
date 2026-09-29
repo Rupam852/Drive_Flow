@@ -242,7 +242,7 @@ export const createAdminNotification = async (req: Request, res: Response) => {
           let buttonUrl: string | undefined = undefined;
           let buttonText: string | undefined = undefined;
 
-          // Attached link is sent ONLY in email as CTA button
+          // Attached link is sent in email as CTA button (defaults to DriveFlow portal)
           if (link && typeof link === 'string' && link.trim().startsWith('http')) {
             buttonUrl = link.trim();
             const lower = link.toLowerCase();
@@ -253,6 +253,9 @@ export const createAdminNotification = async (req: Request, res: Response) => {
             } else {
               buttonText = 'View Details';
             }
+          } else {
+            buttonUrl = frontendUrl;
+            buttonText = 'Open DriveFlow Portal';
           }
 
           const customSender = (req.body.senderName && typeof req.body.senderName === 'string' && req.body.senderName.trim()) || '';
