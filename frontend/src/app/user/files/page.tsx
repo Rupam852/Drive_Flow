@@ -989,6 +989,7 @@ export default function UserFilesPage() {
                 {/* Selection Checkbox */}
                 <div className={`absolute top-2 left-2 z-10 transition-all duration-200 
                   ${selected.has(file.id) ? 'opacity-100 scale-100' : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'}`}
+                  onPointerDown={e => e.stopPropagation()}
                   onClick={e => { e.stopPropagation(); toggleSelect(file.id); }}>
                   <div className={`p-1 rounded-md border transition-all
                     ${selected.has(file.id) ? 'bg-purple-500 border-purple-400' : 'bg-black/40 border-white/10 hover:border-white/30'}`}>
