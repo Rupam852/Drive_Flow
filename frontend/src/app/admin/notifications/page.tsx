@@ -66,6 +66,9 @@ const TEMPLATES = [
 
 New documents and files have been synchronized to your DriveFlow cloud account.
 
+• Synced Items: Project_Files.pdf
+• Location: Shared Workspace
+
 You can preview, organize, or download your files directly through your DriveFlow workspace.
 
 Best regards,
@@ -73,10 +76,10 @@ DriveFlow Team`,
   },
   {
     name: '🚀 App Update Ready',
-    subject: 'DriveFlow: New app update available ([Version Name])',
+    subject: 'DriveFlow: New platform update available (v2.4.0)',
     message: `Hello,
 
-A new version (Version [Version Name]) of DriveFlow is now available with enhancements to file transfer speed and platform stability.
+A new version (v2.4.0) of DriveFlow is now available with enhancements to file transfer speed and platform stability.
 
 Open your DriveFlow dashboard or mobile app to install the update and explore the latest improvements.
 
@@ -100,14 +103,15 @@ DriveFlow Team`,
   },
   {
     name: '⚙️ System Performance',
-    subject: 'DriveFlow: Cloud infrastructure and platform update',
+    subject: 'DriveFlow: Scheduled system optimization notice',
     message: `Hello,
 
 We are conducting routine system enhancements to ensure maximum reliability and high-speed cloud synchronization across DriveFlow.
 
-All files, folders, and storage services remain completely safe and accessible.
+• Schedule Window: Tonight, 11:00 PM – 11:30 PM
+• Service Impact: Brief sync delay of 10-15 minutes
 
-Thank you for being a valued user of DriveFlow.
+All files, folders, and storage services remain completely safe and accessible.
 
 Best regards,
 DriveFlow Team`,

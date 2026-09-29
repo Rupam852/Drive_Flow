@@ -264,7 +264,7 @@ export const testAiConnection = async (req: Request, res: Response) => {
 };
 
 
-// Helper to clean markdown asterisks, bullets, and spacing for human-readable emails
+// Helper to clean markdown asterisks, bullets, placeholders, and spacing for 100% spam-safe emails
 const cleanEmailTextAndRemoveAsterisks = (text: string): string => {
   if (!text) return '';
   return text
@@ -274,8 +274,10 @@ const cleanEmailTextAndRemoveAsterisks = (text: string): string => {
     .replace(/(^|[^\*])\*(?!\s)([^*]+)\*(?!\*)/g, '$1$2')
     // Replace markdown bullet points like '* ' or '- ' at beginning of lines with '• '
     .replace(/^[\*\-]\s+/gm, '• ')
-    // Replace any remaining stray double/triple asterisks
+    // Replace remaining stray double/triple asterisks
     .replace(/\*{2,}/g, '')
+    // Clean up unparsed raw placeholder brackets like [File Name] -> File Name
+    .replace(/\[([A-Za-z0-9\s_\-\.]+)\]/g, '$1')
     // Clean up multiple extra empty lines
     .replace(/\n{3,}/g, '\n\n')
     .trim();
@@ -374,18 +376,37 @@ export const assistNotification = async (req: Request, res: Response) => {
         return;
       }
 
-      systemInstruction = `You are the lead communications specialist for DriveFlow, a high-performance cloud storage and file management platform.
-Your task is to draft a professional, clear notification and email announcement based on the administrator's request.
-CRITICAL FORMATTING & DELIVERABILITY RULES:
-1. DO NOT use markdown asterisks (no **bold**, no *italic*, and no * for bullets). In plain text email boxes, asterisks look messy and unrendered.
-2. For headings/sections, use clean plain text followed by a colon (e.g. "MAINTENANCE SCHEDULE:" or "Details:").
-3. For lists, use the bullet character "• " instead of asterisks "* ".
-4. Subject must be informative and transactional (e.g., "DriveFlow Service Notice: ...", "Account Notice: ...").
-5. Output MUST be strictly valid JSON with exactly two fields: "subject" and "message".
-Example:
+      systemInstruction = `You are the lead communications specialist and email deliverability engineer for DriveFlow, a cloud storage platform.
+Your objective is to craft high-converting, professional, 100% spam-safe transactional announcements and notification emails that land directly in the user's Primary Inbox (Gmail, Yahoo, Outlook, Apple Mail).
+
+STRICT ANTI-SPAM & DELIVERABILITY RULES (MUST FOLLOW):
+1. SUBJECT LINE:
+   - Must ALWAYS start with "DriveFlow: " (e.g. "DriveFlow: New items synced to your cloud workspace", "DriveFlow: Scheduled system optimization notice").
+   - Maximum 60 characters. Clear, concise, informative, and transactional.
+   - NEVER use spam trigger words in subject (e.g. "Free", "Urgent", "Act Now", "Winner", "Alert!", "100%", "Immediate Action", "Limited Time", "$$$").
+   - NEVER use ALL-CAPS words or exclamation marks in the subject.
+
+2. MESSAGE BODY & CONTENT:
+   - Start with a polite, professional greeting: "Hello,"
+   - State the core message in clear, concise, trustworthy language.
+   - NEVER output bracketed placeholder tokens like [File Name], [Insert Date], [User], or [Link]. Always supply complete, natural, and realistic examples (e.g., "Project_Report.pdf", "Tonight between 11:00 PM – 11:30 PM") so the email is immediately ready to send or edit.
+   - If listing details or steps, use clean bullet characters "• " with consistent spacing (e.g., "• Synced Item: Project_Report.pdf").
+   - When discussing maintenance or performance, assure user data safety: "All files, folders, and storage services remain completely safe and encrypted."
+   - End with a clean transactional sign-off: "Best regards,\\nDriveFlow Team"
+   - Tone must be calm, polite, authoritative, and helpful — NEVER create fake urgency or panic.
+
+3. CLEAN TEXT FORMATTING (NO MARKDOWN ASTERISKS):
+   - DO NOT use markdown asterisks (no **bold**, no *italic*, and no * for bullets). Plain-text email inputs do not render markdown asterisks and look broken or suspicious to spam filters.
+   - Use plain capital section titles if needed (e.g. "DETAILS:" or "RECOMMENDED STEPS:").
+
+4. OUTPUT FORMAT:
+   - Return ONLY a valid JSON object with exactly two string fields: "subject" and "message".
+   - Do NOT wrap in markdown code fences or backticks.
+
+Example JSON:
 {
-  "subject": "DriveFlow Service Notice: Scheduled Infrastructure Maintenance",
-  "message": "Hello,\\n\\nPlease be advised that DriveFlow will undergo scheduled system maintenance to improve platform reliability, security, and cloud performance.\\n\\n• Date: This weekend\\n• Duration: Approximately 30-45 minutes\\n\\nDuring this brief window, file synchronization may experience temporary delays. Your data remains fully secure and encrypted.\\n\\nThank you for your patience and support.\\n\\nBest regards,\\nDriveFlow Operations Team"
+  "subject": "DriveFlow: New items synced to your cloud workspace",
+  "message": "Hello,\\n\\nNew documents and files have been synchronized to your DriveFlow cloud account.\\n\\n• Synced Items: Project_Files.pdf\\n• Location: Shared Workspace\\n\\nYou can preview, organize, or download your files directly through your DriveFlow workspace.\\n\\nBest regards,\\nDriveFlow Team"
 }`;
       userContent = `Create a notification draft for: ${prompt.trim()}`;
     } else if (mode === 'polish') {
@@ -394,13 +415,17 @@ Example:
         return;
       }
 
-      systemInstruction = `You are an expert copy editor for DriveFlow cloud platform.
-Your task is to refine, grammar-check, and elevate the provided email draft into a clean, professional email.
-CRITICAL FORMATTING & DELIVERABILITY RULES:
-1. DO NOT use markdown asterisks (no **bold**, no *italic*, and no * for bullets).
-2. For lists, use clean bullets "• " instead of asterisks "* ".
-3. Ensure professional, authoritative tone and remove spam triggers so the email lands in Gmail Primary Inbox.
-4. Output MUST be strictly valid JSON with exactly two fields: "subject" and "message".`;
+      systemInstruction = `You are an expert copy editor and email deliverability specialist for DriveFlow cloud storage platform.
+Your task is to refine, grammar-check, and optimize the administrator's email draft so it achieves 100% Primary Inbox placement (zero spam score in SpamAssassin, Google Postmaster, and Yahoo).
+
+STRICT ANTI-SPAM & REFINEMENT RULES:
+1. Ensure the subject starts with "DriveFlow: " and uses concise, professional, transactional wording without spam words or excessive punctuation.
+2. Remove any aggressive or spam-like phrases (e.g., "urgent", "act fast", "click immediately", "free bonus").
+3. Replace any bracketed placeholders like [File Name] or [Date] with realistic, clean copy.
+4. DO NOT use markdown asterisks (no **bold**, no *italic*, no * bullets). Use unicode "• " for bullet lists.
+5. Ensure a friendly greeting ("Hello,") and a standard sign-off ("Best regards,\\nDriveFlow Team").
+6. Keep formatting neat with double line breaks between paragraphs.
+7. Return ONLY a valid JSON object with exactly two fields: "subject" and "message".`;
       userContent = `Subject: ${currentSubject || ''}\n\nMessage Body:\n${currentMessage}`;
     } else {
       res.status(400).json({ success: false, message: "Invalid mode. Must be 'draft' or 'polish'." });
