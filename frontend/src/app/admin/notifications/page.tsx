@@ -61,88 +61,89 @@ interface DeliveryReportData {
 const TEMPLATES = [
   {
     name: '📄 New File Shared',
-    subject: 'A new file has been shared with you',
-    message: `Hi,
+    subject: 'DriveFlow: New file available in your drive',
+    message: `Hello,
 
-A new file has been shared with you. You can view and download it by logging into your account:
+A new document has been added to your DriveFlow cloud workspace:
 
 • File Name: [File Name]
 
-You can access it anytime by logging in. Feel free to reach out if you face any issues.
+You can access and manage this file directly through your DriveFlow dashboard.
 
-Thanks,
-[Admin Name]`,
+Best regards,
+DriveFlow Team`,
   },
   {
     name: '🚀 App Update Ready',
-    subject: 'A new app update is available ([Version Name])',
-    message: `Hi,
+    subject: 'DriveFlow: New app update available ([Version Name])',
+    message: `Hello,
 
-A new update (Version [Version Name]) has been released. This version includes improvements to file transfer speed and overall performance.
+A new version (Version [Version Name]) of DriveFlow is now available with enhancements to file transfer speed and platform stability.
 
-Open your DriveFlow dashboard to check the latest updates and release highlights.
+Open your DriveFlow dashboard or mobile app to install the update and explore the latest improvements.
 
-Let us know if you face any issues.
-
-Thanks,
-[Admin Name]`,
+Best regards,
+DriveFlow Team`,
   },
   {
     name: '📢 New Features Added',
-    subject: 'New features and improvements added to the app',
-    message: `Hi,
+    subject: 'DriveFlow: New features and platform improvements',
+    message: `Hello,
 
-We have added some useful new features and improvements to make your experience faster and smoother:
+We have added new capabilities and optimizations to provide you with a faster and smoother experience:
 
-• Faster file upload & download
-• Smoother preview and improved stability
+• High-speed file uploads and downloads
+• Enhanced file preview and cloud organization
 
-Open the app to explore the latest changes.
+Open DriveFlow to explore the latest enhancements.
 
-Thanks,
-[Admin Name]`,
+Best regards,
+DriveFlow Team`,
   },
   {
-    name: '⚠️ Short Maintenance',
-    subject: 'Notice: Brief scheduled server maintenance ahead',
-    message: `Hi,
+    name: '⚠️ Scheduled Maintenance',
+    subject: 'DriveFlow: Scheduled system optimization schedule',
+    message: `Hello,
 
-We will be performing a short maintenance to improve server performance.
+We are conducting routine system optimization to improve file synchronization and server response times.
 
-• Duration: Approximately 20–30 minutes
-• All your data and files are completely safe.
+• Window: Approximately 20–30 minutes
+• Data status: All stored files and folders remain safe and accessible.
 
-This is just a heads-up so you are not inconvenienced. Thank you for your patience.
+Thank you for your patience as we continue enhancing your DriveFlow experience.
 
-Thanks,
-[Admin Name]`,
+Best regards,
+DriveFlow Team`,
   },
   {
-    name: '🔒 Security Reminder',
-    subject: 'A quick security reminder for your account',
-    message: `Hi,
+    name: '🔒 Security Best Practices',
+    subject: 'DriveFlow: Workspace safety and security recommendations',
+    message: `Hello,
 
-Just a quick reminder to help keep your account secure:
+Here are a few recommended best practices for protecting your DriveFlow cloud workspace:
 
-• Never share your password or login details with anyone.
-• Always log out after using the app on a shared or public device.
+• Keep your account credentials confidential and use strong passwords.
+• Sign out when accessing your account from shared or public computers.
 
-If you notice anything suspicious, please contact us immediately.
+Feel free to reach out if you have any questions regarding your account settings.
 
-Thanks,
-[Admin Name]`,
+Best regards,
+DriveFlow Team`,
   },
   {
     name: '📁 Storage & Files',
-    subject: 'Update: Storage and file performance improved',
-    message: `Hi,
+    subject: 'DriveFlow: Cloud storage and transfer performance update',
+    message: `Hello,
 
-We have further optimized storage and file transfer speed. Your uploads and downloads should now be noticeably faster than before.
+We have updated our cloud infrastructure to deliver higher file transfer speeds and smoother document previews.
 
-You can visit your dashboard to manage your files and check your available storage anytime.
+• Faster upload and download transfer rates
+• Enhanced storage management tools
 
-Thanks,
-[Admin Name]`,
+Visit your DriveFlow workspace to manage your files anytime.
+
+Best regards,
+DriveFlow Team`,
   },
 ];
 
