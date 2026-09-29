@@ -76,10 +76,10 @@ DriveFlow Team`,
   },
   {
     name: '🚀 App Update Ready',
-    subject: 'DriveFlow: New platform update available (v2.4.0)',
+    subject: 'DriveFlow: New Android Update Available',
     message: `Hello,
 
-A new version (v2.4.0) of DriveFlow is now available with enhancements to file transfer speed and platform stability.
+A new version (Version [Version Name]) of DriveFlow is now available with enhancements to file transfer speed and platform stability.
 
 Open your DriveFlow dashboard or mobile app to install the update and explore the latest improvements.
 
