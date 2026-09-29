@@ -131,21 +131,6 @@ Feel free to reach out if you have any questions regarding your account settings
 Best regards,
 DriveFlow Team`,
   },
-  {
-    name: '📁 Storage Management',
-    subject: 'DriveFlow: Cloud storage performance improvements',
-    message: `Hello,
-
-We have updated our cloud infrastructure to provide faster upload speeds and smoother file handling across your account.
-
-• Feature: Enhanced upload and download speeds
-• Availability: Active on your account
-
-You can review your storage usage and manage your cloud files directly from your dashboard.
-
-Best regards,
-DriveFlow Team`,
-  },
 ];
 
 
