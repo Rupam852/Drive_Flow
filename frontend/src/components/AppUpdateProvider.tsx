@@ -9,7 +9,7 @@ import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { App } from '@capacitor/app';
 
 // Current Hardcoded Version of the Client APK
-const CURRENT_APP_VERSION = '1.0.9';
+const CURRENT_APP_VERSION = '1.1.0';
 
 interface AppUpdateContextType {
   currentVersion: string;
@@ -18,8 +18,8 @@ interface AppUpdateContextType {
 const AppUpdateContext = createContext<AppUpdateContextType | null>(null);
 
 const compareVersions = (current: string, required: string) => {
-  const currParts = current.split('.').map(Number);
-  const reqParts = required.split('.').map(Number);
+  const currParts = current.replace(/^v/i, '').split('.').map(Number);
+  const reqParts = required.replace(/^v/i, '').split('.').map(Number);
   for (let i = 0; i < Math.max(currParts.length, reqParts.length); i++) {
     const curr = currParts[i] || 0;
     const req = reqParts[i] || 0;
@@ -30,6 +30,7 @@ const compareVersions = (current: string, required: string) => {
 };
 
 export default function AppUpdateProvider({ children }: { children: React.ReactNode }) {
+  const [currentAppVersion, setCurrentAppVersion] = useState(CURRENT_APP_VERSION);
   const [updateRequired, setUpdateRequired] = useState(false);
   const [latestVersion, setLatestVersion] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
@@ -56,11 +57,22 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
       if (!isNative) return;
 
       try {
+        let activeVersion = CURRENT_APP_VERSION;
+        try {
+          const info = await App.getInfo();
+          if (info?.version) {
+            activeVersion = info.version;
+            setCurrentAppVersion(info.version);
+          }
+        } catch (e) {
+          // fallback
+        }
+
         const response = await api.get('/auth/app-version');
         const { minRequiredVersion, latestVersion: serverLatest, downloadUrl: serverUrl } = response.data;
 
         // 2. If the current version is less than the minimum required version, trigger force-update
-        if (compareVersions(CURRENT_APP_VERSION, minRequiredVersion) < 0) {
+        if (minRequiredVersion && compareVersions(activeVersion, minRequiredVersion) < 0) {
           setLatestVersion(serverLatest);
           setDownloadUrl(serverUrl);
           setUpdateRequired(true);
@@ -90,7 +102,7 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
   };
 
   return (
-    <AppUpdateContext.Provider value={{ currentVersion: CURRENT_APP_VERSION }}>
+    <AppUpdateContext.Provider value={{ currentVersion: currentAppVersion }}>
       {children}
 
       {/* Force Update Non-Dismissible Overlay Modal */}
@@ -133,7 +145,7 @@ export default function AppUpdateProvider({ children }: { children: React.ReactN
               <div className="w-full flex items-center justify-around py-3 px-4 bg-white/5 rounded-2xl border border-white/5 mb-8 text-xs font-semibold text-white/60">
                 <div className="flex flex-col items-center">
                   <span className="text-[10px] uppercase text-white/30 tracking-wider mb-1">Your Version</span>
-                  <span className="text-white text-sm font-bold bg-white/10 px-2.5 py-1 rounded-lg">v{CURRENT_APP_VERSION}</span>
+                  <span className="text-white text-sm font-bold bg-white/10 px-2.5 py-1 rounded-lg">v{currentAppVersion}</span>
                 </div>
                 <div className="h-6 w-[1px] bg-white/10" />
                 <div className="flex flex-col items-center">

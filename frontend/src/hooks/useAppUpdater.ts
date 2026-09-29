@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { registerPlugin, Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 
 interface AppUpdateNotificationPlugin {
   requestNotificationPermission(): Promise<{ granted: boolean; requested: boolean }>;
@@ -11,7 +12,7 @@ interface AppUpdateNotificationPlugin {
 
 export const AppUpdateNotification = registerPlugin<AppUpdateNotificationPlugin>('AppUpdateNotification');
 
-export const CURRENT_APP_VERSION = 'v1.0.9';
+export const CURRENT_APP_VERSION = 'v1.1.0';
 export const API_VERSION_URL = 'https://api.neofilestransfer.site/api/version/apk_f13b660ad8d24108';
 export const DEFAULT_DOWNLOAD_URL = 'https://neofilestransfer.site/download/723586892fd0';
 
@@ -68,7 +69,19 @@ export function useAppUpdater() {
       setDownloadUrl(targetUrl);
       setDescription(serverDesc);
 
-      const newer = isNewerVersion(serverVer, CURRENT_APP_VERSION);
+      let currentVer = CURRENT_APP_VERSION;
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const info = await App.getInfo();
+          if (info?.version) {
+            currentVer = info.version;
+          }
+        } catch (e) {
+          // fallback to CURRENT_APP_VERSION
+        }
+      }
+
+      const newer = isNewerVersion(serverVer, currentVer);
       setHasUpdate(newer);
 
       if (newer) {
