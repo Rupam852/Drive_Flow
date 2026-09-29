@@ -229,10 +229,12 @@ export default function AdminNotificationsPage() {
     e?.preventDefault();
     const trimmed = fileNameInput.trim();
     if (trimmed) {
-      if (message.includes('[File Name]')) {
+      if (message.includes('• File Name:')) {
+        setMessage(prev => prev.replace(/• File Name:([^\n]*)/, `• File Name: ${trimmed}`));
+      } else if (message.includes('[File Name]')) {
         setMessage(prev => prev.replace(/\[File Name\]/g, trimmed));
       } else {
-        setMessage(prev => prev + `\n\n• File: ${trimmed}`);
+        setMessage(prev => prev + `\n\n• File Name: ${trimmed}`);
       }
       if (subject.includes('[File Name]')) {
         setSubject(prev => prev.replace(/\[File Name\]/g, trimmed));
@@ -767,6 +769,15 @@ export default function AdminNotificationsPage() {
     // Admin manually clicks "Insert Link" to decide whether to attach None, Dashboard, or Download URL.
     setAttachedLink('');
     setResultStatus(null);
+
+    // Prompt admin for File Name if selecting File Sync template
+    if (tmpl.name.includes('File Sync')) {
+      setFileNameInput('');
+      setShowFileNameModal(true);
+    } else if (tmpl.name.includes('App Update')) {
+      setVersionInput('');
+      setShowVersionModal(true);
+    }
   };
 
   // Toggle user selection for multiple mode
@@ -3474,6 +3485,152 @@ export default function AdminNotificationsPage() {
                   OK
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ============================================================== */}
+      {/* FILE NAME INPUT MODAL                                          */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {showFileNameModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col"
+            >
+              <div className="p-4 sm:p-5 border-b bg-purple-50/70 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900/30 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <FileText className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      Enter Synchronized File Name
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Type the file name to display in the notification
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowFileNameModal(false)}
+                  className="p-1.5 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-200 dark:border-white/10 transition-all cursor-pointer shadow-xs active:scale-95"
+                  title="Close popup"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleApplyFileName} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    File Name (e.g. Project_Presentation.pdf, Assets.zip)
+                  </label>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={fileNameInput}
+                    onChange={e => setFileNameInput(e.target.value)}
+                    placeholder="Enter file name..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-hidden focus:ring-2 focus:ring-purple-500 focus:border-purple-500 shadow-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowFileNameModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-white/20 transition-colors cursor-pointer"
+                  >
+                    Skip
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
+                  >
+                    Apply File Name
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ============================================================== */}
+      {/* VERSION INPUT MODAL                                            */}
+      {/* ============================================================== */}
+      <AnimatePresence>
+        {showVersionModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="bg-white dark:bg-[#121626] border border-slate-200 dark:border-white/10 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col"
+            >
+              <div className="p-4 sm:p-5 border-b bg-indigo-50/70 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-900/30 flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs shrink-0">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                      Enter App Version Name
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Set the release version tag for users
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowVersionModal(false)}
+                  className="p-1.5 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-200 dark:border-white/10 transition-all cursor-pointer shadow-xs active:scale-95"
+                  title="Close popup"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleApplyVersion} className="p-5 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                    Version (e.g. 1.0.9 or v2.4.0)
+                  </label>
+                  <input
+                    type="text"
+                    autoFocus
+                    value={versionInput}
+                    onChange={e => setVersionInput(e.target.value)}
+                    placeholder="e.g. 1.0.9"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-[#111422] text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-xs"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowVersionModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-white/20 transition-colors cursor-pointer"
+                  >
+                    Skip
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md transition-all active:scale-95 cursor-pointer"
+                  >
+                    Apply Version
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
