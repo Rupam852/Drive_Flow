@@ -1077,14 +1077,14 @@ export default function AdminNotificationsPage() {
 
           {/* Email Provider Selector when sendEmail is enabled */}
           {sendEmail && (
-            <div className="mt-3 p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40 space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="mt-3 p-3.5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/40 space-y-2.5">
+              <div className="flex items-center justify-between flex-wrap gap-1">
                 <span className="text-xs font-bold text-slate-800 dark:text-gray-200 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   Select Email Dispatch Provider:
                 </span>
-                <span className="text-[10px] text-purple-600 dark:text-purple-400 font-semibold">
-                  {emailProvider === 'brevo' ? '100% Primary Inbox Delivery' : 'Direct Google SMTP'}
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800/40">
+                  🛡️ 100% Spam-Free • Primary Inbox Verified
                 </span>
               </div>
 
@@ -1108,14 +1108,14 @@ export default function AdminNotificationsPage() {
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-bold text-slate-900 dark:text-white">Via Brevo</span>
                       <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/40">
-                        Recommended
+                        100% Spam-Free
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-600 dark:text-gray-300 truncate mt-0.5 font-medium">
                       notifications@driveflow.neofilestransfer.site
                     </p>
-                    <p className="text-[10px] text-slate-400 dark:text-gray-400 mt-0.5">
-                      DKIM & SPF Verified • 0% Spam Guarantee
+                    <p className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-0.5 font-semibold">
+                      DKIM & SPF Verified • 100% Primary Inbox Guaranteed
                     </p>
                   </div>
                 </button>
@@ -1136,14 +1136,17 @@ export default function AdminNotificationsPage() {
                     {emailProvider === 'gmail' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </div>
                   <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-xs font-bold text-slate-900 dark:text-white">Via Own Gmail SMTP</span>
+                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800/40">
+                        100% Spam-Free
+                      </span>
                     </div>
                     <p className="text-[11px] text-slate-600 dark:text-gray-300 truncate mt-0.5 font-medium">
                       bott27124@gmail.com
                     </p>
-                    <p className="text-[10px] text-slate-400 dark:text-gray-400 mt-0.5">
-                      Direct Personal Google SMTP Transport
+                    <p className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-0.5 font-semibold">
+                      Direct Google Transport • 100% Primary Inbox Guaranteed
                     </p>
                   </div>
                 </button>
