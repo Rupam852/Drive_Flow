@@ -67,7 +67,7 @@ const TEMPLATES = [
 Your DriveFlow cloud workspace has updated and synchronized your latest files.
 
 • Status: Synchronization Complete
-• Workspace: Personal Drive
+• File Name: 
 
 You can access and organize your updated documents anytime from your DriveFlow dashboard.
 
