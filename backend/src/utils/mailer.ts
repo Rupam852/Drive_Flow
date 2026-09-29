@@ -56,8 +56,12 @@ export function buildDriveFlowEmailHtml({
   noticeText?: string;
   senderName?: string;
 }): string {
-  const subtitle = senderName && senderName.trim() && senderName.trim() !== 'DriveFlow'
-    ? `Message from ${senderName.trim()}`
+  const cleanSender = senderName && senderName.trim() && !['default admin', 'admin'].includes(senderName.trim().toLowerCase())
+    ? senderName.trim()
+    : 'DriveFlow Team';
+
+  const subtitle = cleanSender !== 'DriveFlow' && cleanSender !== 'DriveFlow Team'
+    ? `Message from ${cleanSender}`
     : 'Official System Notification';
 
   return `<!DOCTYPE html>
@@ -108,7 +112,7 @@ export function buildDriveFlowEmailHtml({
 
               <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 13px; color: #64748b;">
                 <p style="margin: 0 0 2px; font-weight: 600; color: #334155;">Regards,</p>
-                <p style="margin: 0; font-weight: 700; color: #0f172a;">${senderName && senderName.trim() ? senderName.trim() : 'DriveFlow Operations'}</p>
+                <p style="margin: 0; font-weight: 700; color: #0f172a;">${cleanSender}</p>
               </div>
             </td>
           </tr>
@@ -217,15 +221,17 @@ export const sendDirectEmail = async (
   const plainText = text || htmlToPlainText(html);
   const isGmail = emailProvider === 'gmail';
 
-  const senderDisplayName = senderName && senderName.trim()
+  const senderDisplayName = senderName && senderName.trim() && !['default admin', 'admin'].includes(senderName.trim().toLowerCase())
     ? senderName.trim()
-    : creds.fromName;
+    : (creds.fromName || 'DriveFlow');
 
   const fromEmail = isGmail ? creds.gmailUser : creds.fromEmail;
-  const fromAddress = `"${senderDisplayName}" <${fromEmail}>`;
 
   const mailOptions = {
-    from: fromAddress,
+    from: {
+      name: senderDisplayName,
+      address: fromEmail,
+    },
     replyTo: fromEmail,
     to,
     subject: cleanSubj,

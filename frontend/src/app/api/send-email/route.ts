@@ -134,9 +134,9 @@ export async function POST(request: Request) {
       ? `DriveFlow Account Verification\n\nYour one-time code is: ${otp}\n\nThis code will expire in 10 minutes.\n\nSecurity Notice: Never share this code with anyone. If you did not request this code, you can safely ignore this email.\n\n-- DriveFlow Team`
       : htmlToPlainText(finalHtml);
 
-    const senderDisplayName = senderName && typeof senderName === 'string' && senderName.trim()
+    const senderDisplayName = senderName && typeof senderName === 'string' && senderName.trim() && !['default admin', 'admin'].includes(senderName.trim().toLowerCase())
       ? senderName.trim()
-      : fromName;
+      : (fromName || 'DriveFlow');
 
     const createBrevoTransport = (port: number) => {
       return nodemailer.createTransport({
@@ -158,7 +158,10 @@ export async function POST(request: Request) {
 
     const sendWithBrevo = async () => {
       const mailOptions = {
-        from: `"${senderDisplayName}" <${fromEmail}>`,
+        from: {
+          name: senderDisplayName,
+          address: fromEmail,
+        },
         replyTo: fromEmail,
         to,
         subject: finalSubject,
@@ -201,7 +204,10 @@ export async function POST(request: Request) {
       } as any);
 
       await gmailTransporter.sendMail({
-        from: `"${senderDisplayName}" <${gmailUser}>`,
+        from: {
+          name: senderDisplayName,
+          address: gmailUser,
+        },
         replyTo: gmailUser,
         to,
         subject: finalSubject,

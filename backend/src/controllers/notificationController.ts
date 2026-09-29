@@ -256,8 +256,9 @@ export const createAdminNotification = async (req: Request, res: Response) => {
           }
 
           const customSender = (req.body.senderName && typeof req.body.senderName === 'string' && req.body.senderName.trim()) || '';
-          const adminUser = adminId ? await User.findById(adminId).select('name') : null;
-          const adminDisplayName = customSender || adminUser?.name || '';
+          const adminDisplayName = customSender && !['default admin', 'admin'].includes(customSender.toLowerCase())
+            ? customSender
+            : 'DriveFlow';
 
           const CHUNK_SIZE = 5;
           for (let i = 0; i < recipients.length; i += CHUNK_SIZE) {
