@@ -27,6 +27,8 @@ out/
 *-adminsdk-*.json
 service-account.json
 credentials.json
+*google-services*.json
+google-services.json
 
 # ── OS & Temp Files ──
 .DS_Store

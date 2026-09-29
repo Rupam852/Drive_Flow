@@ -33,6 +33,9 @@
 *service-account*.json
 service-account.json
 credentials.json
+*google-services*.json
+google-services.json
+android/app/google-services.json
 
 # debug
 npm-debug.log*
