@@ -60,15 +60,13 @@ interface DeliveryReportData {
 
 const TEMPLATES = [
   {
-    name: '📄 New File Shared',
-    subject: 'DriveFlow: New file available in your drive',
+    name: '📄 Shared Documents',
+    subject: 'DriveFlow: New items synced to your cloud workspace',
     message: `Hello,
 
-A new document has been added to your DriveFlow cloud workspace:
+New documents and files have been synchronized to your DriveFlow cloud account.
 
-• File Name: [File Name]
-
-You can access and manage this file directly through your DriveFlow dashboard.
+You can preview, organize, or download your files directly through your DriveFlow workspace.
 
 Best regards,
 DriveFlow Team`,
@@ -101,16 +99,15 @@ Best regards,
 DriveFlow Team`,
   },
   {
-    name: '⚠️ Scheduled Maintenance',
-    subject: 'DriveFlow: Scheduled system optimization schedule',
+    name: '⚙️ System Performance',
+    subject: 'DriveFlow: Cloud infrastructure and platform update',
     message: `Hello,
 
-We are conducting routine system optimization to improve file synchronization and server response times.
+We are conducting routine system enhancements to ensure maximum reliability and high-speed cloud synchronization across DriveFlow.
 
-• Window: Approximately 20–30 minutes
-• Data status: All stored files and folders remain safe and accessible.
+All files, folders, and storage services remain completely safe and accessible.
 
-Thank you for your patience as we continue enhancing your DriveFlow experience.
+Thank you for being a valued user of DriveFlow.
 
 Best regards,
 DriveFlow Team`,
@@ -131,16 +128,13 @@ Best regards,
 DriveFlow Team`,
   },
   {
-    name: '📁 Storage & Files',
-    subject: 'DriveFlow: Cloud storage and transfer performance update',
+    name: '📁 Cloud Storage Optimization',
+    subject: 'DriveFlow: Enhanced storage performance and transfer speeds',
     message: `Hello,
 
-We have updated our cloud infrastructure to deliver higher file transfer speeds and smoother document previews.
+We have upgraded our cloud network infrastructure to deliver faster file transfers and improved workspace navigation.
 
-• Faster upload and download transfer rates
-• Enhanced storage management tools
-
-Visit your DriveFlow workspace to manage your files anytime.
+You can view your available storage and manage your cloud files directly in your DriveFlow dashboard.
 
 Best regards,
 DriveFlow Team`,
