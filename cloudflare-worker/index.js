@@ -38,15 +38,24 @@ export default {
     newHeaders.set("X-Forwarded-Host", url.host);
     newHeaders.set("X-Via-Worker", "Cloudflare-DriveFlow-UltraEdge");
 
-    // 2. Cacheable GET Endpoints (Edge Caching for Stats, Ping & File Previews/Inline Streams)
+    // 2. Cacheable GET Endpoints (Smart Edge Caching for Stats, Ping & Media Previews)
+    const isRangeRequest = !!request.headers.get("Range");
+    const isBulkDownload = url.pathname.includes("/bulk-download");
+    
+    // Only cache inline media previews (images, pdfs, audio/video thumbnails), not large binary downloads or chunked streams
     const isPreviewRequest =
       request.method === "GET" &&
+      !isRangeRequest &&
+      !isBulkDownload &&
+      url.searchParams.get("inline") === "true" &&
       (url.pathname.includes("/download") ||
         url.pathname.includes("/preview") ||
         url.pathname.includes("/thumbnail"));
 
     const isCacheableGet =
       (request.method === "GET" &&
+        !isRangeRequest &&
+        !isBulkDownload &&
         !request.headers.get("Authorization") &&
         (url.pathname.startsWith("/api/files/stats") ||
           url.pathname.startsWith("/api/auth/ping"))) ||
@@ -139,8 +148,8 @@ export default {
 
     // If GET & Cacheable, store in Cloudflare Edge Cache
     if (isCacheableGet && backendResponse.status === 200) {
-      const edgeCacheTTL = isPreviewRequest ? 86400 : CACHE_TTL_SECONDS;
-      responseHeaders.set("Cache-Control", `public, max-age=${edgeCacheTTL}, s-maxage=${edgeCacheTTL}, stale-while-revalidate=3600`);
+      const edgeCacheTTL = isPreviewRequest ? 7200 : CACHE_TTL_SECONDS;
+      responseHeaders.set("Cache-Control", `public, max-age=${edgeCacheTTL}, s-maxage=${edgeCacheTTL}, stale-while-revalidate=1800`);
       const responseToCache = new Response(response.clone().body, {
         status: response.status,
         headers: responseHeaders,

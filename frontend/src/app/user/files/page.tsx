@@ -142,30 +142,85 @@ export default function UserFilesPage() {
     setDownloadProgress(null);
   };
   const currentFolder = path[path.length - 1]!;
-  const folderCacheRef = useRef<Map<string, { files: DriveFile[]; timestamp: number }>>(new Map());
+  
+  // 🧠 Smart LRU Cache (Max 25 folders in memory to prevent mobile RAM bloat)
+  class FolderLRUCache {
+    private max: number;
+    private cache: Map<string, { files: DriveFile[]; timestamp: number }>;
+    constructor(max = 25) {
+      this.max = max;
+      this.cache = new Map();
+    }
+    get(key: string) {
+      const item = this.cache.get(key);
+      if (item) {
+        this.cache.delete(key);
+        this.cache.set(key, item);
+      }
+      return item;
+    }
+    set(key: string, files: DriveFile[]) {
+      if (this.cache.has(key)) {
+        this.cache.delete(key);
+      } else if (this.cache.size >= this.max) {
+        const oldestKey = this.cache.keys().next().value;
+        if (oldestKey) this.cache.delete(oldestKey);
+      }
+      this.cache.set(key, { files, timestamp: Date.now() });
+    }
+    delete(key: string) {
+      this.cache.delete(key);
+    }
+    clear() {
+      this.cache.clear();
+    }
+  }
+
+  const folderCacheRef = useRef<FolderLRUCache>(new FolderLRUCache(25));
+  const activeFolderIdRef = useRef<string>(currentFolder?.id || ROOT_ID);
+  activeFolderIdRef.current = currentFolder?.id || ROOT_ID;
 
   const loadFiles = async (folderId: string, background = false, forceFresh = false) => {
+    activeFolderIdRef.current = folderId;
     if (forceFresh) {
       folderCacheRef.current.delete(folderId);
     }
     const cached = folderCacheRef.current.get(folderId);
-    const now = Date.now();
-    const isFresh = cached && (now - cached.timestamp < 45000);
 
     if (cached && !forceFresh) {
       // 0ms instant display of cached folder contents - Zero flicker!
       setFiles(cached.files);
       setLoading(false);
-      if (isFresh && !background) return;
-    } else if (!background) {
+
+      // 🔄 SWR (Stale-While-Revalidate): Silently fetch fresh data in background
+      api.get(`/files?parentId=${folderId}`)
+        .then(res => {
+          folderCacheRef.current.set(folderId, res.data);
+          // Only update UI if user is still viewing this folder
+          if (activeFolderIdRef.current === folderId) {
+            setFiles(res.data);
+          }
+        })
+        .catch(err => console.error('SWR background sync failed:', err));
+      return;
+    }
+
+    if (!background) {
       setLoading(true);
     }
     try {
       const res = await api.get(`/files?parentId=${folderId}`);
-      folderCacheRef.current.set(folderId, { files: res.data, timestamp: Date.now() });
-      setFiles(res.data);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+      folderCacheRef.current.set(folderId, res.data);
+      if (activeFolderIdRef.current === folderId) {
+        setFiles(res.data);
+      }
+    } catch (e) { 
+      console.error(e); 
+    } finally { 
+      if (activeFolderIdRef.current === folderId) {
+        setLoading(false); 
+      }
+    }
   };
 
   const fetchStats = async () => {
