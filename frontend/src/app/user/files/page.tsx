@@ -84,6 +84,7 @@ export default function UserFilesPage() {
   const zipNameRef = useRef<HTMLInputElement>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  const didLongPressRef = useRef(false);
   const [downloadStatus, setDownloadStatus] = useState<{ show: boolean; fileName: string; status: 'loading' | 'success' | 'error' }>({
     show: false, fileName: '', status: 'loading'
   });
@@ -293,7 +294,8 @@ export default function UserFilesPage() {
     setPath(newPath);
     const url = new URL(window.location.href);
     url.searchParams.set('folder', newPath[newPath.length - 1].id);
-    window.history.replaceState({ path: newPath }, '', url);
+    window.history.pushState({ path: newPath }, '', url);
+    loadFiles(newPath[newPath.length - 1].id, false, false);
   };
 
   // Universal download trigger - works on both web and Android WebView
@@ -664,8 +666,10 @@ export default function UserFilesPage() {
     // Only handle primary button (finger / left click)
     if (e.button !== 0 && e.pointerType !== 'touch') return;
     touchStartPos.current = { x: e.clientX, y: e.clientY };
+    didLongPressRef.current = false;
     longPressTimerRef.current = setTimeout(() => {
       longPressTimerRef.current = null;
+      didLongPressRef.current = true;
       setSelected(prev => {
         const n = new Set(prev);
         n.has(id) ? n.delete(id) : n.add(id);
@@ -679,8 +683,8 @@ export default function UserFilesPage() {
     if (!longPressTimerRef.current || !touchStartPos.current) return;
     const dx = Math.abs(e.clientX - touchStartPos.current.x);
     const dy = Math.abs(e.clientY - touchStartPos.current.y);
-    // Cancel long press if finger moves more than 12px (natural trembling is ~5px)
-    if (dx > 12 || dy > 12) {
+    // Cancel long press if finger moves more than 10px (smooth scroll protection)
+    if (dx > 10 || dy > 10) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
       touchStartPos.current = null;
@@ -718,6 +722,10 @@ export default function UserFilesPage() {
   };
 
   const handleItemClick = async (file: DriveFile) => {
+    if (didLongPressRef.current) {
+      didLongPressRef.current = false;
+      return;
+    }
     if (selected.size > 0) {
       toggleSelect(file.id);
     } else {

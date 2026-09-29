@@ -478,8 +478,8 @@ function AdminFilesContent() {
     const newPath = path.slice(0, idx + 1);
     setPath(newPath);
     const targetFolder = newPath[newPath.length - 1];
-    window.history.replaceState({ path: newPath }, '', `?folder=${targetFolder.id}`);
-    loadFiles(targetFolder.id);
+    window.history.pushState({ path: newPath }, '', `?folder=${targetFolder.id}`);
+    loadFiles(targetFolder.id, false, false);
   };
   // ──────────────────────────────────────────────────────────────────
 
@@ -563,6 +563,10 @@ function AdminFilesContent() {
   }, [currentFolder.id]);
 
   const handleItemClick = async (file: DriveFile) => {
+    if (didLongPressRef.current) {
+      didLongPressRef.current = false;
+      return;
+    }
     if (selected.size > 0) {
       toggleSelect(file.id);
     } else if (isFolder(file)) {
@@ -614,7 +618,8 @@ function AdminFilesContent() {
       await api.put(`/files/${id}/restore`);
       addToast('File restored!');
       setTrashFiles(prev => prev.filter(f => f.id !== id));
-      loadFiles(currentFolder.id);
+      folderCacheRef.current.clear();
+      await loadFiles(currentFolder.id, false, true);
       fetchStats();
     } catch (e) { addToast('Restore failed', 'error'); }
   };
@@ -633,7 +638,8 @@ function AdminFilesContent() {
           setTrashFiles([]);
           setSelectedTrash(new Set());
           fetchStats();
-          loadFiles(currentFolder.id);
+          folderCacheRef.current.clear();
+          await loadFiles(currentFolder.id, false, true);
         } catch (e: any) {
           addToast(e.response?.data?.message || 'Error emptying trash', 'error');
         }
@@ -656,7 +662,8 @@ function AdminFilesContent() {
           setTrashFiles(prev => prev.filter(f => !ids.includes(f.id)));
           setSelectedTrash(new Set());
           fetchStats();
-          loadFiles(currentFolder.id);
+          folderCacheRef.current.clear();
+          await loadFiles(currentFolder.id, false, true);
         } catch (e: any) {
           addToast(e.response?.data?.message || 'Error deleting items', 'error');
         }
@@ -678,7 +685,8 @@ function AdminFilesContent() {
           addToast('All items restored');
           setTrashFiles([]);
           setSelectedTrash(new Set());
-          loadFiles(currentFolder.id);
+          folderCacheRef.current.clear();
+          await loadFiles(currentFolder.id, false, true);
           fetchStats();
         } catch (e: any) {
           addToast(e.response?.data?.message || 'Restore all failed', 'error');
@@ -695,7 +703,8 @@ function AdminFilesContent() {
       addToast('Items restored successfully');
       setTrashFiles(prev => prev.filter(f => !ids.includes(f.id)));
       setSelectedTrash(new Set());
-      loadFiles(currentFolder.id);
+      folderCacheRef.current.clear();
+      await loadFiles(currentFolder.id, false, true);
       fetchStats();
     } catch (e: any) {
       addToast(e.response?.data?.message || 'Bulk restore failed', 'error');
@@ -774,21 +783,42 @@ function AdminFilesContent() {
     }
   };
 
-  const [longPressTimer, setLongPressTimer] = useState<any>(null);
+  // 🛡️ Mis-Touch Prevention & Smart Long-Press Selection
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchStartPos = useRef<{ x: number; y: number } | null>(null);
+  const didLongPressRef = useRef(false);
 
-  const handleItemTouchStart = (id: string) => {
-    const timer = setTimeout(() => {
+  const handleItemPointerDown = (id: string, e: React.PointerEvent) => {
+    // Only handle primary touch or left-click
+    if (e.button !== 0 && e.pointerType !== 'touch') return;
+    touchStartPos.current = { x: e.clientX, y: e.clientY };
+    didLongPressRef.current = false;
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTimerRef.current = null;
+      didLongPressRef.current = true;
       toggleSelect(id);
-      if (navigator.vibrate) navigator.vibrate(50);
+      if (navigator.vibrate) navigator.vibrate(60);
     }, 500);
-    setLongPressTimer(timer);
   };
 
-  const handleItemTouchEnd = () => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      setLongPressTimer(null);
+  const handleItemPointerMove = (e: React.PointerEvent) => {
+    if (!longPressTimerRef.current || !touchStartPos.current) return;
+    const dx = Math.abs(e.clientX - touchStartPos.current.x);
+    const dy = Math.abs(e.clientY - touchStartPos.current.y);
+    // Cancel long-press if finger moved > 10px (smooth scroll protection)
+    if (dx > 10 || dy > 10) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+      touchStartPos.current = null;
     }
+  };
+
+  const handleItemPointerUp = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    touchStartPos.current = null;
   };
 
   const handleMove = async (targetId: string, idsToMove?: string[]) => {
@@ -803,7 +833,8 @@ function AdminFilesContent() {
       setShowMoveModal(false);
       addToast('Moved successfully');
       fetchStats();
-      loadFiles(currentFolder.id);
+      folderCacheRef.current.clear();
+      await loadFiles(currentFolder.id, false, true);
     } catch (e) { addToast('Move failed', 'error'); }
     finally { setActionLoading(false); }
   };
@@ -1083,7 +1114,8 @@ function AdminFilesContent() {
       }
     }
 
-    await loadFiles(currentFolder.id);
+    folderCacheRef.current.clear();
+    await loadFiles(currentFolder.id, false, true);
     fetchStats();
     setUploading(false);
     try { targetInput.value = ''; } catch (e) { }
@@ -1100,7 +1132,8 @@ function AdminFilesContent() {
       await api.post('/files/folder', { name: newFolderName, parentId: currentFolder.id });
       setNewFolderName('');
       setShowNewFolderModal(false);
-      await loadFiles(currentFolder.id);
+      folderCacheRef.current.clear();
+      await loadFiles(currentFolder.id, false, true);
       fetchStats();
       addToast('Folder created!');
     } catch (e) {
@@ -1125,7 +1158,8 @@ function AdminFilesContent() {
         newWindow.close();
         addToast('No edit link returned', 'error');
       }
-      await loadFiles(currentFolder.id);
+      folderCacheRef.current.clear();
+      await loadFiles(currentFolder.id, false, true);
       fetchStats();
     } catch (e) {
       console.error(e);
@@ -1143,7 +1177,8 @@ function AdminFilesContent() {
       setFiles(prev => prev.map(f => f.id === renaming.id ? { ...f, name: newName } : f));
       setRenaming(null);
       addToast('File renamed!');
-      loadFiles(currentFolder.id);
+      folderCacheRef.current.clear();
+      await loadFiles(currentFolder.id, false, true);
       fetchStats();
     } catch (e) {
       addToast('Error renaming', 'error');
@@ -1160,7 +1195,8 @@ function AdminFilesContent() {
       setSelected(new Set());
       addToast('Items moved to trash');
       fetchStats();
-      loadFiles(currentFolder.id);
+      folderCacheRef.current.clear();
+      await loadFiles(currentFolder.id, false, true);
     } catch (e) { addToast('Delete failed', 'error'); }
     finally { setDeletingIds(prev => prev.filter(id => !ids.includes(id))); }
   };
@@ -1170,6 +1206,7 @@ function AdminFilesContent() {
     try {
       await api.put(`/files/${file.id}/hide`, { hide: newHidden });
       setFiles(prev => prev.map(f => f.id === file.id ? { ...f, isHidden: newHidden } : f));
+      folderCacheRef.current.clear();
       addToast(newHidden ? `"${file.name}" hidden from users` : `"${file.name}" visible to users`);
     } catch (e) {
       addToast('Failed to update visibility', 'error');
@@ -1843,10 +1880,16 @@ function AdminFilesContent() {
                   {filteredFiles.map((file, i) => (
                     <motion.tr key={file.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.01 }}
                       onClick={() => handleItemClick(file)}
+                      onPointerDown={(e) => handleItemPointerDown(file.id, e)}
+                      onPointerMove={handleItemPointerMove}
+                      onPointerUp={handleItemPointerUp}
+                      onPointerCancel={handleItemPointerUp}
+                      onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
                       className={`border-b border-white/5 hover:bg-white/5 transition-colors group cursor-pointer ${file.isHidden ? 'opacity-50 bg-amber-500/5 border-amber-500/10' : selected.has(file.id) ? 'bg-purple-500/10' : ''
                         }`}>
                       <td className="px-2 sm:px-4 py-3 text-center">
-                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(file.id); }}>
+                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(file.id); }}
+                          onPointerDown={(e) => e.stopPropagation()}>
                           {selected.has(file.id) ? <CheckSquare className="w-4 h-4 text-purple-400" /> : <Square className="w-4 h-4 text-gray-500 hover:text-gray-300" />}
                         </button>
                       </td>
@@ -1862,24 +1905,29 @@ function AdminFilesContent() {
                       <td className="px-2 sm:px-4 py-3">
                         <div className="flex items-center gap-2 sm:gap-3 transition-opacity">
                           {!(currentFolder.id === ROOT_ID && isFolder(file)) && (
-                            <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }} title="Download"
+                            <button onClick={(e) => { e.stopPropagation(); handleDownload(file); }}
+                              onPointerDown={(e) => e.stopPropagation()} title="Download"
                               className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                               <Download className="w-4 h-4" />
                             </button>
                           )}
-                          <button onClick={(e) => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} title="Rename"
+                          <button onClick={(e) => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }}
+                            onPointerDown={(e) => e.stopPropagation()} title="Rename"
                             className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }} title="Move"
+                          <button onClick={(e) => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }}
+                            onPointerDown={(e) => e.stopPropagation()} title="Move"
                             className="p-1.5 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
                             <Move className="w-4 h-4" />
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); handleToggleHide(file); }} title={file.isHidden ? 'Unhide (show to users)' : 'Hide from users'}
+                          <button onClick={(e) => { e.stopPropagation(); handleToggleHide(file); }}
+                            onPointerDown={(e) => e.stopPropagation()} title={file.isHidden ? 'Unhide (show to users)' : 'Hide from users'}
                             className={`p-1.5 rounded-lg transition-colors ${file.isHidden ? 'text-amber-400 hover:bg-amber-500/20 hover:text-amber-300' : 'text-gray-400 hover:bg-amber-500/10 hover:text-amber-400'}`}>
                             {file.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); handleDelete([file.id]); }} title="Delete"
+                          <button onClick={(e) => { e.stopPropagation(); handleDelete([file.id]); }}
+                            onPointerDown={(e) => e.stopPropagation()} title="Delete"
                             disabled={deletingIds.includes(file.id)}
                             className="p-1.5 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors">
                             {deletingIds.includes(file.id)
@@ -1927,8 +1975,10 @@ function AdminFilesContent() {
                       ? 'bg-purple-500/10 border-purple-500/40'
                       : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/20'}`}
                   onClick={() => handleItemClick(file)}
-                  onTouchStart={() => handleItemTouchStart(file.id)}
-                  onTouchEnd={handleItemTouchEnd}
+                  onPointerDown={(e) => handleItemPointerDown(file.id, e)}
+                  onPointerMove={handleItemPointerMove}
+                  onPointerUp={handleItemPointerUp}
+                  onPointerCancel={handleItemPointerUp}
                   onContextMenu={(e) => { e.preventDefault(); toggleSelect(file.id); }}
                 >
                   {/* Hidden Badge for admin */}
@@ -1940,6 +1990,7 @@ function AdminFilesContent() {
                   {/* Selection Checkbox */}
                   <div className={`absolute top-2 left-2 z-10 transition-all duration-200 
                   ${selected.has(file.id) ? 'opacity-100 scale-100' : 'opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100'}`}
+                    onPointerDown={(e) => e.stopPropagation()}
                     onClick={e => { e.stopPropagation(); toggleSelect(file.id); }}>
                     <div className={`p-1 rounded-md border transition-all
                     ${selected.has(file.id) ? 'bg-purple-500 border-purple-400' : 'bg-black/40 border-white/10 hover:border-white/30'}`}>
@@ -1959,14 +2010,19 @@ function AdminFilesContent() {
                   {/* Grid Hover Actions */}
                   <div className="absolute inset-0 bg-black/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 rounded-3xl flex items-center justify-center gap-2 transition-all">
                     {!(currentFolder.id === ROOT_ID && isFolder(file)) && (
-                      <button onClick={e => { e.stopPropagation(); handleDownload(file); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Download"><Download className="w-4 h-4" /></button>
+                      <button onClick={e => { e.stopPropagation(); handleDownload(file); }}
+                        onPointerDown={(e) => e.stopPropagation()} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Download"><Download className="w-4 h-4" /></button>
                     )}
-                    <button onClick={e => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Rename"><Pencil className="w-4 h-4" /></button>
-                    <button onClick={e => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Move"><Move className="w-4 h-4" /></button>
-                    <button onClick={e => { e.stopPropagation(); handleToggleHide(file); }} className={`p-2 rounded-lg transition-colors ${file.isHidden ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-white/10 text-white hover:bg-amber-500/20 hover:text-amber-400'}`} title={file.isHidden ? 'Unhide' : 'Hide'}>
+                    <button onClick={e => { e.stopPropagation(); setRenaming(file); setNewName(file.name); }}
+                      onPointerDown={(e) => e.stopPropagation()} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Rename"><Pencil className="w-4 h-4" /></button>
+                    <button onClick={e => { e.stopPropagation(); setMovingIds([file.id]); setShowMoveModal(true); }}
+                      onPointerDown={(e) => e.stopPropagation()} className="p-2 bg-white/10 rounded-lg hover:bg-white/20 text-white" title="Move"><Move className="w-4 h-4" /></button>
+                    <button onClick={e => { e.stopPropagation(); handleToggleHide(file); }}
+                      onPointerDown={(e) => e.stopPropagation()} className={`p-2 rounded-lg transition-colors ${file.isHidden ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' : 'bg-white/10 text-white hover:bg-amber-500/20 hover:text-amber-400'}`} title={file.isHidden ? 'Unhide' : 'Hide'}>
                       {file.isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
-                    <button onClick={e => { e.stopPropagation(); handleDelete([file.id]); }} className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400" title="Delete"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={e => { e.stopPropagation(); handleDelete([file.id]); }}
+                      onPointerDown={(e) => e.stopPropagation()} className="p-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 text-red-400" title="Delete"><Trash2 className="w-4 h-4" /></button>
                   </div>
                 </motion.div>
               ))}

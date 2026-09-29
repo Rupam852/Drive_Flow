@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAdblocked, setIsAdblocked] = useState(false);
+  const [isSendingVerifyOtp, setIsSendingVerifyOtp] = useState(false);
   const [showPopup, setShowPopup] = useState<{ message: string; isError: boolean; email?: string } | null>(null);
   const [isNativeApp, setIsNativeApp] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -433,17 +434,32 @@ export default function LoginPage() {
               </button>
               {showPopup.message.toLowerCase().includes('verify') && showPopup.email && (
                 <button
+                  disabled={isSendingVerifyOtp}
                   onClick={async () => {
+                    setIsSendingVerifyOtp(true);
                     try {
                       await api.post('/auth/resend-otp', { email: showPopup.email });
                       router.push(`/register?email=${encodeURIComponent(showPopup.email || '')}&verify=true`);
                     } catch (err: any) {
-                      alert(err.response?.data?.message || 'Failed to resend OTP');
+                      if (err.response?.status === 429) {
+                        // Rate limit active - still proceed to verification screen where countdown timer runs
+                        router.push(`/register?email=${encodeURIComponent(showPopup.email || '')}&verify=true`);
+                      } else {
+                        alert(err.response?.data?.message || 'Failed to resend OTP');
+                        setIsSendingVerifyOtp(false);
+                      }
                     }
                   }}
-                  className="px-4 py-2 rounded-lg bg-[var(--color-secondary)] text-white hover:bg-sky-600 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-[var(--color-secondary)] text-white hover:bg-sky-600 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Verify Email
+                  {isSendingVerifyOtp ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sending OTP...</span>
+                    </>
+                  ) : (
+                    'Verify Email'
+                  )}
                 </button>
               )}
               <a 
